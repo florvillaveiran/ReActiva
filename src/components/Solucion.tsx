@@ -10,7 +10,7 @@ export const Solucion = () => {
       icon: Clock, 
       title: "Pausas activas 3 días por semana", 
       desc: "2 pausas por día de 5-10 minutos cada una. Diseñadas para no interrumpir el flujo de trabajo y reactivar la energía.", 
-      image: "https://images.unsplash.com/photo-1552581234-2612b7495043?auto=format&fit=crop&w=1000&q=80" 
+      image: "/pausas-activas.png" 
     },
     { 
       icon: Mail, 
