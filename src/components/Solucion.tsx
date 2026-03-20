@@ -16,13 +16,13 @@ export const Solucion = () => {
       icon: Mail, 
       title: "Videos asincrónicos por email", 
       desc: "Contenido enviado automáticamente para que cada miembro del equipo lo haga a su propio ritmo y tiempo.", 
-      image: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=1000&q=80" 
+      image: "/email-video.png" 
     },
     { 
       icon: Users, 
       title: "Sin ropa deportiva ni equipamiento", 
       desc: "Ejercicios discretos adaptados al espacio de trabajo, ya sea en la oficina o en home office.", 
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1000&q=80" 
+      image: "/split-exercise.png" 
     },
     { 
       icon: BarChart3, 
@@ -33,7 +33,7 @@ export const Solucion = () => {
   ];
 
   return (
-    <section id="programa" className="py-24 bg-[#FDF8E9]">
+    <section id="programa" className="py-24 bg-neutral-100">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-20">
           <motion.h2 

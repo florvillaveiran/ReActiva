@@ -38,7 +38,7 @@ export const Hero = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="text-lg md:text-xl text-slate-300 leading-relaxed mb-10 max-w-xl"
           >
-            Y su salud, tu mejor inversión. Transformamos la rutina laboral con pausas activas de 3 días por semana, efectivas y fáciles de aplicar.
+            Y su salud, tu mejor inversión. Transformamos la rutina laboral con pausas activas 100% online, 3 días por semana, efectivas y fáciles de aplicar.
           </motion.p>
           
           <motion.div 

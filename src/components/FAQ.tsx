@@ -32,7 +32,7 @@ export const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-24 bg-[#FDF8E9]">
+    <section id="faq" className="py-24 bg-neutral-100">
       <div className="max-w-3xl mx-auto px-6">
         <div className="text-center mb-16">
           <div className="inline-flex items-center justify-center gap-2 mb-4">

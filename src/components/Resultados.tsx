@@ -1,63 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, Heart, Users, RefreshCw, Check, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 
 export const Resultados = () => {
-  const cards = [
-    { icon: TrendingUp, title: "Más energía durante la jornada", desc: "Equipos más enfocados y productivos." },
-    { icon: Heart, title: "Menos días perdidos", desc: "Bienestar físico que reduce el ausentismo." },
-    { icon: Users, title: "Mejor clima laboral", desc: "Más satisfacción y motivación real." },
-    { icon: RefreshCw, title: "Mayor estabilidad del equipo", desc: "Se retiene más talento." },
-  ];
-
   return (
     <section id="resultados" className="py-32 bg-white">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight mb-6"
-          >
-            Resultados reales en <span className="text-[#10b981]">equipos reales</span>
-          </motion.h2>
-          <p className="text-lg text-slate-600">
-            Datos verificables de empresas que ya transformaron su cultura laboral
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-32">
-          {cards.map((card, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={`rounded-3xl md:rounded-[2.5rem] p-5 md:p-8 shadow-sm border border-slate-100 flex flex-col items-center text-center hover:-translate-y-2 hover:shadow-xl transition-all duration-500 group ${
-                i === 0 ? 'bg-[#10b981]/10 col-span-2 md:col-span-2' : 
-                i === 1 ? 'bg-[#10b981]/10 col-span-1 md:col-span-1' :
-                i === 2 ? 'bg-[#C1E9D2]/20 col-span-1 md:col-span-1' :
-                'bg-[#FDF8E9] col-span-2 md:col-span-2 md:col-start-2'
-              }`}
-            >
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white flex items-center justify-center mb-4 md:mb-6 shadow-sm group-hover:rotate-6 transition-transform">
-                <card.icon className={`w-6 h-6 md:w-8 md:h-8 ${
-                  i === 0 ? 'text-[#10b981]' : 
-                  i === 1 ? 'text-[#10b981]' :
-                  i === 2 ? 'text-[#C1E9D2]' :
-                  'text-slate-400'
-                }`} />
-              </div>
-              <h3 className="text-lg md:text-2xl font-bold text-slate-900 mb-3 md:mb-4 leading-tight">{card.title}</h3>
-              <div className="flex items-start gap-2 text-left mt-auto">
-                <Check className="w-4 h-4 md:w-5 md:h-5 text-slate-400 shrink-0 mt-0.5" />
-                <p className="text-slate-600 text-xs md:text-sm leading-relaxed">{card.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
 
         <motion.div 
           initial={{ opacity: 0 }}
