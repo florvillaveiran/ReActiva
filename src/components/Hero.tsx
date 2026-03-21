@@ -5,7 +5,7 @@ import { Logo } from './Logo';
 
 export const Hero = () => {
   return (
-    <section className="relative min-h-[85vh] flex items-center pt-20 overflow-hidden">
+    <section className="relative min-h-[70vh] md:min-h-[85vh] flex items-center pt-32 pb-4 md:pb-12 overflow-hidden">
       {/* Background Image with slow zoom */}
       <motion.div 
         initial={{ scale: 1.1 }}
@@ -45,23 +45,23 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="flex flex-col sm:flex-row gap-4 mb-16"
+            className="flex flex-col sm:flex-row gap-4 mb-8 md:mb-12"
           >
             <motion.a 
               href="#bienestar"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 rounded-full bg-[#10b981] text-white font-semibold text-lg hover:bg-[#059669] transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+              className="px-4 py-3 sm:px-8 sm:py-4 rounded-full bg-[#10b981] text-white font-semibold text-[15px] sm:text-lg hover:bg-[#059669] transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              Activa tu prueba de 15 días <ArrowRight className="w-5 h-5" />
+              Activa tu prueba de 15 días <ArrowRight className="w-5 h-5 flex-shrink-0" />
             </motion.a>
             <motion.a 
               href="#metodo"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 rounded-full bg-white/10 text-white font-semibold text-lg hover:bg-white/20 backdrop-blur-md border border-white/20 transition-colors flex items-center justify-center gap-2"
+              className="px-4 py-3 sm:px-8 sm:py-4 rounded-full bg-white/10 text-white font-semibold text-[15px] sm:text-lg hover:bg-white/20 backdrop-blur-md border border-white/20 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              <Play className="w-5 h-5" /> Ver cómo funciona
+              <Play className="w-5 h-5 flex-shrink-0" /> Ver cómo funciona
             </motion.a>
           </motion.div>
           
@@ -69,7 +69,7 @@ export const Hero = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.7 }}
-            className="flex flex-wrap items-center gap-6 text-sm font-medium text-slate-300 mb-12"
+            className="flex flex-wrap items-center gap-6 text-sm font-medium text-slate-300 mb-2 md:mb-12"
           >
             {[
               "Prueba gratuita",

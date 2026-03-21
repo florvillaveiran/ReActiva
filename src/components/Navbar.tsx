@@ -11,8 +11,8 @@ export const Navbar = () => {
   }, []);
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-neutral-100/90 backdrop-blur-md shadow-sm py-4 border-b border-neutral-200/50' : 'bg-transparent py-6'}`}>
-      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-neutral-100/90 backdrop-blur-md shadow-sm py-3 md:py-4 border-b border-neutral-200/50' : 'bg-transparent py-4 md:py-6'}`}>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 flex justify-between items-center">
         <Logo scrolled={scrolled} />
         
         <div className="hidden md:flex items-center gap-8">
