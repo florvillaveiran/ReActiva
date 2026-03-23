@@ -3,6 +3,7 @@ import { Mail, Target } from 'lucide-react';
 import { Logo } from './Logo';
 
 export const Footer = () => {
+
   return (
     <footer className="bg-white py-16 border-t border-slate-200">
       <div className="max-w-7xl mx-auto px-6">
@@ -17,11 +18,21 @@ export const Footer = () => {
           <div>
             <h4 className="font-bold text-slate-900 mb-6">Contacto</h4>
             <ul className="space-y-4 text-slate-600">
-              <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-[#10b981]" /> info@metodoreactiva.com
+              <li>
+                <a 
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=info@metodoreactiva.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:text-[#10b981] transition-colors"
+                >
+                  <Mail className="w-4 h-4 text-[#10b981]" /> 
+                  info@metodoreactiva.com
+                </a>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="font-bold text-lg leading-none text-[#10b981]">@</span> reactiva.kinesio
+              <li>
+                <a href="https://www.instagram.com/reactiva.kinesio" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-[#10b981] transition-colors">
+                  <span className="font-bold text-lg leading-none text-[#10b981]">@</span> reactiva.kinesio
+                </a>
               </li>
               <li className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-[#10b981]" /> Argentina
@@ -32,8 +43,8 @@ export const Footer = () => {
           <div>
             <h4 className="font-bold text-slate-900 mb-6">Legal</h4>
             <ul className="space-y-4 text-slate-600">
-              <li><a href="#" className="hover:text-[#10b981] transition-colors">Términos y condiciones</a></li>
-              <li><a href="#" className="hover:text-[#10b981] transition-colors">Política de privacidad</a></li>
+              <li><a href="/terminos-y-condiciones" className="hover:text-[#10b981] transition-colors">Términos y condiciones</a></li>
+              <li><a href="/politica-de-privacidad" className="hover:text-[#10b981] transition-colors">Política de privacidad</a></li>
             </ul>
           </div>
         </div>
