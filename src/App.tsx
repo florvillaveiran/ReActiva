@@ -9,7 +9,8 @@ import Presentacion from './pages/presentacion';
 
 function Layout() {
   const location = useLocation();
-  const isPresentacion = location.pathname.toLowerCase() === '/presentacion' || location.pathname.toLowerCase() === '/presentaci%c3%b3n' || location.pathname.toLowerCase() === '/presentación';
+  const path = location.pathname.toLowerCase().replace(/\/$/, '');
+  const isPresentacion = path === '/presentacion' || path === '/presentaci%c3%b3n' || path === '/presentación';
 
   if (isPresentacion) {
     return (
