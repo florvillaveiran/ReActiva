@@ -34,25 +34,25 @@ const risks = [
 
 export default function SedentaryCost() {
   return (
-    <section className="h-full px-6 flex items-center justify-center bg-brand-cream overflow-hidden py-10">
-      <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+    <section className="h-full px-4 md:px-6 flex items-center justify-center bg-brand-cream overflow-hidden py-8 md:py-10">
+      <div className="max-w-7xl w-full flex flex-col lg:grid lg:grid-cols-12 gap-6 md:gap-8 items-center">
         
         {/* Text Section */}
-        <div className="lg:col-span-5 flex flex-col gap-4 order-2 lg:order-1">
+        <div className="lg:col-span-5 flex flex-col gap-2 md:gap-4 order-2 lg:order-1">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="font-display text-5xl md:text-6xl text-brand-primary tracking-tight mb-4 font-bold">
+            <h2 className="font-display text-2xl sm:text-4xl md:text-6xl text-brand-primary tracking-tight mb-1 md:mb-4 font-bold">
               El Costo del Sedentarismo
             </h2>
-            <p className="font-sans text-base md:text-lg text-brand-on-surface-variant max-w-lg mb-6">
+            <p className="font-sans text-[13px] sm:text-base md:text-lg text-brand-on-surface-variant max-w-lg mb-2 md:mb-6 leading-tight">
               La inactividad prolongada no es solo un hábito, es una barrera invisible que compromete tu vitalidad diaria.
             </p>
           </motion.div>
 
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5 md:gap-2">
             {risks.map((risk, i) => (
               <motion.div
                 key={i}
@@ -60,14 +60,14 @@ export default function SedentaryCost() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white p-3 rounded-xl shadow-sm border border-slate-50 flex items-center gap-4"
+                className="bg-white p-2.5 md:p-3 rounded-xl shadow-sm border border-slate-50 flex items-center gap-3 md:gap-4"
               >
-                <div className={`${risk.color} ${risk.onColor} w-10 h-10 rounded-full flex items-center justify-center shrink-0`}>
-                  <risk.icon size={20} />
+                <div className={`${risk.color} ${risk.onColor} w-7 h-7 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0`}>
+                  <risk.icon size={14} md:size={16} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-brand-on-surface text-base">{risk.title}</h4>
-                  <p className="text-sm text-brand-on-surface-variant/70 font-medium leading-tight">{risk.desc}</p>
+                  <h4 className="font-bold text-brand-on-surface text-[13px] md:text-base leading-tight">{risk.title}</h4>
+                  <p className="text-[10px] md:text-sm text-brand-on-surface-variant/70 font-medium leading-tight">{risk.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -80,12 +80,12 @@ export default function SedentaryCost() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="lg:col-span-7 order-1 lg:order-2 relative"
+          className="lg:col-span-7 order-1 lg:order-2 relative w-full"
         >
-          <div className="overflow-hidden rounded-[32px] shadow-2xl relative">
+          <div className="overflow-hidden rounded-[20px] md:rounded-[32px] shadow-2xl relative max-h-[20vh] sm:max-h-[35vh] md:max-h-none">
             <img 
               alt="Person sleeping at desk" 
-              className="w-full aspect-video object-cover" 
+              className="w-full h-full object-cover" 
               src="/sedentarismo-costo.jpg" 
             />
             {/* Warning Overlay Label */}
@@ -94,10 +94,10 @@ export default function SedentaryCost() {
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.5 }}
-              className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-lg flex items-center gap-2 border border-white/40 shadow-xl"
+              className="absolute bottom-3 left-3 md:bottom-6 md:left-6 bg-white/90 backdrop-blur-md px-3 md:px-4 py-1 md:py-2 rounded-lg flex items-center gap-2 border border-white/40 shadow-xl"
             >
-              <TriangleAlert className="text-brand-primary" size={14} />
-              <span className="font-bold text-brand-on-surface text-xs">Riesgo Ergonómico Detectado</span>
+              <TriangleAlert className="text-brand-primary" size={10} md:size={12} />
+              <span className="font-bold text-brand-on-surface text-[9px] md:text-xs">Riesgo Ergonómico Detectado</span>
             </motion.div>
           </div>
         </motion.div>
