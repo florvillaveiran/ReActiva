@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Lexend", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-cream: #F9F8F3;
+  --color-brand-primary: #126C40;
+  --color-brand-primary-container: #C8E6C9;
+  --color-brand-tertiary-container: #FF9AA6;
+  --color-brand-on-surface: #161D1F;
+  --color-brand-on-surface-variant: #3F4941;
+  --color-brand-surface: #FFFFFF;
+  
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2.5rem;
+  --radius-3xl: 3rem;
+  --radius-4xl: 4rem;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-cream text-brand-on-surface font-sans;
+  }
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-md border border-white/30 shadow-xl;
+}
+
+.tonal-layer {
+  @apply bg-white shadow-[0_20px_40px_-15px_rgba(18,108,64,0.05)];
+}
