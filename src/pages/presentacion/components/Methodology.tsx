@@ -42,7 +42,7 @@ export default function Methodology() {
         <span className="inline-block py-1 md:py-1.5 px-3 md:px-4 rounded-full bg-brand-primary-container/20 text-brand-primary font-bold text-[8px] md:text-xs uppercase tracking-widest mb-2 md:mb-4">
           MÉTODO RE-ACTIVA
         </span>
-        <h2 className="font-display text-2xl md:text-5xl text-brand-on-surface mb-1 md:mb-3 font-bold tracking-tight">Metodología</h2>
+        <h2 className="font-display text-2xl md:text-5xl text-[#0B1B3D] mb-1 md:mb-3 font-bold tracking-tight">Metodolog<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>a</h2>
         <p className="font-sans text-[13px] md:text-lg text-brand-on-surface-variant max-w-2xl font-medium leading-tight">
           Un proceso cíclico diseñado para integrar la vitalidad en el flujo de trabajo.
         </p>

@@ -13,9 +13,11 @@ export default function Hero() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="lg:col-span-6 flex flex-col space-y-1 md:space-y-4 items-center md:items-start text-center md:text-left"
         >
-          <h1 className="font-display text-5xl sm:text-6xl md:text-[110px] font-bold leading-[0.8] text-brand-primary tracking-tighter">
-            Re-Activa
-          </h1>
+          <img 
+            src="/logo-reactiva-dark.png" 
+            alt="ReActiva" 
+            className="h-20 sm:h-24 md:h-28 lg:h-[110px] w-auto object-contain"
+          />
           <h2 className="font-display text-xl sm:text-3xl md:text-6xl text-brand-on-surface-variant font-medium max-w-[15ch] sm:max-w-none">
             Bienestar laboral en movimiento.
           </h2>

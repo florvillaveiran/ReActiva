@@ -12,7 +12,7 @@ const comparisonData = [
     label: "Tiempo",
     icon: Clock,
     trad: { title: "20-30 min tiempo", desc: "Logística compleja y traslados internos." },
-    digital: { title: "5-8 min tiempo", desc: "Micro-pausas efectivas sin perder enfoque." }
+    digital: { title: "5-10 min tiempo", desc: "Micro-pausas efectivas sin perder enfoque." }
   },
   {
     label: "Flujo",
@@ -47,7 +47,7 @@ export default function Comparison() {
           <span className="inline-block py-1 md:py-1.5 px-3 md:px-4 rounded-full bg-[#E0F2F1] text-brand-primary font-bold text-[8px] md:text-xs uppercase tracking-widest mb-2 md:mb-4 border border-brand-primary/10">
             EFICIENCIA CORPORATIVA
           </span>
-          <h2 className="font-display text-2xl md:text-6xl text-brand-on-surface font-bold mb-1 md:mb-4 tracking-tight">Virtual gana siempre.</h2>
+          <h2 className="font-display text-2xl md:text-6xl text-[#0B1B3D] font-bold mb-1 md:mb-4 tracking-tight">V<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>rtual gana s<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>empre.</h2>
           <p className="font-sans text-[13px] md:text-lg text-brand-on-surface-variant max-w-2xl mx-auto font-medium leading-tight">
             La brecha entre el bienestar tradicional y la productividad moderna se cierra con tecnología.
           </p>

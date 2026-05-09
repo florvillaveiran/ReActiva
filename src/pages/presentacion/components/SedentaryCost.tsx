@@ -44,8 +44,8 @@ export default function SedentaryCost() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="font-display text-2xl sm:text-4xl md:text-6xl text-brand-primary tracking-tight mb-1 md:mb-4 font-bold">
-              El Costo del Sedentarismo
+            <h2 className="font-display text-2xl sm:text-4xl md:text-6xl text-[#0B1B3D] tracking-tight mb-1 md:mb-4 font-bold">
+              El Costo del Sedentar<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>smo
             </h2>
             <p className="font-sans text-[13px] sm:text-base md:text-lg text-brand-on-surface-variant max-w-lg mb-2 md:mb-6 leading-tight">
               La inactividad prolongada no es solo un hábito, es una barrera invisible que compromete tu vitalidad diaria.

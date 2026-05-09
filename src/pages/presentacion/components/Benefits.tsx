@@ -12,9 +12,9 @@ export default function Benefits() {
            className="mb-3 md:mb-8 shrink-0"
         >
           <span className="text-brand-primary font-bold text-[8px] md:text-sm uppercase tracking-widest mb-1.5 md:mb-3 block">IMPACTO REAL</span>
-          <h2 className="font-display text-2xl md:text-6xl text-brand-on-surface font-bold mb-1 md:mb-4 tracking-tight">Beneficios comprobados.</h2>
+          <h2 className="font-display text-2xl md:text-6xl text-[#0B1B3D] font-bold mb-1 md:mb-4 tracking-tight">Benef<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>c<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>os comprobados.</h2>
           <p className="font-sans text-[13px] md:text-lg text-brand-on-surface-variant max-w-2xl font-medium leading-tight">
-            Nuestra metodología "Active Vitality" transforma la dinámica corporativa con resultados medibles.
+            Nuestra metodología transforma la dinámica corporativa con resultados medibles.
           </p>
         </motion.div>
 
@@ -33,14 +33,14 @@ export default function Benefits() {
                    </div>
                    <h3 className="font-display text-lg md:text-3xl font-bold mb-1 md:mb-4 tracking-tight">Mejora la productividad.</h3>
                    <p className="text-brand-on-surface-variant text-[11px] md:text-base font-medium leading-tight md:leading-relaxed mb-3 md:mb-6">
-                      Un equipo revitalizado rinde hasta un 25% más en tareas críticas. Las pausas optimizan el enfoque.
+                      Un equipo revitalizado logra un mayor rendimiento en tareas críticas. Las pausas optimizan el enfoque.
                    </p>
                 </div>
                 <div>
                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mb-1 md:mb-2">
                       <div className="w-[85%] h-full bg-brand-primary"></div>
                    </div>
-                   <p className="text-[#2E7D32] font-bold text-[8px] md:text-xs uppercase tracking-widest text-right">85% Eficiencia</p>
+                   <p className="text-[#2E7D32] font-bold text-[8px] md:text-xs uppercase tracking-widest text-right">Alta Eficiencia</p>
                 </div>
              </div>
              <div className="lg:w-2/5 h-[100px] md:h-full lg:min-h-[200px]">
@@ -57,7 +57,7 @@ export default function Benefits() {
              className="bg-white p-4 md:p-8 rounded-[20px] md:rounded-[32px] shadow-sm border border-slate-50 flex flex-col justify-between"
           >
              <div>
-                <div className="w-7 h-7 md:w-10 md:h-10 bg-[#FCE4EC] rounded-lg md:rounded-xl flex items-center justify-center text-pink-600 mb-3 md:mb-6">
+                <div className="w-7 h-7 md:w-10 md:h-10 bg-[#E8F5E9] rounded-lg md:rounded-xl flex items-center justify-center text-[#2E7D32] mb-3 md:mb-6">
                    <Calendar size={16} md:size={20} />
                 </div>
                 <h3 className="font-display text-base md:text-2xl font-bold mb-1.5 md:mb-3 tracking-tight leading-tight">Reducción del ausentismo.</h3>

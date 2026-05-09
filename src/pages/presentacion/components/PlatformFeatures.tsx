@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { CalendarRange, Timer, LineChart, BellRing, UserCheck, Play, Accessibility } from 'lucide-react';
+import { CalendarRange, Timer, LineChart, BellRing, UserCheck, Play, Dumbbell } from 'lucide-react';
 
 export default function PlatformFeatures() {
   return (
@@ -17,8 +17,8 @@ export default function PlatformFeatures() {
             <Timer className="animate-pulse" size={12} md:size={18} />
             <span className="font-bold text-[8px] md:text-sm uppercase tracking-widest">MÓDULO DE BIENESTAR</span>
           </div>
-          <h2 className="font-display text-2xl md:text-6xl text-brand-on-surface font-bold leading-tight tracking-tight">
-            Pausas Activas + Seguimiento
+          <h2 className="font-display text-2xl md:text-6xl text-[#0B1B3D] font-bold leading-tight tracking-tight">
+            Pausas Act<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>vas + Segu<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>m<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>ento
           </h2>
           <p className="font-sans text-[13px] md:text-lg text-brand-on-surface-variant max-w-2xl leading-tight font-medium">
             Impulsamos la vitalidad laboral a través de micro-hábitos. Menos sedentarismo, más energía.
@@ -77,7 +77,7 @@ export default function PlatformFeatures() {
           {[
             { icon: LineChart, label: "Seguimiento Real", desc: "Dashboard para RRHH con métricas." },
             { icon: BellRing, label: "Notificaciones", desc: "Alertas no invasivas al movimiento." },
-            { icon: Accessibility, label: "Ejercicios Validados", desc: "Rutinas por especialistas." }
+            { icon: Dumbbell, label: "Ejercicios Validados", desc: "Rutinas por especialistas." }
           ].map((feat, i) => (
             <motion.div 
               key={i}

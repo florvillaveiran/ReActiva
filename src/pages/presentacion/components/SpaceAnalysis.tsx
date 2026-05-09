@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Ruler, LayoutGrid, Layers, Accessibility } from 'lucide-react';
+import { Ruler, LayoutGrid, Layers, PersonStanding } from 'lucide-react';
 
 export default function SpaceAnalysis() {
   return (
@@ -15,8 +15,8 @@ export default function SpaceAnalysis() {
           <div className="flex items-center gap-2 text-[#2E7D32]">
             <span className="font-bold text-[8px] md:text-sm uppercase tracking-widest bg-[#E8F5E9] px-2 py-1 rounded">BONUS INCLUIDO</span>
           </div>
-          <h2 className="font-display text-2xl md:text-6xl text-brand-on-surface font-bold leading-tight tracking-tight">
-            Análisis del Espacio
+          <h2 className="font-display text-2xl md:text-6xl text-[#0B1B3D] font-bold leading-tight tracking-tight">
+            Anál<span className="relative inline-block -mx-[0.01em]">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>s<span className="relative inline-block -mx-[0.01em]">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>s del Espac<span className="relative inline-block -mx-[0.01em]">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>o
           </h2>
           <p className="font-sans text-[13px] md:text-lg text-brand-on-surface-variant max-w-2xl font-medium leading-tight">
             La vitalidad comienza en tu entorno. Ergo-vitalidad para tu productividad sostenible.
@@ -44,7 +44,7 @@ export default function SpaceAnalysis() {
           {/* Checklist */}
           <div className="flex flex-col gap-1.5 md:gap-3">
             {[
-              { label: "Postura", icon: Accessibility },
+              { label: "Postura", icon: PersonStanding },
               { label: "Configuración escritorio", icon: LayoutGrid },
               { label: "Organización", icon: Layers }
             ].map((item, i) => (
@@ -79,7 +79,7 @@ export default function SpaceAnalysis() {
             <div className="flex flex-col md:block">
               <span className="text-brand-primary font-bold text-[8px] md:text-xs uppercase tracking-widest mb-0.5 md:mb-2 block">DATO CLAVE</span>
               <p className="text-[10px] md:text-sm text-brand-on-surface-variant font-medium leading-tight md:leading-relaxed">
-                Una mala postura reduce tu capacidad pulmonar hasta un 30%.
+                Una postura encorvada restringe la expansión del tórax, limitando el flujo de oxígeno y provocando fatiga mental y física.
               </p>
             </div>
             <div className="md:border-l border-slate-100 md:pl-6 flex flex-col md:block">

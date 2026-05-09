@@ -14,9 +14,9 @@ const cardData = [
     title: "Reduce estrés",
     description: "Técnicas de relajación diseñadas para aliviar la fatiga mental y mejorar el bienestar emocional.",
     icon: Brain,
-    bgColor: "bg-[#FCE4EC]",
-    iconColor: "text-pink-600",
-    accentColor: "bg-brand-primary-container"
+    bgColor: "bg-[#E3F2FD]",
+    iconColor: "text-[#1E88E5]",
+    accentColor: "bg-blue-200"
   },
   {
     title: "Mejora el rendimiento",
@@ -38,7 +38,9 @@ export default function WhatIs() {
           viewport={{ once: true }}
           className="mb-2 md:mb-8 max-w-2xl"
         >
-          <h2 className="font-display text-2xl md:text-6xl text-brand-primary mb-1 md:mb-4 font-bold tracking-tight">¿Qué es Re-Activa?</h2>
+          <h2 className="font-display text-2xl md:text-6xl text-brand-primary mb-1 md:mb-4 font-bold tracking-tight">
+            ¿Qué es <span className="text-[#0B1B3D]">ReAct<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>va</span>?
+          </h2>
           <p className="font-sans text-[13px] md:text-lg text-brand-on-surface-variant font-medium leading-tight">
             Un programa integral de bienestar con ejercicios personalizados, guiados y adaptados al entorno laboral.
           </p>

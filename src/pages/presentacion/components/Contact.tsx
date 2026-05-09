@@ -17,11 +17,11 @@ export default function Contact() {
               <span className="inline-block py-1 md:py-1.5 px-3 md:px-4 rounded-full bg-[#C8E6C9] text-brand-primary font-bold text-[9px] md:text-xs uppercase tracking-widest mb-3 md:mb-6">
                 ÚLTIMO PASO
               </span>
-              <h2 className="font-display text-3xl md:text-6xl text-brand-primary font-bold leading-tight mb-2 md:mb-6 tracking-tight">
+              <h2 className="font-display text-3xl md:text-6xl text-[#0B1B3D] font-bold leading-tight mb-2 md:mb-6 tracking-tight">
                 ¿Avanzamos Juntos?
               </h2>
               <p className="font-sans text-sm md:text-lg text-brand-on-surface-variant max-w-2xl font-medium leading-tight md:leading-relaxed">
-                Estamos listos para diseñar tu plan de Vitalidad Activa.
+                Estamos listos para diseñar tu plan ReActiva.
               </p>
             </motion.div>
 
@@ -29,7 +29,7 @@ export default function Contact() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
               {[
                 { icon: Mail, label: "EMAIL", type: "single", value: "info@metodoreactiva.com", href: "mailto:info@metodoreactiva.com" },
-                { icon: MessageCircle, label: "WHATSAPP", type: "multi", values: [{ text: "+54 9 261 342-8552", href: "https://wa.me/5492613428552" }, { text: "+61 473 913 485", href: "https://wa.me/61473913485" }] },
+                { icon: MessageCircle, label: "WHATSAPP", type: "multi", values: [{ text: "+54 9 261 342-8552", href: "https://wa.me/5492613428552" }, { text: "+54 9 261 724-0431", href: "https://wa.me/5492617240431" }] },
                 { icon: Globe, label: "WEB", type: "single", value: "metodoreactiva.com", href: "https://metodoreactiva.com" },
                 { icon: Instagram, label: "INSTAGRAM", type: "single", value: "@reactiva.kinesio", href: "https://instagram.com/reactiva.kinesio" }
               ].map((item, i) => (
@@ -80,7 +80,7 @@ export default function Contact() {
 
               <h3 className="font-display text-xl md:text-2xl font-bold text-brand-primary mb-1 md:mb-3">Re-Activa</h3>
               <p className="italic text-slate-500 font-medium text-sm md:text-base leading-tight md:leading-relaxed mb-6 md:mb-8 px-2 italic">
-                "Impulsando el movement que tu empresa necesita."
+                "Impulsando el movimiento que tu empresa necesita."
               </p>
 
               <div className="w-full rounded-[20px] md:rounded-[24px] overflow-hidden shadow-xl aspect-[4/5] max-w-[180px] md:max-w-[260px]">
