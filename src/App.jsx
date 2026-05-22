@@ -1,19 +1,21 @@
-
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import UserDashboard from "./pages/UserDashboard";
+import Admin from "./pages/Admin";
+import Usuario from "./pages/Usuario";
 
 function App() {
   return (
-    <div style={{padding: "40px"}}>
-      <UserDashboard />
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<UserDashboard />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/usuario" element={<Usuario />} />
+        {/* Cualquier ruta que no exista vuelve al home (útil para Netlify) */}
+        <Route path="*" element={<UserDashboard />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;
-export function UserDashboard() {
-  return (
-    <div>
-      <h2>Mi Pausa Activa</h2>
-      <p>Si ves esto, ya está funcionando.</p>
-    </div>
-  );
-}
