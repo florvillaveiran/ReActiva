@@ -1,0 +1,256 @@
+/* ==============================================
+   RE-ACTIVA PLATAFORMA — Design System
+   ============================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ---- Variables globales ---- */
+:root {
+  --primary-color: #00c2a8;
+  --primary-hover: #00a891;
+  --primary-light: rgba(0, 194, 168, 0.08);
+
+  --bg-color: #f8f9fb;
+  --bg-secondary-color: #f2f4f7;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+
+  --text-color: #111827;
+  --text-muted: #6b7280;
+
+  --border-color: #e5e7eb;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  --sidebar-width: 240px;
+  --font: 'Inter', system-ui, sans-serif;
+}
+
+/* ---- Reset y base ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Plataforma Root ---- */
+#plataforma-root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Layout Principal (sidebar + main) ---- */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+}
+
+/* ---- Sidebar ---- */
+.sidebar {
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+/* ---- Main Content ---- */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 2.5rem;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+}
+
+/* ---- Cards ---- */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ---- Tipografía ---- */
+.header-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.text-sm {
+  font-size: 0.8125rem;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+/* ---- Inputs ---- */
+.input-field {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-family: var(--font);
+  font-size: 0.875rem;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+}
+
+.input-field:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 194, 168, 0.15);
+}
+
+/* ---- Botones ---- */
+.btn-primary {
+  padding: 0.65rem 1.25rem;
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  padding: 0.65rem 1.25rem;
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color);
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-secondary-color);
+  border-color: var(--primary-color);
+}
+
+/* ---- Animaciones ---- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Login Page ---- */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-color);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* ---- Tablas ---- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.8125rem;
+}
+
+th {
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: var(--bg-secondary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+}
+
+tr:hover td {
+  background-color: #fafafa;
+}
+
+/* ---- Badges ---- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-green  { background-color: #dcfce7; color: #16a34a; }
+.badge-red    { background-color: #fee2e2; color: #dc2626; }
+.badge-blue   { background-color: #dbeafe; color: #2563eb; }
+.badge-gray   { background-color: #f3f4f6; color: #6b7280; }
+
+/* ---- Recharts overrides ---- */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-md) !important;
+}

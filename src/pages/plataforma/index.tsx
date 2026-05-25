@@ -1,45 +1,45 @@
-import { useState, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import PlataformaHome from "./PlataformaHome";
-import Dashboard from "./Dashboard";
-import Admin from "./Admin";
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { Layout } from './components/Layout';
+import { Login } from './views/Login';
+import { AdminDashboard } from './views/admin/Dashboard';
+import { UsuarioDashboard } from './views/usuario/Dashboard';
+import { Empresas } from './views/admin/Empresas';
+import { Usuarios } from './views/admin/Usuarios';
+import { Analiticas } from './views/admin/Analiticas';
+import { Contenido } from './views/admin/Contenido';
+import { Emails } from './views/admin/Emails';
+import './index.css';
 
-export default function PlataformaApp() {
-  const [user, setUser] = useState<{ role: string; name: string; companyId: string } | null>(null);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("reactiva_user");
-    if (saved) setUser(JSON.parse(saved));
-  }, []);
-
-  const login = (userData: { role: string; name: string; companyId: string }) => {
-    setUser(userData);
-    localStorage.setItem("reactiva_user", JSON.stringify(userData));
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("reactiva_user");
-  };
-
+function App() {
   return (
-    <Routes>
-      <Route 
-        path="/" 
-        element={
-          user 
-            ? <Navigate to={user.role === "admin" ? "admin" : "dashboard"} /> 
-            : <PlataformaHome onLogin={login} />
-        } 
-      />
-      <Route 
-        path="dashboard" 
-        element={user ? <Dashboard user={user} onLogout={logout} /> : <Navigate to="/plataforma" />} 
-      />
-      <Route 
-        path="admin" 
-        element={user?.role === "admin" ? <Admin onLogout={logout} /> : <Navigate to="/plataforma" />} 
-      />
-    </Routes>
+    <AuthProvider>
+      <div id="plataforma-root">
+        <Routes>
+        <Route path="login" element={<Login />} />
+          
+          {/* Rutas de Admin */}
+          <Route path="admin" element={<Layout allowedRole="admin" />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="contenido" element={<Contenido />} />
+            <Route path="empresas" element={<Empresas />} />
+            <Route path="usuarios" element={<Usuarios />} />
+            <Route path="analiticas" element={<Analiticas />} />
+            <Route path="emails" element={<Emails />} />
+          </Route>
+
+          {/* Rutas de Usuario */}
+          <Route path="usuario" element={<Layout allowedRole="usuario" />}>
+            <Route index element={<UsuarioDashboard />} />
+          </Route>
+
+          {/* Redirección por defecto */}
+          <Route path="*" element={<Navigate to="login" replace />} />
+        </Routes>
+      </div>
+    </AuthProvider>
   );
 }
+
+export default App;
