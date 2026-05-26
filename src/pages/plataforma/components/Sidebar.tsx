@@ -23,8 +23,8 @@ export const Sidebar: React.FC = () => {
 
   return (
     <div className="sidebar">
-      <div style={{ padding: '2rem 1.5rem', textAlign: 'center', borderBottom: '1px solid var(--border-color)' }}>
-        <h1 style={{ color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: 700 }}>Método Reactiva</h1>
+      <div style={{ padding: '2rem 1.5rem', textAlign: 'center', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
+        <img src="/logo-reactiva-dark.png" alt="Re-Activa" style={{ height: '40px', objectFit: 'contain' }} />
       </div>
       
       <nav style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

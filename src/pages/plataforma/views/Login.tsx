@@ -47,17 +47,11 @@ export const Login: React.FC = () => {
       <div style={{ width: '100%', maxWidth: '420px' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '56px', height: '56px', borderRadius: '16px',
-            backgroundColor: 'var(--primary-light)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 1.25rem',
-          }}>
-            <LogIn size={28} color="var(--primary-color)" />
-          </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.375rem' }}>
-            Método Re-Activa
-          </h1>
+          <img 
+            src="/logo-reactiva-dark.png" 
+            alt="Re-Activa" 
+            style={{ height: '56px', objectFit: 'contain', margin: '0 auto 1.5rem', display: 'block' }} 
+          />
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
             Ingresá a tu cuenta para continuar
           </p>
