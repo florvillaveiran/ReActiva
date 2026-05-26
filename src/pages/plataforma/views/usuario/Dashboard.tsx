@@ -96,59 +96,178 @@ const MiniForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void;
 
 // ─── Formulario Semanal (Viernes Tarde) ────────────────────────────────────────
 const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void; onSubmit: (r: any) => void; }> = ({ bloque, onClose, onSubmit }) => {
-  const [estres, setEstres] = useState(0);
-  const [ayuda, setAyuda] = useState('');
-  const [mejora, setMejora] = useState('');
+  const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
-  const canSubmit = estres > 0 && ayuda !== '' && mejora !== '';
-  const submit = () => { setDone(true); setTimeout(() => onSubmit({ bloque, estres, ayuda, mejora, tipo: 'semanal' }), 1200); };
+
+  // Respuestas
+  const [q1, setQ1] = useState(''); // Sensación general
+  const [q2, setQ2] = useState(''); // Ayuda pausas
+  const [q3, setQ3] = useState(0); // Energía
+  const [q4, setQ4] = useState(0); // Molestias físicas
+  const [q5, setQ5] = useState<string[]>([]); // Zonas dolor
+  const [q6, setQ6] = useState(''); // Tensión
+  const [q7, setQ7] = useState(''); // Qué pausa sirvió
+  const [q8, setQ8] = useState(''); // Qué mejorar
+  const [q9, setQ9] = useState(''); // Comentario
+
+  const toggleZona = (z: string) => {
+    if (z === 'Ninguna') return setQ5(['Ninguna']);
+    let nuevas = q5.includes('Ninguna') ? [] : [...q5];
+    if (nuevas.includes(z)) nuevas = nuevas.filter(x => x !== z);
+    else nuevas.push(z);
+    setQ5(nuevas);
+  };
+
+  const submit = () => { 
+    setDone(true); 
+    setTimeout(() => onSubmit({ bloque, respuestas: { q1, q2, q3, q4, q5, q6, q7, q8, q9 }, tipo: 'semanal-completo' }), 1200); 
+  };
+
+  const emojis = [
+    { val: 'Muy tenso/a', icon: '😣' }, 
+    { val: 'Regular', icon: '😐' }, 
+    { val: 'Bien', icon: '🙂' }, 
+    { val: 'Muy bien', icon: '😊' }, 
+    { val: 'Excelente', icon: '🤩' }
+  ];
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s' }}>
-      <div style={{ background: 'white', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ background: 'white', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '440px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
         {done ? (
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
             <CheckCircle2 size={52} color="var(--primary-color)" style={{ margin: '0 auto 1rem', display: 'block' }} />
             <h3 style={{ fontWeight: 700, color: '#166534', marginBottom: '0.5rem' }}>¡Excelente semana!</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gracias por tu feedback semanal.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Tus respuestas nos ayudan a mejorar el programa.</p>
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Resumen Semanal</h3>
-              <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}><X size={20} /></button>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
             
-            {/* P1 */}
-            <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Nivel de estrés esta semana (1–5)</p>
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              {[1,2,3,4,5].map(n => (
-                <button key={n} onClick={() => setEstres(n)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', fontWeight: 700, border: `2px solid ${estres === n ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: estres === n ? 'var(--primary-color)' : 'transparent', color: estres === n ? 'white' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>{n}</button>
+            {/* Progress bar */}
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem' }}>
+              {[1,2,3].map(s => (
+                <div key={s} style={{ height: '4px', flex: 1, backgroundColor: step >= s ? 'var(--primary-color)' : '#e2e8f0', borderRadius: '2px', transition: 'all 0.3s' }} />
               ))}
             </div>
 
-            {/* P2 */}
-            <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>¿Las pausas te ayudaron a sentirte mejor?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              {['Sí, mucho', 'Más o menos', 'No noté diferencia'].map(opt => (
-                <button key={opt} onClick={() => setAyuda(opt)} style={{ padding: '0.65rem', borderRadius: '10px', fontWeight: 600, border: `2px solid ${ayuda === opt ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: ayuda === opt ? 'var(--primary-light)' : 'transparent', color: ayuda === opt ? 'var(--primary-color)' : 'var(--text-muted)', cursor: 'pointer', fontSize: '0.82rem', textAlign: 'left' }}>{opt}</button>
-              ))}
-            </div>
+            {step === 1 && (
+              <div style={{ animation: 'fadeIn 0.3s' }}>
+                <p className="form-label">1. ¿Cómo te sentiste esta semana en general?</p>
+                <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '1.2rem' }}>
+                  {emojis.map(e => (
+                    <button key={e.val} onClick={() => setQ1(e.val)} style={{ flex: 1, padding: '0.4rem 0', borderRadius: '10px', border: `2px solid ${q1 === e.val ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: q1 === e.val ? 'var(--primary-light)' : 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                      <span style={{ fontSize: '1.4rem' }}>{e.icon}</span>
+                      <span style={{ fontSize: '0.55rem', fontWeight: 600, color: q1 === e.val ? 'var(--primary-color)' : 'var(--text-muted)' }}>{e.val}</span>
+                    </button>
+                  ))}
+                </div>
 
-            {/* P3 */}
-            <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>¿Notaste mejora en molestias musculares?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              {['Sí, se redujeron', 'Siguen igual', 'No suelo tener molestias'].map(opt => (
-                <button key={opt} onClick={() => setMejora(opt)} style={{ padding: '0.65rem', borderRadius: '10px', fontWeight: 600, border: `2px solid ${mejora === opt ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: mejora === opt ? 'var(--primary-light)' : 'transparent', color: mejora === opt ? 'var(--primary-color)' : 'var(--text-muted)', cursor: 'pointer', fontSize: '0.82rem', textAlign: 'left' }}>{opt}</button>
-              ))}
-            </div>
+                <p className="form-label">2. ¿Sentiste que las pausas te ayudaron?</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.2rem' }}>
+                  {['Sí, bastante', 'Sí, un poco', 'No noté mucha diferencia', 'No, no me ayudaron'].map(opt => (
+                    <button key={opt} onClick={() => setQ2(opt)} className={`pill-btn ${q2 === opt ? 'active' : ''}`}>{opt}</button>
+                  ))}
+                </div>
 
-            <button onClick={submit} disabled={!canSubmit} className="btn-primary" style={{ width: '100%', padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: canSubmit ? 1 : 0.4 }}>
-              <Send size={15} /> Finalizar semana
-            </button>
+                <p className="form-label">3. Nivel de energía promedio</p>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} onClick={() => setQ3(n)} className={`number-btn ${q3 === n ? 'active' : ''}`}>{n}</button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                  <span>Muy baja</span><span>Muy alta</span>
+                </div>
+                
+                <button onClick={() => setStep(2)} disabled={!q1 || !q2 || !q3} className="btn-primary" style={{ width: '100%', padding: '0.8rem', opacity: (!q1||!q2||!q3)?0.5:1 }}>Siguiente</button>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div style={{ animation: 'fadeIn 0.3s' }}>
+                <p className="form-label">4. Nivel de molestias físicas</p>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} onClick={() => setQ4(n)} className={`number-btn ${q4 === n ? 'active' : ''}`}>{n}</button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '1.2rem' }}>
+                  <span>Sin molestias</span><span>Muchas molestias</span>
+                </div>
+
+                <p className="form-label">5. ¿Tuviste dolor en alguna zona?</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.2rem' }}>
+                  {['Cuello', 'Hombros', 'Espalda alta', 'Espalda baja', 'Muñecas', 'Caderas', 'Rodillas', 'Piernas', 'Cabeza', 'Ninguna'].map(z => (
+                    <button key={z} onClick={() => toggleZona(z)} className={`pill-btn ${q5.includes(z) ? 'active-danger' : ''}`}>{z}</button>
+                  ))}
+                </div>
+
+                <p className="form-label">6. ¿En qué momento sentiste más tensión?</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.5rem' }}>
+                  {['A la mañana', 'Al mediodía', 'A la tarde', 'Al final de la jornada', 'No sentí tensión'].map(opt => (
+                    <button key={opt} onClick={() => setQ6(opt)} className={`pill-btn ${q6 === opt ? 'active' : ''}`}>{opt}</button>
+                  ))}
+                </div>
+                
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => setStep(1)} className="btn-secondary" style={{ flex: 1 }}>Atrás</button>
+                  <button onClick={() => setStep(3)} disabled={!q4 || q5.length===0 || !q6} className="btn-primary" style={{ flex: 2, padding: '0.8rem', opacity: (!q4||q5.length===0||!q6)?0.5:1 }}>Siguiente</button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div style={{ animation: 'fadeIn 0.3s' }}>
+                <p className="form-label">7. ¿Qué tipo de pausa te sirvió más?</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.2rem' }}>
+                  {['Movilidad / estiramientos', 'Respiración / relajación', 'Activación / energía', 'Postura / ergonomía', 'Todas por igual', 'Ninguna en particular'].map(opt => (
+                    <button key={opt} onClick={() => setQ7(opt)} className={`pill-btn ${q7 === opt ? 'active' : ''}`}>{opt}</button>
+                  ))}
+                </div>
+
+                <p className="form-label">8. ¿Qué te gustaría mejorar? (Opcional)</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.2rem' }}>
+                  {['Pausas más cortas', 'Pausas más suaves', 'Pausas más intensas', 'Más cuello/espalda', 'Más piernas/cadera', 'Más relajación', 'Está bien así'].map(opt => (
+                    <button key={opt} onClick={() => setQ8(opt)} className={`pill-btn ${q8 === opt ? 'active' : ''}`}>{opt}</button>
+                  ))}
+                </div>
+
+                <p className="form-label">9. Comentario libre (Opcional)</p>
+                <textarea 
+                  className="input-field" 
+                  rows={2} 
+                  placeholder="¿Querés contarnos algo más?" 
+                  value={q9} 
+                  onChange={e => setQ9(e.target.value)} 
+                  style={{ marginBottom: '1.5rem', resize: 'none' }}
+                />
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => setStep(2)} className="btn-secondary" style={{ flex: 1 }}>Atrás</button>
+                  <button onClick={submit} disabled={!q7} className="btn-primary" style={{ flex: 2, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: !q7?0.5:1 }}>
+                    <Send size={15} /> Enviar
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
+
+      <style>{`
+        .form-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem; }
+        .pill-btn { padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; border: 1.5px solid var(--border-color); background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+        .pill-btn.active { border-color: var(--primary-color); background: var(--primary-light); color: var(--primary-color); }
+        .pill-btn.active-danger { border-color: #f43f5e; background: #fff1f2; color: #e11d48; }
+        .number-btn { flex: 1; padding: 0.6rem; border-radius: 10px; font-weight: 700; border: 2px solid var(--border-color); background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+        .number-btn.active { border-color: var(--primary-color); background: var(--primary-color); color: white; }
+        .btn-secondary { padding: 0.8rem; border-radius: var(--radius-md); font-weight: 600; border: 1px solid var(--border-color); background: white; color: var(--text-color); cursor: pointer; transition: background 0.15s; }
+        .btn-secondary:hover { background: #f8fafc; }
+      `}</style>
     </div>
   );
 };
