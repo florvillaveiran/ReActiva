@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { Login } from './views/Login';
 import { AdminDashboard } from './views/admin/Dashboard';
 import { UsuarioDashboard } from './views/usuario/Dashboard';
+import { UsuarioProgreso } from './views/usuario/Progreso';
 import { Empresas } from './views/admin/Empresas';
 import { Usuarios } from './views/admin/Usuarios';
 import { Analiticas } from './views/admin/Analiticas';
@@ -32,6 +33,7 @@ function App() {
           {/* Rutas de Usuario */}
           <Route path="usuario" element={<Layout allowedRole="usuario" />}>
             <Route index element={<UsuarioDashboard />} />
+            <Route path="progreso" element={<UsuarioProgreso />} />
           </Route>
 
           {/* Redirección por defecto */}

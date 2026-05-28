@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Building2, BarChart3, LogOut, PlaySquare, Video, Mail } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, BarChart3, LogOut, PlaySquare, Video, Mail, Activity } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -17,6 +17,7 @@ export const Sidebar: React.FC = () => {
 
   const userLinks = [
     { to: '/plataforma/usuario', icon: <PlaySquare size={20} />, label: 'Mi Programa', end: true },
+    { to: '/plataforma/usuario/progreso', icon: <Activity size={20} />, label: 'Mi Progreso' },
   ];
 
   const links = user?.role === 'admin' ? adminLinks : userLinks;
