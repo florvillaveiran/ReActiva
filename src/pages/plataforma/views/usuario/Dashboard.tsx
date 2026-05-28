@@ -61,10 +61,14 @@ const MiniForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void;
             </div>
             {/* P2: Energia */}
             <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Nivel de energía (1–5)</p>
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.3rem' }}>
               {[1,2,3,4,5].map(n => (
                 <button key={n} onClick={() => setEnergia(n)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', fontWeight: 700, border: `2px solid ${energia === n ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: energia === n ? 'var(--primary-color)' : 'transparent', color: energia === n ? 'white' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>{n}</button>
               ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+              <span>Muy baja</span>
+              <span>Muy alta</span>
             </div>
             {/* P3: Dolor */}
             <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>¿Sentiste algún dolor?</p>
@@ -99,37 +103,31 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
 
-  // Respuestas
-  const [q1, setQ1] = useState(''); // Sensación general
-  const [q2, setQ2] = useState(''); // Ayuda pausas
-  const [q3, setQ3] = useState(0); // Energía
-  const [q4, setQ4] = useState(0); // Molestias físicas
-  const [q5, setQ5] = useState<string[]>([]); // Zonas dolor
-  const [q6, setQ6] = useState(''); // Tensión
-  const [q7, setQ7] = useState(''); // Qué pausa sirvió
-  const [q8, setQ8] = useState(''); // Qué mejorar
-  const [q9, setQ9] = useState(''); // Comentario
+  // Page 1
+  const [feeling, setFeeling] = useState('');
+  const [energia, setEnergia] = useState(0);
+  const [dolor, setDolor] = useState<boolean | null>(null);
+  const [zona, setZona] = useState('');
 
-  const toggleZona = (z: string) => {
-    if (z === 'Ninguna') return setQ5(['Ninguna']);
-    let nuevas = q5.includes('Ninguna') ? [] : [...q5];
-    if (nuevas.includes(z)) nuevas = nuevas.filter(x => x !== z);
-    else nuevas.push(z);
-    setQ5(nuevas);
-  };
+  // Page 2
+  const [tension, setTension] = useState('');
+  const [trabajando, setTrabajando] = useState('');
+  const [ayudaron, setAyudaron] = useState('');
+  const [comentario, setComentario] = useState('');
+
+  const canNext = energia > 0 && dolor !== null && feeling !== '';
+  const canNext2 = tension !== '' && trabajando !== '';
+  const canSubmit = ayudaron !== '';
 
   const submit = () => { 
     setDone(true); 
-    setTimeout(() => onSubmit({ bloque, respuestas: { q1, q2, q3, q4, q5, q6, q7, q8, q9 }, tipo: 'semanal-completo' }), 1200); 
+    setTimeout(() => onSubmit({ bloque, respuestas: { feeling, energia, dolor, zona, tension, trabajando, ayudaron, comentario }, tipo: 'semanal-compacto' }), 1200); 
   };
 
-  const emojis = [
-    { val: 'Muy tenso/a', icon: '😣' }, 
-    { val: 'Regular', icon: '😐' }, 
-    { val: 'Bien', icon: '🙂' }, 
-    { val: 'Muy bien', icon: '😊' }, 
-    { val: 'Excelente', icon: '🤩' }
-  ];
+  const emojisFeeling = [{ val: 'Mal', icon: '😟' }, { val: 'Regular', icon: '😐' }, { val: 'Bien', icon: '🙂' }, { val: 'Muy bien', icon: '😊' }, { val: 'Genial', icon: '🤩' }];
+  const opcionesTension = ['A la mañana', 'Al mediodía', 'A la tarde', 'Al final de la jornada', 'No sentí tensión'];
+  const opcionesTrabajando = [{ label: 'Disperso', icon: '😵💫' }, { label: 'Normal', icon: '😐' }, { label: 'Enfocado', icon: '💪' }];
+  const opcionesAyudaron = ['Sí, mucho', 'Sí, un poco', 'No'];
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s' }}>
@@ -149,106 +147,109 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
             
             {/* Progress bar */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem' }}>
-              {[1,2,3].map(s => (
+              {[1, 2, 3].map(s => (
                 <div key={s} style={{ height: '4px', flex: 1, backgroundColor: step >= s ? 'var(--primary-color)' : '#e2e8f0', borderRadius: '2px', transition: 'all 0.3s' }} />
               ))}
             </div>
 
             {step === 1 && (
               <div style={{ animation: 'fadeIn 0.3s' }}>
-                <p className="form-label">1. ¿Cómo te sentiste esta semana en general?</p>
-                <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '1.2rem' }}>
-                  {emojis.map(e => (
-                    <button key={e.val} onClick={() => setQ1(e.val)} style={{ flex: 1, padding: '0.4rem 0', borderRadius: '10px', border: `2px solid ${q1 === e.val ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: q1 === e.val ? 'var(--primary-light)' : 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                      <span style={{ fontSize: '1.4rem' }}>{e.icon}</span>
-                      <span style={{ fontSize: '0.55rem', fontWeight: 600, color: q1 === e.val ? 'var(--primary-color)' : 'var(--text-muted)' }}>{e.val}</span>
+                <p className="form-label">¿Cómo terminaste?</p>
+                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem' }}>
+                  {emojisFeeling.map(e => (
+                    <button key={e.val} onClick={() => setFeeling(e.val)} style={{ flex: 1, padding: '0.5rem 0.1rem', borderRadius: '10px', fontSize: '1.4rem', border: `2px solid ${feeling === e.val ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: feeling === e.val ? 'var(--primary-light)' : 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                      {e.icon}
+                      <span style={{ fontSize: '0.55rem', fontWeight: 600, color: feeling === e.val ? 'var(--primary-color)' : 'var(--text-muted)' }}>{e.val}</span>
                     </button>
                   ))}
                 </div>
 
-                <p className="form-label">2. ¿Sentiste que las pausas te ayudaron?</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.2rem' }}>
-                  {['Sí, bastante', 'Sí, un poco', 'No noté mucha diferencia', 'No, no me ayudaron'].map(opt => (
-                    <button key={opt} onClick={() => setQ2(opt)} className={`pill-btn ${q2 === opt ? 'active' : ''}`}>{opt}</button>
+                <p className="form-label">Nivel de energía (1–5)</p>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} onClick={() => setEnergia(n)} className={`number-btn ${energia === n ? 'active' : ''}`}>{n}</button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                  <span>Muy baja</span><span>Muy alta</span>
+                </div>
+
+                <p className="form-label">¿Sentiste algún dolor?</p>
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: dolor ? '0.75rem' : '1.5rem' }}>
+                  {[{ v: true, label: 'Sí, tuve dolor' }, { v: false, label: 'No, todo bien' }].map(opt => (
+                    <button key={String(opt.v)} onClick={() => setDolor(opt.v)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', fontWeight: 600, border: `2px solid ${dolor === opt.v ? (opt.v ? '#f43f5e' : 'var(--primary-color)') : 'var(--border-color)'}`, backgroundColor: dolor === opt.v ? (opt.v ? '#fff1f2' : 'var(--primary-light)') : 'transparent', color: dolor === opt.v ? (opt.v ? '#e11d48' : 'var(--primary-color)') : 'var(--text-muted)', cursor: 'pointer', fontSize: '0.82rem' }}>{opt.label}</button>
                   ))}
                 </div>
 
-                <p className="form-label">3. Nivel de energía promedio</p>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.3rem' }}>
-                  {[1,2,3,4,5].map(n => (
-                    <button key={n} onClick={() => setQ3(n)} className={`number-btn ${q3 === n ? 'active' : ''}`}>{n}</button>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                  <span>Muy baja</span><span>Muy alta</span>
-                </div>
+                {dolor && (
+                  <div style={{ marginBottom: '1.25rem', animation: 'fadeIn 0.2s' }}>
+                    <p className="form-label">¿En qué zona del cuerpo?</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.6rem' }}>
+                      {['Cuello', 'Hombros', 'Espalda alta', 'Espalda baja', 'Muñecas', 'Caderas', 'Rodillas', 'Otro'].map(z => (
+                        <button key={z} type="button" onClick={() => setZona(z)} style={{ padding: '0.3rem 0.7rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 500, border: `1.5px solid ${zona === z ? '#f43f5e' : 'var(--border-color)'}`, backgroundColor: zona === z ? '#fff1f2' : 'transparent', color: zona === z ? '#e11d48' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>{z}</button>
+                      ))}
+                    </div>
+                    {zona === 'Otro' && <input type="text" placeholder="Describí dónde..." className="input-field" onChange={e => setZona('Otro: ' + e.target.value)} style={{ fontSize: '0.82rem' }} />}
+                  </div>
+                )}
                 
-                <button onClick={() => setStep(2)} disabled={!q1 || !q2 || !q3} className="btn-primary" style={{ width: '100%', padding: '0.8rem', opacity: (!q1||!q2||!q3)?0.5:1 }}>Siguiente</button>
+                <button onClick={() => setStep(2)} disabled={!canNext} className="btn-primary" style={{ width: '100%', padding: '0.8rem', opacity: canNext ? 1 : 0.4 }}>Siguiente</button>
               </div>
             )}
 
             {step === 2 && (
               <div style={{ animation: 'fadeIn 0.3s' }}>
-                <p className="form-label">4. Nivel de molestias físicas</p>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.3rem' }}>
-                  {[1,2,3,4,5].map(n => (
-                    <button key={n} onClick={() => setQ4(n)} className={`number-btn ${q4 === n ? 'active' : ''}`}>{n}</button>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '1.2rem' }}>
-                  <span>Sin molestias</span><span>Muchas molestias</span>
-                </div>
-
-                <p className="form-label">5. ¿Tuviste dolor en alguna zona?</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.2rem' }}>
-                  {['Cuello', 'Hombros', 'Espalda alta', 'Espalda baja', 'Muñecas', 'Caderas', 'Rodillas', 'Piernas', 'Cabeza', 'Ninguna'].map(z => (
-                    <button key={z} onClick={() => toggleZona(z)} className={`pill-btn ${q5.includes(z) ? 'active-danger' : ''}`}>{z}</button>
-                  ))}
-                </div>
-
-                <p className="form-label">6. ¿En qué momento sentiste más tensión?</p>
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.8rem' }}>¿En qué momento sentiste más tensión?</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.5rem' }}>
-                  {['A la mañana', 'Al mediodía', 'A la tarde', 'Al final de la jornada', 'No sentí tensión'].map(opt => (
-                    <button key={opt} onClick={() => setQ6(opt)} className={`pill-btn ${q6 === opt ? 'active' : ''}`}>{opt}</button>
+                  {opcionesTension.map(opt => (
+                    <button key={opt} onClick={() => setTension(opt)} style={{ padding: '0.5rem 0.8rem', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 500, border: `1.5px solid ${tension === opt ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: tension === opt ? 'var(--primary-light)' : 'transparent', color: tension === opt ? 'var(--primary-color)' : 'var(--text-color)', cursor: 'pointer', transition: 'all 0.2s', outline: 'none' }}>
+                      {opt}
+                    </button>
                   ))}
                 </div>
-                
+
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.8rem' }}>¿Cómo te sentiste trabajando esta semana?</p>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                  {opcionesTrabajando.map(opt => (
+                    <button key={opt.label} onClick={() => setTrabajando(opt.label)} style={{ flex: 1, padding: '0.8rem 0.4rem', borderRadius: '14px', fontSize: '1.4rem', border: `1.5px solid ${trabajando === opt.label ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: trabajando === opt.label ? 'var(--primary-light)' : 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', transition: 'all 0.2s', boxShadow: trabajando === opt.label ? '0 4px 12px rgba(0,194,168,0.1)' : 'none', outline: 'none' }}>
+                      {opt.icon}
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: trabajando === opt.label ? 'var(--primary-color)' : 'var(--text-color)' }}>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => setStep(1)} className="btn-secondary" style={{ flex: 1 }}>Atrás</button>
-                  <button onClick={() => setStep(3)} disabled={!q4 || q5.length===0 || !q6} className="btn-primary" style={{ flex: 2, padding: '0.8rem', opacity: (!q4||q5.length===0||!q6)?0.5:1 }}>Siguiente</button>
+                  <button onClick={() => setStep(1)} className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }}>Atrás</button>
+                  <button onClick={() => setStep(3)} disabled={!canNext2} className="btn-primary" style={{ flex: 2, padding: '0.8rem', opacity: canNext2 ? 1 : 0.4 }}>Siguiente</button>
                 </div>
               </div>
             )}
 
             {step === 3 && (
               <div style={{ animation: 'fadeIn 0.3s' }}>
-                <p className="form-label">7. ¿Qué tipo de pausa te sirvió más?</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.2rem' }}>
-                  {['Movilidad / estiramientos', 'Respiración / relajación', 'Activación / energía', 'Postura / ergonomía', 'Todas por igual', 'Ninguna en particular'].map(opt => (
-                    <button key={opt} onClick={() => setQ7(opt)} className={`pill-btn ${q7 === opt ? 'active' : ''}`}>{opt}</button>
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.8rem' }}>¿Las pausas activas te ayudaron esta semana?</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.5rem' }}>
+                  {opcionesAyudaron.map(opt => (
+                    <button key={opt} onClick={() => setAyudaron(opt)} style={{ padding: '0.5rem 0.8rem', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 500, border: `1.5px solid ${ayudaron === opt ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: ayudaron === opt ? 'var(--primary-light)' : 'transparent', color: ayudaron === opt ? 'var(--primary-color)' : 'var(--text-color)', cursor: 'pointer', transition: 'all 0.2s', outline: 'none' }}>
+                      {opt}
+                    </button>
                   ))}
                 </div>
 
-                <p className="form-label">8. ¿Qué te gustaría mejorar? (Opcional)</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.2rem' }}>
-                  {['Pausas más cortas', 'Pausas más suaves', 'Pausas más intensas', 'Más cuello/espalda', 'Más piernas/cadera', 'Más relajación', 'Está bien así'].map(opt => (
-                    <button key={opt} onClick={() => setQ8(opt)} className={`pill-btn ${q8 === opt ? 'active' : ''}`}>{opt}</button>
-                  ))}
-                </div>
-
-                <p className="form-label">9. Comentario libre (Opcional)</p>
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.8rem' }}>Comentario libre <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(Opcional)</span></p>
                 <textarea 
-                  className="input-field" 
-                  rows={2} 
-                  placeholder="¿Querés contarnos algo más?" 
-                  value={q9} 
-                  onChange={e => setQ9(e.target.value)} 
-                  style={{ marginBottom: '1.5rem', resize: 'none' }}
+                  rows={3} 
+                  placeholder="Si quieres, cuéntanos un poco más..." 
+                  value={comentario} 
+                  onChange={e => setComentario(e.target.value)} 
+                  style={{ width: '100%', padding: '0.75rem', fontSize: '0.85rem', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', color: 'var(--text-color)', marginBottom: '1.5rem', resize: 'none', outline: 'none', transition: 'border-color 0.2s', fontFamily: 'var(--font)' }}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--primary-color)'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
                 />
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => setStep(2)} className="btn-secondary" style={{ flex: 1 }}>Atrás</button>
-                  <button onClick={submit} disabled={!q7} className="btn-primary" style={{ flex: 2, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: !q7?0.5:1 }}>
+                  <button onClick={() => setStep(2)} className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }}>Atrás</button>
+                  <button onClick={submit} disabled={!canSubmit} className="btn-primary" style={{ flex: 2, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: canSubmit ? 1 : 0.4 }}>
                     <Send size={15} /> Enviar
                   </button>
                 </div>
@@ -273,34 +274,47 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
 };
 
 
-// ─── Tarjeta de Pausa ────────────────────────────────────────────────────────
-const PauseCard: React.FC<{ bloque: 'morning' | 'afternoon'; status: 'done' | 'available' | 'locked'; isToday: boolean; onAction: () => void; lockReason?: string; }> = ({ bloque, status, isToday, onAction, lockReason }) => {
+// ─── Tarjeta de Pausa Compacta ───────────────────────────────────────────────
+const PauseCard: React.FC<{ bloque: 'morning' | 'afternoon'; status: 'done' | 'available' | 'locked'; isToday: boolean; onAction: () => void; lockReason?: string; }> = ({ bloque, status, isToday, onAction }) => {
   const info = PAUSAS[bloque];
+  const isAvailable = status === 'available';
+  const isDone = status === 'done';
+  const isLocked = status === 'locked';
+
   return (
-    <div className="card" style={{ overflow: 'hidden', border: status === 'available' ? '2px solid var(--primary-color)' : '1px solid var(--border-color)', opacity: (status === 'locked' && !isToday) ? 0.55 : 1, transition: 'all 0.2s', transform: status === 'available' ? 'scale(1.01)' : 'scale(1)' }}>
-      {/* Imagen compacta */}
-      <div style={{ height: '75px', position: 'relative', backgroundImage: `url(${info.img})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#1e293b', filter: status === 'locked' ? 'grayscale(70%)' : 'none' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.32)' }} />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {status === 'done' && <CheckCircle2 size={28} color="white" />}
-          {status === 'locked' && <Lock size={22} color="rgba(255,255,255,0.65)" />}
-          {status === 'available' && <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={14} color="white" fill="white" /></div>}
-        </div>
+    <div 
+      className={`mini-pause-card ${isAvailable ? 'available' : ''}`}
+      onClick={isAvailable ? onAction : undefined}
+      style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        padding: '0.75rem', 
+        gap: '0.75rem',
+        backgroundColor: isDone ? 'var(--primary-light)' : 'var(--card-bg)',
+        border: isAvailable ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
+        borderRadius: 'var(--radius-sm)',
+        opacity: (isLocked && !isToday) ? 0.6 : 1,
+        transition: 'all 0.2s ease',
+        cursor: isAvailable ? 'pointer' : 'default',
+        boxShadow: isAvailable ? '0 4px 12px rgba(0, 194, 168, 0.15)' : 'var(--shadow-sm)',
+        position: 'relative'
+      }}
+    >
+      <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: isDone ? 'var(--primary-color)' : isLocked ? '#f1f5f9' : '#e6fcf8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {isDone && <CheckCircle2 size={18} color="white" />}
+        {isLocked && <Lock size={16} color="var(--text-muted)" />}
+        {isAvailable && <Play size={16} color="var(--primary-color)" fill="var(--primary-color)" />}
       </div>
-      {/* Info */}
-      <div style={{ padding: '0.75rem' }}>
-        <p style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-color)', marginBottom: '2px' }}>{info.titulo}</p>
-        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>{info.hora} · {info.duracion}</p>
-        {status === 'done' && <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary-color)', fontSize: '0.72rem', fontWeight: 600 }}><CheckCircle2 size={12} /> Completada</div>}
-        {status === 'locked' && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}><Lock size={11} /> {lockReason || 'Próximamente'}</div>}
-        {status === 'available' && (
-          <button onClick={onAction} className="btn-primary" style={{ width: '100%', padding: '0.5rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>¡Ya hice mi pausa!</button>
-        )}
+      
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontWeight: 600, fontSize: '0.85rem', color: isDone ? 'var(--primary-color)' : 'var(--text-color)', marginBottom: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{info.titulo}</p>
+        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{info.hora} · {info.duracion}</p>
       </div>
+
+      {isAvailable && <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary-color)', backgroundColor: 'white', border: '1px solid var(--primary-color)', padding: '2px 6px', borderRadius: '10px' }}>AHORA</div>}
     </div>
   );
 };
-
 
 
 // ─── Dashboard Principal ──────────────────────────────────────────────────────
@@ -308,8 +322,6 @@ export const UsuarioDashboard: React.FC = () => {
   const [completed, setCompleted] = useState<PauseRecord[]>([]);
   const [openForm, setOpenForm] = useState<'morning' | 'afternoon' | null>(null);
   const [nowHour, setNowHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
-  
-  // Agregamos un selector para que puedas probar los distintos días (Demo mode)
   const [today, setToday] = useState('Lunes');
 
   useEffect(() => {
@@ -319,7 +331,6 @@ export const UsuarioDashboard: React.FC = () => {
 
   const isDone = (dia: string, bloque: 'morning' | 'afternoon') => completed.some(r => r.dia === dia && r.bloque === bloque);
 
-  // Auto-avanzar de día en la demo cuando se completa la tarde
   useEffect(() => {
     if (isDone('Lunes', 'afternoon') && !isDone('Miércoles', 'morning')) {
       setToday('Miércoles');
@@ -329,8 +340,6 @@ export const UsuarioDashboard: React.FC = () => {
   }, [completed]);
 
   const handleFormSubmit = (record: Omit<PauseRecord, 'dia'>) => {
-    // Si la pausa es automática (mañana), le ponemos el día que corresponda según la tarjeta que tocó.
-    // Como el handleFormSubmit se llama directo, lo forzamos al "today" actual.
     const full = { ...record, dia: today };
     setCompleted(prev => [...prev, full as PauseRecord]);
     setOpenForm(null);
@@ -340,149 +349,167 @@ export const UsuarioDashboard: React.FC = () => {
 
   const getStatus = (dia: string, bloque: 'morning' | 'afternoon'): { status: 'done' | 'available' | 'locked'; reason?: string } => {
     if (isDone(dia, bloque)) return { status: 'done' };
-    if (dia !== today) {
-      // Simplificamos la demo: Si el día ya pasó, está bloqueado (o podríamos dejarlo "vencido", pero mantenemos la lógica actual).
-      return { status: 'locked', reason: 'Próximamente' };
-    }
-    // Es hoy
+    if (dia !== today) return { status: 'locked', reason: 'Próximamente' };
     if (bloque === 'morning') {
-      if (nowHour < 8) return { status: 'locked', reason: 'Disponible desde las 08:00 AM' };
+      if (nowHour < 8) return { status: 'locked', reason: 'Disponible a las 08:00 AM' };
       return { status: 'available' };
     }
-    // Tarde
-    if (!isDone(today, 'morning')) return { status: 'locked', reason: 'Completá la pausa de mañana primero' };
-    if (nowHour < 15) return { status: 'locked', reason: 'Disponible desde las 03:00 PM' };
+    if (!isDone(today, 'morning')) return { status: 'locked', reason: 'Completá la mañana primero' };
+    if (nowHour < 15) return { status: 'locked', reason: 'Disponible a las 03:00 PM' };
     return { status: 'available' };
   };
 
   const totalPausas = completed.length;
   const diasCompletos = DAYS.filter(d => isDone(d, 'morning') && isDone(d, 'afternoon')).length;
-  const pct = Math.round((totalPausas / (DAYS.length * 2)) * 100);
+  const pct = Math.round((totalPausas / (DAYS.length * 2)) * 100) || 0;
+
+  // Determinar la pausa actual (protagonista)
+  const currentMorning = getStatus(today, 'morning');
+  const currentAfternoon = getStatus(today, 'afternoon');
+  let activePause: { bloque: 'morning' | 'afternoon'; info: typeof PAUSAS['morning'] } | null = null;
+  
+  if (currentMorning.status === 'available') {
+    activePause = { bloque: 'morning', info: PAUSAS['morning'] };
+  } else if (currentAfternoon.status === 'available') {
+    activePause = { bloque: 'afternoon', info: PAUSAS['afternoon'] };
+  }
+
+  const handleActivePauseAction = () => {
+    if (!activePause) return;
+    if (activePause.bloque === 'morning') {
+      handleFormSubmit({ bloque: 'morning', tipo: 'sin-form' });
+    } else {
+      setOpenForm('afternoon');
+    }
+  };
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '1.5rem' }}>
+    <div style={{ animation: 'fadeIn 0.4s ease-out', display: 'flex', gap: '1.5rem', height: 'calc(100vh - 5rem)', overflow: 'hidden' }}>
       
-      {/* Demo Switcher (Auto-actualizado) */}
-      <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.5rem 1rem', borderRadius: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Día de la semana actual (Demo):</span>
-        {DAYS.map(d => (
-          <button key={d} onClick={() => setToday(d)} style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem', borderRadius: '15px', border: `1px solid ${today === d ? 'var(--primary-color)' : '#e2e8f0'}`, background: today === d ? 'var(--primary-color)' : 'white', color: today === d ? 'white' : 'var(--text-color)', cursor: 'pointer', transition: 'all 0.3s' }}>
-            {d}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Banner ── */}
-      <div className="card" style={{ padding: '1.5rem 2rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap', background: 'linear-gradient(135deg, #f0fdf9 0%, #ffffff 100%)', borderColor: '#d1fae5' }}>
-        {/* Mensaje */}
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flex: '1 1 250px', minWidth: 0 }}>
-          <span style={{ fontSize: '2rem', flexShrink: 0 }}>👋</span>
-          <div style={{ minWidth: 0 }}>
-            <p style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-color)', marginBottom: '4px' }}>¡Excelente semana, equipo!</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Recuerden tomar sus pausas activas. Su bienestar es nuestra prioridad.</p>
-          </div>
-        </div>
-        {/* Divider */}
-        <div style={{ width: 1, height: 50, backgroundColor: '#d1fae5', flexShrink: 0 }} />
-        {/* Progreso stepper */}
-        <div style={{ flexShrink: 0 }}>
-          <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Tu progreso</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-            {DAYS.map((d, i) => {
-              const allDone = isDone(d, 'morning') && isDone(d, 'afternoon');
-              const isToday = d === today;
-              return (
-                <React.Fragment key={d}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: allDone ? 'var(--primary-color)' : isToday ? 'white' : '#f1f5f9', border: `2px solid ${allDone || isToday ? 'var(--primary-color)' : '#e2e8f0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {allDone ? <CheckCircle2 size={16} color="white" /> : <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: isToday ? 'var(--primary-color)' : '#cbd5e1' }} />}
-                    </div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: isToday ? 700 : 500, color: isToday ? 'var(--primary-color)' : 'var(--text-muted)' }}>{d.slice(0,3)}</span>
-                  </div>
-                  {i < DAYS.length - 1 && <div style={{ width: 40, height: 3, backgroundColor: '#e2e8f0', margin: '0 4px', marginBottom: '18px' }}><div style={{ width: allDone ? '100%' : '0%', height: '100%', backgroundColor: 'var(--primary-color)' }} /></div>}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-        {/* Divider */}
-        <div style={{ width: 1, height: 50, backgroundColor: '#d1fae5', flexShrink: 0 }} />
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0 }}>
-          {[
-            { icon: <Flame size={16} />, val: `${diasCompletos}/${DAYS.length}`, label: 'Días' },
-            { icon: <Play size={16} />, val: totalPausas, label: 'Pausas' },
-            { icon: <Clock size={16} />, val: `${totalPausas * 9}m`, label: 'Tiempo' },
-            { icon: <TrendingUp size={16} />, val: `${pct}%`, label: 'Constancia' },
-          ].map(s => (
-            <div key={s.label} style={{ textAlign: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: 'var(--primary-color)' }}>
-                {s.icon}
-                <span style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-color)' }}>{s.val}</span>
-              </div>
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.label}</p>
+      {/* ── Columna Izquierda: Protagonista (~65%) ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
+        
+        {/* Banner Superior Compacto */}
+        <div className="card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(135deg, #f0fdf9 0%, #ffffff 100%)', border: '1px solid #d1fae5', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <div style={{ fontSize: '1.5rem', width: '40px', height: '40px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)' }}>👋</div>
+            <div>
+              <p style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-color)', marginBottom: '2px' }}>¡Hola, Francisco!</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Demo activa en: <strong style={{ color: 'var(--primary-color)' }}>{today}</strong></p>
             </div>
-          ))}
+          </div>
+          
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Progreso</p>
+              <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary-color)' }}>{pct}%</p>
+            </div>
+            <div style={{ width: 1, height: 30, backgroundColor: '#d1fae5' }} />
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              {DAYS.map(d => (
+                <button key={d} onClick={() => setToday(d)} style={{ width: '28px', height: '28px', borderRadius: '50%', border: 'none', backgroundColor: today === d ? 'var(--primary-color)' : (isDone(d, 'morning') && isDone(d, 'afternoon') ? '#10b981' : '#e2e8f0'), color: 'white', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', transition: 'transform 0.2s' }}>
+                  {d.charAt(0)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Video Protagonista */}
+        <div className="card" style={{ flex: 1, borderRadius: 'var(--radius-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 10px 30px rgba(0, 194, 168, 0.08)', border: '1px solid var(--border-color)' }}>
+          {activePause ? (
+            <>
+              {/* Imagen/Video Área */}
+              <div style={{ flex: 1, position: 'relative', backgroundImage: `url(${activePause.info.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.8) 100%)' }} />
+                
+                {/* Botón de Play Central */}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(4px)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.2s', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} className="play-btn">
+                  <Play size={28} color="white" fill="white" style={{ marginLeft: '4px' }} />
+                </div>
+                
+                {/* Textos sobre la imagen */}
+                <div style={{ position: 'absolute', bottom: '1.5rem', left: '1.5rem', right: '1.5rem', color: 'white' }}>
+                  <div style={{ display: 'inline-block', backgroundColor: 'var(--primary-color)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 700, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
+                    RECOMENDADO AHORA
+                  </div>
+                  <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.2rem', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>{activePause.info.titulo}</h2>
+                  <p style={{ fontSize: '0.9rem', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Clock size={14} /> {activePause.info.duracion} de bienestar para tu cuerpo
+                  </p>
+                </div>
+              </div>
+              {/* Área de Acción */}
+              <div style={{ padding: '1.25rem 1.5rem', backgroundColor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>¿Ya realizaste esta pausa?</p>
+                <button onClick={handleActivePauseAction} className="btn-primary" style={{ padding: '0.75rem 2rem', fontSize: '1rem', borderRadius: '100px', boxShadow: '0 4px 12px rgba(0, 194, 168, 0.25)' }}>
+                  Completar pausa
+                </button>
+              </div>
+            </>
+          ) : (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '2rem', textAlign: 'center' }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                <CheckCircle2 size={40} color="#16a34a" />
+              </div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.5rem' }}>¡Día completado!</h2>
+              <p style={{ color: 'var(--text-muted)', maxWidth: '300px' }}>Has realizado todas tus pausas de hoy. Descansa y nos vemos pronto.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Título ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '2px' }}>Tu programa semanal de pausas activas</h2>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Todas las pausas y sus horarios de disponibilidad.</p>
+      {/* ── Columna Derecha: Cronograma (~35%) ── */}
+      <div className="card" style={{ width: '340px', flexShrink: 0, borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'white' }}>
+        <div style={{ padding: '1.25rem 1.25rem 0.5rem' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '2px' }}>Tu semana</h3>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{diasCompletos} de {DAYS.length} días completados</p>
         </div>
-      </div>
 
-      {/* ── Grid 3 columnas ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {DAYS.map(dia => {
             const isToday = dia === today;
             return (
-              <div key={dia} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {/* Header día */}
-                <div style={{ textAlign: 'center', paddingBottom: '0.4rem', borderBottom: `2px solid ${isToday ? 'var(--primary-color)' : 'var(--border-color)'}` }}>
-                  <span style={{ fontWeight: isToday ? 700 : 500, fontSize: '0.85rem', color: isToday ? 'var(--primary-color)' : 'var(--text-muted)' }}>{dia}</span>
+              <div key={dia} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: isToday ? 700 : 600, fontSize: '0.85rem', color: isToday ? 'var(--primary-color)' : 'var(--text-color)' }}>{dia}</span>
+                  {isToday && <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
                 </div>
                 {/* Pausa Mañana */}
-                {(() => { 
-                  const { status, reason } = getStatus(dia, 'morning'); 
-                  return <PauseCard 
-                    bloque="morning" 
-                    status={status} 
-                    isToday={isToday} 
-                    onAction={() => {
-                      // Pausa mañana -> No abre form, lo marca directo.
-                      handleFormSubmit({ bloque: 'morning', tipo: 'sin-form' });
-                    }} 
-                    lockReason={reason} 
-                  />; 
-                })()}
+                <PauseCard 
+                  bloque="morning" 
+                  status={getStatus(dia, 'morning').status} 
+                  isToday={isToday} 
+                  onAction={() => handleFormSubmit({ bloque: 'morning', tipo: 'sin-form' })} 
+                />
                 {/* Pausa Tarde */}
-                {(() => { 
-                  const { status, reason } = getStatus(dia, 'afternoon'); 
-                  return <PauseCard 
-                    bloque="afternoon" 
-                    status={status} 
-                    isToday={isToday} 
-                    onAction={() => setOpenForm('afternoon')} 
-                    lockReason={reason} 
-                  />; 
-                })()}
+                <PauseCard 
+                  bloque="afternoon" 
+                  status={getStatus(dia, 'afternoon').status} 
+                  isToday={isToday} 
+                  onAction={() => setOpenForm('afternoon')} 
+                />
               </div>
             );
           })}
-      </div>
+        </div>
 
-      {/* ── Footer compacto ── */}
-      <div style={{ marginTop: '1rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: '#f0fdf9', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
-        <span style={{ fontSize: '1.4rem' }}>🏆</span>
-        <p style={{ fontSize: '0.9rem', color: '#047857' }}><strong>¡Seguí así!</strong> La constancia en pequeñas acciones genera grandes resultados.</p>
+        {/* Footer Motivacional */}
+        <div style={{ padding: '1rem', backgroundColor: '#f0fdf9', borderTop: '1px solid #d1fae5', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 500 }}>
+            <span style={{ fontSize: '1rem', marginRight: '4px' }}>🌿</span>
+            Pequeñas pausas, grandes resultados
+          </p>
+        </div>
       </div>
 
       {/* ── Modal ── */}
       {openForm === 'afternoon' && today !== 'Viernes' && <MiniForm bloque={openForm} onClose={() => setOpenForm(null)} onSubmit={handleFormSubmit} />}
       {openForm === 'afternoon' && today === 'Viernes' && <WeeklyForm bloque={openForm} onClose={() => setOpenForm(null)} onSubmit={handleFormSubmit} />}
+      
+      <style>{`
+        .play-btn:hover { transform: translate(-50%, -50%) scale(1.1) !important; }
+      `}</style>
     </div>
   );
 };
