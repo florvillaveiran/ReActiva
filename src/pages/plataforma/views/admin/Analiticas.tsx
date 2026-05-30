@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, AreaChart, Area } from 'recharts';
 import { Download, Filter } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useAdminStats } from '../../hooks/useAdminStats';
 
 const mockDataGlobal = {
   zonas: [
@@ -39,7 +40,21 @@ export const Analiticas: React.FC = () => {
   const [generandoPDF, setGenerandoPDF] = useState(false);
   const reporteRef = useRef<HTMLDivElement>(null);
 
-  const data = filtro === 'all' ? mockDataGlobal : mockDataEmpresa;
+  // Stats reales del usuario demo (en vivo desde localStorage).
+  // TODO(backend): reemplazar por fetch a /api/admin/analiticas?empresa=... y borrar mocks.
+  const stats = useAdminStats();
+
+  // Vista "all" con datos reales → datos del usuario demo (fallback a mock si no hay).
+  // Vista por empresa → mock (hasta tener backend con datos por empresa).
+  const data = useMemo(() => {
+    if (filtro === 'all' && stats.hayDatos) {
+      return {
+        zonas: stats.zonasDolorChart.length > 0 ? stats.zonasDolorChart : mockDataGlobal.zonas,
+        evolucion: stats.evolucion,
+      };
+    }
+    return filtro === 'all' ? mockDataGlobal : mockDataEmpresa;
+  }, [filtro, stats]);
 
   const handleDescargarPDF = async () => {
     if (!reporteRef.current) return;
