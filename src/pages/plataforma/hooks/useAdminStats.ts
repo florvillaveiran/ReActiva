@@ -48,6 +48,7 @@ export interface AdminStats {
   reportanMolestias: number;   // % 0-100 que reporta dolor
   zonasDolorTop: string[];     // 2-3 zonas más reportadas
   estadoEmocional: number | null; // promedio 1-5
+  energiaPromedio: number;        // promedio 0-5 (0 si no hay datos)
   // Participación por día
   participacionPorDia: { name: string; participacion: number }[];
   // Foco (de la pregunta semanal "Disperso / Normal / Enfocado")
@@ -163,6 +164,7 @@ const computeStats = (pausas: PausaGuardada[]): AdminStats => {
     reportanMolestias,
     zonasDolorTop,
     estadoEmocional,
+    energiaPromedio,
     participacionPorDia,
     foco,
     zonasDolorChart,
