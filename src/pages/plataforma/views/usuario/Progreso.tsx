@@ -1,18 +1,7 @@
 import React from 'react';
-import { CheckCircle2, Calendar, Award, Zap, Target, HeartPulse, PieChart, Sparkles } from 'lucide-react';
+import { CheckCircle2, Calendar, Award, Zap, Target, HeartPulse, PieChart, Sparkles, Inbox } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
-
-const energiaData = [
-  { dia: 'Lun', valor: 3 },
-  { dia: 'Mié', valor: 4 },
-  { dia: 'Vie', valor: 5 },
-];
-
-const focoData = [
-  { dia: 'Lun', valor: 3 },
-  { dia: 'Mié', valor: 4 },
-  { dia: 'Vie', valor: 4 },
-];
+import { usePausasStats } from '../../hooks/usePausasStats';
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────
 const KpiCard: React.FC<{
@@ -116,6 +105,63 @@ const ChartCard: React.FC<{
 
 // ─── Vista Mi Progreso ────────────────────────────────────────────────────
 export const UsuarioProgreso: React.FC = () => {
+  const stats = usePausasStats();
+
+  // Adherencia label dinámica
+  const adherenciaLabel =
+    stats.adherencia >= 80 ? '¡Vas excelente!' :
+    stats.adherencia >= 50 ? '¡Buen ritmo!' :
+    stats.adherencia > 0 ? '¡Vamos por más!' :
+    'Sin datos aún';
+
+  // Convertir promedios 1-5 a %
+  const energiaPct = stats.energiaPromedio != null ? Math.round((stats.energiaPromedio / 5) * 100) : null;
+  const focoPct = stats.focoPromedio != null ? Math.round((stats.focoPromedio / 5) * 100) : null;
+
+  // Data para los charts (reemplazar null por 0 para que el área se dibuje)
+  const energiaChartData = stats.energiaPorDia.map(d => ({ dia: d.dia, valor: d.valor ?? 0 }));
+  const focoChartData = stats.focoPorDia.map(d => ({ dia: d.dia, valor: d.valor ?? 0 }));
+
+  // Estado vacío: sin ninguna pausa completada
+  if (!stats.hayDatos) {
+    return (
+      <div style={{
+        animation: 'fadeIn 0.3s ease-out',
+        display: 'flex', flexDirection: 'column', gap: '1.25rem',
+        minHeight: 'calc(100vh - 3rem)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-color)' }}>Mi Progreso</h1>
+          <span style={{
+            padding: '0.3rem 0.85rem', borderRadius: '20px',
+            backgroundColor: '#ecfdf5', color: '#059669',
+            fontSize: '0.78rem', fontWeight: 600, border: '1px solid #a7f3d0',
+          }}>Esta Semana</span>
+        </div>
+
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: 'white', borderRadius: '20px',
+          border: '1px solid #eef0f3', padding: '3rem 2rem',
+          textAlign: 'center', gap: '1rem',
+        }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%',
+            backgroundColor: '#ecfdf5', color: '#10b981',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Inbox size={32} />
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-color)' }}>Todavía no hay datos para mostrar</h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 420 }}>
+            Completá tu primera pausa en <strong style={{ color: 'var(--primary-color)' }}>Mi Programa</strong> y empezaremos a calcular tus métricas de energía, foco, molestias e impacto.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       animation: 'fadeIn 0.3s ease-out',
@@ -142,22 +188,22 @@ export const UsuarioProgreso: React.FC = () => {
           icon={<CheckCircle2 size={24} />}
           iconBg="#ecfdf5"
           iconColor="#059669"
-          value="5 Pausas"
+          value={`${stats.totalPausas} ${stats.totalPausas === 1 ? 'Pausa' : 'Pausas'}`}
           label="completadas esta semana 🙌"
         />
         <KpiCard
           icon={<Calendar size={22} />}
           iconBg="#fff7ed"
           iconColor="#f97316"
-          value="3 Días"
+          value={`${stats.diasActivos} ${stats.diasActivos === 1 ? 'Día' : 'Días'}`}
           label="activos de lunes a viernes"
         />
         <KpiCard
           icon={<Award size={22} />}
           iconBg="#fefce8"
           iconColor="#ca8a04"
-          value="83%"
-          label="adherencia. ¡Vas excelente!"
+          value={`${stats.adherencia}%`}
+          label={`adherencia. ${adherenciaLabel}`}
         />
       </div>
 
@@ -169,9 +215,9 @@ export const UsuarioProgreso: React.FC = () => {
           iconColor="#d97706"
           titulo="Energía Post-Pausa"
           subtitulo="Evolución de tu vitalidad"
-          promedio="80%"
+          promedio={energiaPct != null ? `${energiaPct}%` : '—'}
           promedioColor="#d97706"
-          data={energiaData}
+          data={energiaChartData}
           lineColor="#f59e0b"
           gradientId="energiaGradient"
         />
@@ -181,9 +227,9 @@ export const UsuarioProgreso: React.FC = () => {
           iconColor="#2563eb"
           titulo="Nivel de Foco"
           subtitulo="Tu concentración semanal"
-          promedio="73%"
+          promedio={focoPct != null ? `${focoPct}%` : '—'}
           promedioColor="#2563eb"
-          data={focoData}
+          data={focoChartData}
           lineColor="#3b82f6"
           gradientId="focoGradient"
         />
@@ -208,21 +254,31 @@ export const UsuarioProgreso: React.FC = () => {
             <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)' }}>Molestias Físicas</p>
           </div>
           <p style={{ fontSize: '0.95rem', marginBottom: '0.9rem' }}>
-            <span style={{ fontWeight: 800, fontSize: '1.4rem' }}>2 </span>
-            <span style={{ color: 'var(--text-muted)' }}>días con molestias leves</span>
+            <span style={{ fontWeight: 800, fontSize: '1.4rem' }}>{stats.diasConDolor} </span>
+            <span style={{ color: 'var(--text-muted)' }}>
+              {stats.diasConDolor === 0 ? 'días sin molestias' : (stats.diasConDolor === 1 ? 'día con molestias leves' : 'días con molestias leves')}
+            </span>
           </p>
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {['Cuello', 'Hombros'].map(z => (
-              <span key={z} style={{
-                padding: '0.3rem 0.8rem',
-                borderRadius: '20px',
-                fontSize: '0.78rem',
-                fontWeight: 500,
-                backgroundColor: '#f8fafc',
-                color: 'var(--text-muted)',
-                border: '1px solid #e2e8f0',
-              }}>{z}</span>
-            ))}
+            {stats.zonasDolor.length === 0 ? (
+              <span style={{
+                padding: '0.3rem 0.8rem', borderRadius: '20px',
+                fontSize: '0.78rem', fontWeight: 500,
+                backgroundColor: '#f0fdf4', color: '#059669', border: '1px solid #a7f3d0',
+              }}>Todo en orden</span>
+            ) : (
+              stats.zonasDolor.map(z => (
+                <span key={z} style={{
+                  padding: '0.3rem 0.8rem',
+                  borderRadius: '20px',
+                  fontSize: '0.78rem',
+                  fontWeight: 500,
+                  backgroundColor: '#f8fafc',
+                  color: 'var(--text-muted)',
+                  border: '1px solid #e2e8f0',
+                }}>{z}</span>
+              ))
+            )}
           </div>
         </div>
 
@@ -242,24 +298,30 @@ export const UsuarioProgreso: React.FC = () => {
             </div>
             <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)' }}>Impacto Percibido</p>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-color)' }}>Beneficio de las pausas</span>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#059669' }}>85%</span>
-          </div>
-          <div style={{
-            height: 8, borderRadius: '20px',
-            backgroundColor: '#f1f5f9',
-            overflow: 'hidden',
-            marginBottom: '0.75rem',
-          }}>
-            <div style={{
-              width: '85%', height: '100%',
-              background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
-              borderRadius: '20px',
-            }} />
-          </div>
+          {stats.impactoPercibido != null ? (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-color)' }}>Beneficio de las pausas</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#059669' }}>{stats.impactoPercibido}%</span>
+              </div>
+              <div style={{
+                height: 8, borderRadius: '20px',
+                backgroundColor: '#f1f5f9', overflow: 'hidden', marginBottom: '0.75rem',
+              }}>
+                <div style={{
+                  width: `${stats.impactoPercibido}%`, height: '100%',
+                  background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
+                  borderRadius: '20px', transition: 'width 0.4s',
+                }} />
+              </div>
+            </>
+          ) : (
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+              Pendiente de feedback semanal
+            </p>
+          )}
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-            Sientes que las pausas te están ayudando mucho a liberar tensión diaria.
+            {stats.impactoTexto}
           </p>
         </div>
 
@@ -282,7 +344,7 @@ export const UsuarioProgreso: React.FC = () => {
             <p style={{ fontSize: '1rem', fontWeight: 700, color: '#6b21a8' }}>Para ti</p>
           </div>
           <p style={{ fontSize: '0.85rem', color: '#581c87', lineHeight: 1.55, fontStyle: 'italic' }}>
-            "Tu constancia está mejorando 🙌 Notamos que tu energía promedio aumentó esta semana. ¡Sigue así, tu cuerpo te lo agradece!"
+            {stats.mensajeParaTi}
           </p>
         </div>
       </div>

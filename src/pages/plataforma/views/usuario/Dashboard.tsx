@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CheckCircle2, Lock, Play, Send, Clock, X } from 'lucide-react';
+import { CheckCircle2, Lock, Play, Send, Clock, X, RotateCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 // ─── Configuración ──────────────────────────────────────────────────────────
@@ -50,6 +50,19 @@ const PAUSAS = {
     subtitulo: '8 min de relajación para tu mente',
   },
 };
+
+// Videos de YouTube por día y bloque (IDs)
+const VIDEOS_BY_DAY: Record<string, Record<'morning' | 'afternoon', string>> = {
+  Lunes:     { morning: '4tP5slYAwcY', afternoon: 'RO8ha2ltBo8' },
+  Miércoles: { morning: 'jxrxN5D1KhE', afternoon: 'pNIgbZvnZxY' },
+  Viernes:   { morning: '51yo4a4wlWA', afternoon: 'pogg_OsgWno' },
+};
+
+const getVideoId = (dia: string, bloque: 'morning' | 'afternoon'): string | null =>
+  VIDEOS_BY_DAY[dia]?.[bloque] ?? null;
+
+const getYouTubeThumb = (videoId: string): string =>
+  `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
 // ─── Mini Formulario (Lunes y Miércoles Tarde) ────────────────────────────────
 const MiniForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void; onSubmit: (r: Omit<PauseRecord, 'dia'>) => void; }> = ({ bloque, onClose, onSubmit }) => {
@@ -297,6 +310,76 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
   );
 };
 
+// ─── Modal de Video (YouTube embed) ──────────────────────────────────────────
+const VideoModal: React.FC<{ videoId: string; titulo: string; onClose: () => void }> = ({ videoId, titulo, onClose }) => {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handler);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '2rem', animation: 'fadeIn 0.2s',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: '960px',
+          backgroundColor: 'black', borderRadius: '16px',
+          overflow: 'hidden', boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
+          position: 'relative',
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '1rem 1.25rem', backgroundColor: '#0f172a',
+        }}>
+          <p style={{ color: 'white', fontWeight: 600, fontSize: '0.95rem' }}>{titulo}</p>
+          <button
+            onClick={onClose}
+            title="Cerrar (Esc)"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 36, height: 36, borderRadius: '50%',
+              border: 'none', backgroundColor: 'rgba(255,255,255,0.1)',
+              color: 'white', cursor: 'pointer', transition: 'background 0.15s',
+            }}
+            onMouseOver={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'; }}
+            onMouseOut={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        {/* Iframe 16:9 */}
+        <div style={{ position: 'relative', paddingTop: '56.25%' }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+            title={titulo}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={{
+              position: 'absolute', top: 0, left: 0,
+              width: '100%', height: '100%', border: 'none',
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Card de pausa en panel "Tu semana" ──────────────────────────────────────
 const WeekPauseRow: React.FC<{
   bloque: 'morning' | 'afternoon';
@@ -349,12 +432,50 @@ const WeekPauseRow: React.FC<{
   );
 };
 
+// Lee pausas del localStorage, deduplicadas por (dia, bloque), última gana.
+const loadPausasFromStorage = (): PauseRecord[] => {
+  try {
+    const all: any[] = JSON.parse(localStorage.getItem('reactiva_pausas') || '[]');
+    const map = new Map<string, PauseRecord>();
+    for (const p of all) {
+      if (p?.dia && p?.bloque) map.set(`${p.dia}__${p.bloque}`, p as PauseRecord);
+    }
+    return Array.from(map.values());
+  } catch {
+    return [];
+  }
+};
+
+// Set de claves "dia__bloque" de videos ya vistos.
+const loadVideosVistos = (): Set<string> => {
+  try {
+    const arr: string[] = JSON.parse(localStorage.getItem('reactiva_videos_vistos') || '[]');
+    return new Set(arr);
+  } catch {
+    return new Set();
+  }
+};
+
 // ─── Dashboard Principal ──────────────────────────────────────────────────────
 export const UsuarioDashboard: React.FC = () => {
-  const [completed, setCompleted] = useState<PauseRecord[]>([]);
+  const [completed, setCompleted] = useState<PauseRecord[]>(() => loadPausasFromStorage());
   const [openForm, setOpenForm] = useState<'morning' | 'afternoon' | null>(null);
+  const [openVideo, setOpenVideo] = useState<{ dia: string; bloque: 'morning' | 'afternoon' } | null>(null);
+  const [videosVistos, setVideosVistos] = useState<Set<string>>(() => loadVideosVistos());
   const [nowHour, setNowHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
   const [today, setToday] = useState('Lunes');
+
+  // Marca un video como visto y persiste en localStorage
+  const markVideoVisto = (dia: string, bloque: 'morning' | 'afternoon') => {
+    const key = `${dia}__${bloque}`;
+    setVideosVistos(prev => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      localStorage.setItem('reactiva_videos_vistos', JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
 
   useEffect(() => {
     const t = setInterval(() => setNowHour(new Date().getHours() + new Date().getMinutes() / 60), 60000);
@@ -373,12 +494,31 @@ export const UsuarioDashboard: React.FC = () => {
   }, [completed]);
 
   const handleFormSubmit = (record: Omit<PauseRecord, 'dia'>) => {
-    const full = { ...record, dia: today };
-    setCompleted(prev => [...prev, full as PauseRecord]);
+    const full = { ...record, dia: today } as PauseRecord;
+    // Dedup en el state: sobreescribir si ya existe ese (dia, bloque)
+    setCompleted(prev => {
+      const filtered = prev.filter(r => !(r.dia === full.dia && r.bloque === full.bloque));
+      return [...filtered, full];
+    });
     setOpenForm(null);
-    const all = JSON.parse(localStorage.getItem('reactiva_pausas') || '[]');
-    localStorage.setItem('reactiva_pausas', JSON.stringify([...all, { ...full, fecha: new Date().toISOString() }]));
+    // Dedup también en localStorage
+    const all: any[] = JSON.parse(localStorage.getItem('reactiva_pausas') || '[]');
+    const filteredStorage = all.filter(p => !(p?.dia === full.dia && p?.bloque === full.bloque));
+    filteredStorage.push({ ...full, fecha: new Date().toISOString() });
+    localStorage.setItem('reactiva_pausas', JSON.stringify(filteredStorage));
+    window.dispatchEvent(new Event('reactiva-pausas-updated'));
     fireConfetti();
+  };
+
+  // Reiniciar la demo: limpia state y localStorage
+  const handleResetDemo = () => {
+    if (!window.confirm('¿Reiniciar la demo? Se borrarán todas las pausas registradas.')) return;
+    setCompleted([]);
+    setVideosVistos(new Set());
+    setToday('Lunes');
+    localStorage.removeItem('reactiva_pausas');
+    localStorage.removeItem('reactiva_videos_vistos');
+    window.dispatchEvent(new Event('reactiva-pausas-updated'));
   };
 
   const getStatus = (dia: string, bloque: 'morning' | 'afternoon'): { status: 'done' | 'available' | 'locked'; reason?: string } => {
@@ -408,6 +548,7 @@ export const UsuarioDashboard: React.FC = () => {
 
   const activeInfo = activeBloque ? PAUSAS[activeBloque] : null;
   const activeStatusObj = activeBloque ? getStatus(today, activeBloque) : null;
+  const activeVideoId = activeBloque ? getVideoId(today, activeBloque) : null;
   const allDoneToday = activeBloque === null;
 
   const handleActiveAction = () => {
@@ -483,6 +624,23 @@ export const UsuarioDashboard: React.FC = () => {
                 );
               })}
             </div>
+
+            {/* Reiniciar demo */}
+            <button
+              onClick={handleResetDemo}
+              title="Reiniciar la demo (borra todas las pausas)"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                padding: '0.4rem 0.8rem', borderRadius: '20px',
+                border: '1px solid #e2e8f0', backgroundColor: 'white',
+                color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600,
+                cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+              }}
+              onMouseOver={e => { e.currentTarget.style.borderColor = '#f43f5e'; e.currentTarget.style.color = '#e11d48'; }}
+              onMouseOut={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+            >
+              <RotateCcw size={13} /> Reiniciar demo
+            </button>
           </div>
 
           {/* Tarjeta principal de pausa activa */}
@@ -492,16 +650,19 @@ export const UsuarioDashboard: React.FC = () => {
               position: 'relative',
               flex: 1,
               minHeight: 420,
-              backgroundImage: activeInfo ? `url(${activeInfo.img})` : 'none',
+              backgroundImage: activeVideoId
+                ? `url(${getYouTubeThumb(activeVideoId)})`
+                : activeInfo ? `url(${activeInfo.img})` : 'none',
               backgroundColor: '#1e293b',
               backgroundSize: 'cover', backgroundPosition: 'center',
             }}>
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.45) 100%)' }} />
 
-              {/* Play central */}
-              {activeBloque && activeStatusObj?.status === 'available' && (
+              {/* Play central — abre el modal con el video de YouTube */}
+              {activeBloque && activeVideoId && (
                 <button
-                  onClick={handleActiveAction}
+                  onClick={() => { setOpenVideo({ dia: today, bloque: activeBloque }); markVideoVisto(today, activeBloque); }}
+                  title="Reproducir video de la pausa"
                   style={{
                     position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                     width: 80, height: 80, borderRadius: '50%',
@@ -510,10 +671,10 @@ export const UsuarioDashboard: React.FC = () => {
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'all 0.2s',
                   }}
-                  onMouseOver={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.06)'; }}
-                  onMouseOut={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)'; }}
+                  onMouseOver={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.08)'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.28)'; }}
+                  onMouseOut={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.18)'; }}
                 >
-                  <Play size={28} color="white" fill="white" />
+                  <Play size={28} color="white" fill="white" style={{ marginLeft: 4 }} />
                 </button>
               )}
 
@@ -550,34 +711,48 @@ export const UsuarioDashboard: React.FC = () => {
             </div>
 
             {/* Barra de acción inferior */}
-            {!allDoneToday && (
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: '1rem', padding: '1.1rem 1.5rem',
-              }}>
-                <p style={{ fontSize: '0.95rem', color: 'var(--text-color)', fontWeight: 500 }}>
-                  {activeStatusObj?.status === 'available'
-                    ? '¿Ya realizaste esta pausa?'
-                    : activeStatusObj?.reason || 'Pausa bloqueada'}
-                </p>
-                <button
-                  onClick={handleActiveAction}
-                  disabled={activeStatusObj?.status !== 'available'}
-                  style={{
-                    padding: '0.85rem 2.2rem',
-                    borderRadius: '999px',
-                    border: 'none',
-                    backgroundColor: activeStatusObj?.status === 'available' ? 'var(--primary-color)' : '#cbd5e1',
-                    color: 'white', fontWeight: 700, fontSize: '0.92rem',
-                    cursor: activeStatusObj?.status === 'available' ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s',
-                    boxShadow: activeStatusObj?.status === 'available' ? '0 4px 12px rgba(0, 194, 168, 0.25)' : 'none',
-                  }}
-                >
-                  {activeStatusObj?.status === 'available' ? 'Completar pausa' : (activeStatusObj?.status === 'locked' ? <><Lock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Bloqueada</> : 'Hecha')}
-                </button>
-              </div>
-            )}
+            {!allDoneToday && (() => {
+              const videoKey = activeBloque ? `${today}__${activeBloque}` : '';
+              const requiereVideo = !!activeVideoId;
+              const videoVisto = videoKey ? videosVistos.has(videoKey) : false;
+              const isAvailable = activeStatusObj?.status === 'available';
+              const puedeCompletar = isAvailable && (!requiereVideo || videoVisto);
+
+              let prompt: string;
+              if (!isAvailable) prompt = activeStatusObj?.reason || 'Pausa bloqueada';
+              else if (requiereVideo && !videoVisto) prompt = 'Mirá el video y después marcá la pausa como hecha.';
+              else prompt = '¿Ya realizaste esta pausa?';
+
+              return (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: '1rem', padding: '1.1rem 1.5rem',
+                }}>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--text-color)', fontWeight: 500 }}>{prompt}</p>
+                  <button
+                    onClick={handleActiveAction}
+                    disabled={!puedeCompletar}
+                    title={!puedeCompletar && isAvailable && !videoVisto ? 'Tenés que ver el video primero' : undefined}
+                    style={{
+                      padding: '0.85rem 2.2rem',
+                      borderRadius: '999px',
+                      border: 'none',
+                      backgroundColor: puedeCompletar ? 'var(--primary-color)' : '#cbd5e1',
+                      color: 'white', fontWeight: 700, fontSize: '0.92rem',
+                      cursor: puedeCompletar ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.2s',
+                      boxShadow: puedeCompletar ? '0 4px 12px rgba(0, 194, 168, 0.25)' : 'none',
+                    }}
+                  >
+                    {!isAvailable ? (
+                      activeStatusObj?.status === 'locked' ? <><Lock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Bloqueada</> : 'Hecha'
+                    ) : (!videoVisto && requiereVideo) ? (
+                      <><Play size={14} style={{ verticalAlign: 'middle', marginRight: 6, fill: 'white' }} />Mirá el video</>
+                    ) : 'Completar pausa'}
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -635,6 +810,13 @@ export const UsuarioDashboard: React.FC = () => {
       {/* Modales */}
       {openForm === 'afternoon' && today !== 'Viernes' && <MiniForm bloque={openForm} onClose={() => setOpenForm(null)} onSubmit={handleFormSubmit} />}
       {openForm === 'afternoon' && today === 'Viernes' && <WeeklyForm bloque={openForm} onClose={() => setOpenForm(null)} onSubmit={handleFormSubmit} />}
+      {openVideo && getVideoId(openVideo.dia, openVideo.bloque) && (
+        <VideoModal
+          videoId={getVideoId(openVideo.dia, openVideo.bloque)!}
+          titulo={`${PAUSAS[openVideo.bloque].titulo} · ${openVideo.dia} ${openVideo.bloque === 'morning' ? 'mañana' : 'tarde'}`}
+          onClose={() => setOpenVideo(null)}
+        />
+      )}
     </div>
   );
 };
