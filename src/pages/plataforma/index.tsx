@@ -19,7 +19,7 @@ function App() {
       <div id="plataforma-root">
         <Routes>
         <Route path="login" element={<Login />} />
-          
+
           {/* Rutas de Admin */}
           <Route path="admin" element={<Layout allowedRole="admin" />}>
             <Route index element={<AdminDashboard />} />

@@ -1,232 +1,291 @@
 import React from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Zap, Target, CheckCircle2, CalendarDays, Award, HeartPulse, PieChart, Sparkles } from 'lucide-react';
+import { CheckCircle2, Calendar, Award, Zap, Target, HeartPulse, PieChart, Sparkles } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
 
-const mockProgresoData = [
-  { day: 'Lun', energiaPost: 3, foco: 3 },
-  { day: 'Mié', energiaPost: 4, foco: 4 },
-  { day: 'Vie', energiaPost: 5, foco: 4 },
+const energiaData = [
+  { dia: 'Lun', valor: 3 },
+  { dia: 'Mié', valor: 4 },
+  { dia: 'Vie', valor: 5 },
 ];
 
+const focoData = [
+  { dia: 'Lun', valor: 3 },
+  { dia: 'Mié', valor: 4 },
+  { dia: 'Vie', valor: 4 },
+];
+
+// ─── KPI Card ─────────────────────────────────────────────────────────────
+const KpiCard: React.FC<{
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  value: string;
+  label: string;
+}> = ({ icon, iconBg, iconColor, value, label }) => (
+  <div style={{
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '1.25rem 1.5rem',
+    border: '1px solid #eef0f3',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+  }}>
+    <div style={{
+      width: 48, height: 48, borderRadius: '12px',
+      backgroundColor: iconBg, color: iconColor,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      {icon}
+    </div>
+    <div style={{ minWidth: 0 }}>
+      <p style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-color)', lineHeight: 1.1, marginBottom: '2px' }}>{value}</p>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{label}</p>
+    </div>
+  </div>
+);
+
+// ─── Chart Card ───────────────────────────────────────────────────────────
+const ChartCard: React.FC<{
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  titulo: string;
+  subtitulo: string;
+  promedio: string;
+  promedioColor: string;
+  data: { dia: string; valor: number }[];
+  lineColor: string;
+  gradientId: string;
+}> = ({ icon, iconBg, iconColor, titulo, subtitulo, promedio, promedioColor, data, lineColor, gradientId }) => (
+  <div style={{
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '1.5rem',
+    border: '1px solid #eef0f3',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+    display: 'flex', flexDirection: 'column', minHeight: 0,
+  }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: '10px',
+          backgroundColor: iconBg, color: iconColor,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {icon}
+        </div>
+        <div>
+          <p style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-color)' }}>{titulo}</p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{subtitulo}</p>
+        </div>
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <p style={{ fontSize: '1.5rem', fontWeight: 800, color: promedioColor, lineHeight: 1 }}>{promedio}</p>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Promedio</p>
+      </div>
+    </div>
+    <div style={{ flex: 1, minHeight: 200 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={lineColor} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={lineColor} stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+          <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+          <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+          <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8rem' }} />
+          <Area
+            type="monotone"
+            dataKey="valor"
+            stroke={lineColor}
+            strokeWidth={3}
+            fill={`url(#${gradientId})`}
+            dot={{ fill: lineColor, r: 4, strokeWidth: 0 }}
+            activeDot={{ r: 6 }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+);
+
+// ─── Vista Mi Progreso ────────────────────────────────────────────────────
 export const UsuarioProgreso: React.FC = () => {
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '10px 20px', boxSizing: 'border-box', animation: 'fadeIn 0.3s ease-out' }}>
-      
-      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <h2 className="header-title" style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-color)' }}>Mi Progreso</h2>
-        <span style={{ backgroundColor: '#f0fdf4', color: '#166534', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 600, border: '1px solid #bbf7d0' }}>
-          Esta Semana
-        </span>
+    <div style={{
+      animation: 'fadeIn 0.3s ease-out',
+      display: 'flex', flexDirection: 'column', gap: '1.25rem',
+      minHeight: 'calc(100vh - 3rem)',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-color)' }}>Mi Progreso</h1>
+        <span style={{
+          padding: '0.3rem 0.85rem',
+          borderRadius: '20px',
+          backgroundColor: '#ecfdf5',
+          color: '#059669',
+          fontSize: '0.78rem',
+          fontWeight: 600,
+          border: '1px solid #a7f3d0',
+        }}>Esta Semana</span>
       </div>
 
-      {/* PASO 4: Participación - Cards Pequeñas */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
-        gap: '1rem',
-        marginBottom: '1.5rem'
-      }}>
-        <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '0.75rem', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-          <div style={{ backgroundColor: '#f0fdf4', padding: '0.5rem', borderRadius: '8px' }}>
-            <CheckCircle2 size={24} color="#16a34a" />
-          </div>
-          <div>
-            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>5 Pausas</h4>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>completadas esta semana 🙌</p>
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '0.75rem', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-          <div style={{ backgroundColor: '#fef2f2', padding: '0.5rem', borderRadius: '8px' }}>
-            <CalendarDays size={24} color="#ef4444" />
-          </div>
-          <div>
-            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>3 Días</h4>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>activos de lunes a viernes</p>
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '0.75rem', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-          <div style={{ backgroundColor: '#fffbeb', padding: '0.5rem', borderRadius: '8px' }}>
-            <Award size={24} color="#d97706" />
-          </div>
-          <div>
-            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>83%</h4>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>adherencia. ¡Vas excelente!</p>
-          </div>
-        </div>
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+        <KpiCard
+          icon={<CheckCircle2 size={24} />}
+          iconBg="#ecfdf5"
+          iconColor="#059669"
+          value="5 Pausas"
+          label="completadas esta semana 🙌"
+        />
+        <KpiCard
+          icon={<Calendar size={22} />}
+          iconBg="#fff7ed"
+          iconColor="#f97316"
+          value="3 Días"
+          label="activos de lunes a viernes"
+        />
+        <KpiCard
+          icon={<Award size={22} />}
+          iconBg="#fefce8"
+          iconColor="#ca8a04"
+          value="83%"
+          label="adherencia. ¡Vas excelente!"
+        />
       </div>
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        gap: '1.5rem',
-      }}>
-        {/* Gráfica de Energía */}
-        <div className="card" style={{ padding: '1.5rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ backgroundColor: '#fffbeb', padding: '0.5rem', borderRadius: '8px' }}>
-                <Zap size={20} color="#d97706" />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>Energía Post-Pausa</h3>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Evolución de tu vitalidad</p>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ display: 'block', fontSize: '1.25rem', fontWeight: 700, color: '#d97706' }}>80%</span>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 500 }}>Promedio</span>
-            </div>
-          </div>
-
-          <div style={{ width: '100%', height: '220px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockProgresoData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorEnergia" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#fbbf24" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
-                  labelStyle={{ fontWeight: 600, color: '#1e293b', marginBottom: '0.25rem' }}
-                  itemStyle={{ color: '#d97706', fontSize: '0.9rem', fontWeight: 500 }}
-                  formatter={(value: number) => [`${value} / 5`, 'Energía']}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="energiaPost" 
-                  stroke="#fbbf24" 
-                  strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorEnergia)" 
-                  activeDot={{ r: 6, fill: '#fbbf24', stroke: 'white', strokeWidth: 2 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Gráfica de Foco */}
-        <div className="card" style={{ padding: '1.5rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ backgroundColor: '#eff6ff', padding: '0.5rem', borderRadius: '8px' }}>
-                <Target size={20} color="#3b82f6" />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>Nivel de Foco</h3>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Tu concentración semanal</p>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ display: 'block', fontSize: '1.25rem', fontWeight: 700, color: '#3b82f6' }}>73%</span>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 500 }}>Promedio</span>
-            </div>
-          </div>
-
-          <div style={{ width: '100%', height: '220px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockProgresoData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorFoco" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
-                  labelStyle={{ fontWeight: 600, color: '#1e293b', marginBottom: '0.25rem' }}
-                  itemStyle={{ color: '#2563eb', fontSize: '0.9rem', fontWeight: 500 }}
-                  formatter={(value: number) => [`${value} / 5`, 'Foco']}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="foco" 
-                  stroke="#3b82f6" 
-                  strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorFoco)" 
-                  activeDot={{ r: 6, fill: '#3b82f6', stroke: 'white', strokeWidth: 2 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      {/* Charts */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', flex: 2.2, minHeight: 320 }}>
+        <ChartCard
+          icon={<Zap size={20} />}
+          iconBg="#fef3c7"
+          iconColor="#d97706"
+          titulo="Energía Post-Pausa"
+          subtitulo="Evolución de tu vitalidad"
+          promedio="80%"
+          promedioColor="#d97706"
+          data={energiaData}
+          lineColor="#f59e0b"
+          gradientId="energiaGradient"
+        />
+        <ChartCard
+          icon={<Target size={20} />}
+          iconBg="#dbeafe"
+          iconColor="#2563eb"
+          titulo="Nivel de Foco"
+          subtitulo="Tu concentración semanal"
+          promedio="73%"
+          promedioColor="#2563eb"
+          data={focoData}
+          lineColor="#3b82f6"
+          gradientId="focoGradient"
+        />
       </div>
 
-      {/* PASO 5: Dolor, Impacto e Insights */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
-        gap: '1.5rem',
-        marginTop: '1.5rem'
-      }}>
-        
-        {/* Dolor / Molestias */}
-        <div className="card" style={{ padding: '1.25rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <div style={{ backgroundColor: '#fef2f2', padding: '0.4rem', borderRadius: '8px' }}>
-              <HeartPulse size={18} color="#ef4444" />
+      {/* Cards inferiores */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', flex: 0.6, minHeight: 160 }}>
+        {/* Molestias Físicas */}
+        <div style={{
+          backgroundColor: 'white', borderRadius: '16px', padding: '1.25rem 1.5rem',
+          border: '1px solid #eef0f3', boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+          height: '100%', display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '8px',
+              backgroundColor: '#fff1f2', color: '#e11d48',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <HeartPulse size={18} />
             </div>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>Molestias Físicas</h3>
+            <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)' }}>Molestias Físicas</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', lineHeight: 1 }}>2</span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, paddingBottom: '2px' }}>días con molestias leves</span>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-            <span style={{ fontSize: '0.7rem', backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontWeight: 500 }}>Cuello</span>
-            <span style={{ fontSize: '0.7rem', backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontWeight: 500 }}>Hombros</span>
+          <p style={{ fontSize: '0.95rem', marginBottom: '0.9rem' }}>
+            <span style={{ fontWeight: 800, fontSize: '1.4rem' }}>2 </span>
+            <span style={{ color: 'var(--text-muted)' }}>días con molestias leves</span>
+          </p>
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {['Cuello', 'Hombros'].map(z => (
+              <span key={z} style={{
+                padding: '0.3rem 0.8rem',
+                borderRadius: '20px',
+                fontSize: '0.78rem',
+                fontWeight: 500,
+                backgroundColor: '#f8fafc',
+                color: 'var(--text-muted)',
+                border: '1px solid #e2e8f0',
+              }}>{z}</span>
+            ))}
           </div>
         </div>
 
         {/* Impacto Percibido */}
-        <div className="card" style={{ padding: '1.25rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <div style={{ backgroundColor: '#f0fdfa', padding: '0.4rem', borderRadius: '8px' }}>
-              <PieChart size={18} color="#0d9488" />
+        <div style={{
+          backgroundColor: 'white', borderRadius: '16px', padding: '1.25rem 1.5rem',
+          border: '1px solid #eef0f3', boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+          height: '100%', display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '8px',
+              backgroundColor: '#ecfdf5', color: '#10b981',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <PieChart size={18} />
             </div>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>Impacto Percibido</h3>
+            <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)' }}>Impacto Percibido</p>
           </div>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>
-              <span>Beneficio de las pausas</span>
-              <span style={{ color: '#0d9488' }}>85%</span>
-            </div>
-            {/* Barra elegante */}
-            <div style={{ width: '100%', height: '8px', backgroundColor: '#ccfbf1', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: '85%', height: '100%', backgroundColor: '#14b8a6', borderRadius: '4px' }}></div>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-color)' }}>Beneficio de las pausas</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#059669' }}>85%</span>
           </div>
-          <p style={{ margin: '0.75rem 0 0 0', fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
+          <div style={{
+            height: 8, borderRadius: '20px',
+            backgroundColor: '#f1f5f9',
+            overflow: 'hidden',
+            marginBottom: '0.75rem',
+          }}>
+            <div style={{
+              width: '85%', height: '100%',
+              background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
+              borderRadius: '20px',
+            }} />
+          </div>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
             Sientes que las pausas te están ayudando mucho a liberar tensión diaria.
           </p>
         </div>
 
-        {/* Insights Positivos */}
-        <div className="card" style={{ padding: '1.25rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', backgroundColor: '#faf5ff' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <div style={{ backgroundColor: '#f3e8ff', padding: '0.4rem', borderRadius: '8px' }}>
-              <Sparkles size={18} color="#9333ea" />
+        {/* Para ti */}
+        <div style={{
+          background: 'linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%)',
+          borderRadius: '16px', padding: '1.25rem 1.5rem',
+          border: '1px solid #e9d5ff',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+          height: '100%', display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '8px',
+              backgroundColor: '#f3e8ff', color: '#9333ea',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Sparkles size={18} />
             </div>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#7e22ce' }}>Para ti</h3>
+            <p style={{ fontSize: '1rem', fontWeight: 700, color: '#6b21a8' }}>Para ti</p>
           </div>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b21a8', lineHeight: 1.5, fontWeight: 500 }}>
+          <p style={{ fontSize: '0.85rem', color: '#581c87', lineHeight: 1.55, fontStyle: 'italic' }}>
             "Tu constancia está mejorando 🙌 Notamos que tu energía promedio aumentó esta semana. ¡Sigue así, tu cuerpo te lo agradece!"
           </p>
         </div>
-
       </div>
-
     </div>
   );
 };
