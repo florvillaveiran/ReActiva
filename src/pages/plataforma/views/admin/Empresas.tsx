@@ -3,10 +3,12 @@ import { Search, MapPin, Users, ChevronLeft, Building, Plus } from 'lucide-react
 
 type EstadoPago = 'abonado' | 'pendiente';
 
-const mockEmpresas: { id: number; nombre: string; ubicacion: string; empleados: number; estado: string; rrhhEmail: string; rrhhPhone: string; pago: EstadoPago }[] = [
-  { id: 1, nombre: 'Empresa Alpha', ubicacion: 'Madrid, España', empleados: 450, estado: 'Activa', rrhhEmail: 'rrhh@alpha.com', rrhhPhone: '+34 600 123 456', pago: 'abonado' },
-  { id: 2, nombre: 'Empresa Beta', ubicacion: 'Bogotá, Colombia', empleados: 320, estado: 'Activa', rrhhEmail: 'contacto@beta.co', rrhhPhone: '+57 300 987 654', pago: 'abonado' },
-  { id: 3, nombre: 'Empresa Gamma', ubicacion: 'CDMX, México', empleados: 890, estado: 'En riesgo', rrhhEmail: 'rh@gamma.mx', rrhhPhone: '+52 55 1234 5678', pago: 'pendiente' },
+// Estado normalizado: todas las empresas en la plataforma están 'Activa'.
+// (Si en el futuro se incorpora "Inactiva" como estado, ampliar el literal.)
+const mockEmpresas: { id: number; nombre: string; ubicacion: string; empleados: number; estado: 'Activa'; rrhhEmail: string; rrhhPhone: string; pago: EstadoPago }[] = [
+  { id: 1, nombre: 'Empresa Alpha', ubicacion: 'Madrid, España',    empleados: 450, estado: 'Activa', rrhhEmail: 'rrhh@alpha.com',     rrhhPhone: '+34 600 123 456', pago: 'abonado' },
+  { id: 2, nombre: 'Empresa Beta',  ubicacion: 'Bogotá, Colombia',  empleados: 320, estado: 'Activa', rrhhEmail: 'contacto@beta.co',   rrhhPhone: '+57 300 987 654', pago: 'abonado' },
+  { id: 3, nombre: 'Empresa Gamma', ubicacion: 'CDMX, México',      empleados: 890, estado: 'Activa', rrhhEmail: 'rh@gamma.mx',        rrhhPhone: '+52 55 1234 5678', pago: 'pendiente' },
 ];
 
 const PAGO_STYLES: Record<EstadoPago, { bg: string; color: string; dot: string; label: string }> = {

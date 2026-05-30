@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
-import { Search, Filter, MoreVertical, AlertCircle } from 'lucide-react';
+import { Search, AlertCircle } from 'lucide-react';
 
-const mockUsuarios = [
-  { id: 1, nombre: 'Ana García', empresa: 'Empresa Alpha', participacion: 95, dolor: false, interaccion: 'Hace 2 horas' },
-  { id: 2, nombre: 'Carlos López', empresa: 'Empresa Beta', participacion: 40, dolor: true, interaccion: 'Hace 5 días' },
-  { id: 3, nombre: 'María Rodríguez', empresa: 'Empresa Alpha', participacion: 88, dolor: false, interaccion: 'Hace 1 hora' },
-  { id: 4, nombre: 'Juan Pérez', empresa: 'Empresa Gamma', participacion: 60, dolor: true, interaccion: 'Hace 2 semanas' },
-  { id: 5, nombre: 'Luis Torres', empresa: 'Empresa Beta', participacion: 92, dolor: false, interaccion: 'Ayer' },
+// Modelo interno de usuario.
+// `fechaCreacion`, `ultimoAcceso` y `cantidadPausas` se guardan para reporting y analytics
+// (no se renderizan en la tabla, son uso interno y para el backend cuando exista).
+// Estado normalizado a 'Activo' único.
+interface Usuario {
+  id: number;
+  nombre: string;
+  empresa: string;
+  participacion: number;
+  dolor: boolean;
+  interaccion: string;
+  estado: 'Activo';
+  fechaCreacion: string;   // ISO date
+  ultimoAcceso: string;    // ISO date
+  cantidadPausas: number;
+}
+
+const mockUsuarios: Usuario[] = [
+  { id: 1, nombre: 'Ana García',      empresa: 'Empresa Alpha', participacion: 95, dolor: false, interaccion: 'Hace 2 horas',   estado: 'Activo', fechaCreacion: '2026-03-12T10:15:00Z', ultimoAcceso: '2026-05-30T08:20:00Z', cantidadPausas: 47 },
+  { id: 2, nombre: 'Carlos López',    empresa: 'Empresa Beta',  participacion: 40, dolor: true,  interaccion: 'Hace 5 días',    estado: 'Activo', fechaCreacion: '2026-04-02T09:30:00Z', ultimoAcceso: '2026-05-25T14:05:00Z', cantidadPausas: 12 },
+  { id: 3, nombre: 'María Rodríguez', empresa: 'Empresa Alpha', participacion: 88, dolor: false, interaccion: 'Hace 1 hora',    estado: 'Activo', fechaCreacion: '2026-02-20T11:00:00Z', ultimoAcceso: '2026-05-30T09:10:00Z', cantidadPausas: 53 },
+  { id: 4, nombre: 'Juan Pérez',      empresa: 'Empresa Gamma', participacion: 60, dolor: true,  interaccion: 'Hace 2 semanas', estado: 'Activo', fechaCreacion: '2026-01-15T08:45:00Z', ultimoAcceso: '2026-05-16T16:30:00Z', cantidadPausas: 28 },
+  { id: 5, nombre: 'Luis Torres',     empresa: 'Empresa Beta',  participacion: 92, dolor: false, interaccion: 'Ayer',           estado: 'Activo', fechaCreacion: '2026-03-28T14:20:00Z', ultimoAcceso: '2026-05-29T18:00:00Z', cantidadPausas: 41 },
 ];
 
 export const Usuarios: React.FC = () => {
@@ -18,6 +35,15 @@ export const Usuarios: React.FC = () => {
     const coincideBusqueda = u.nombre.toLowerCase().includes(search.toLowerCase());
     return coincideEmpresa && coincideBusqueda;
   });
+
+  // Formato corto de fecha (dd MMM yy) en español
+  const formatFecha = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' });
+    } catch {
+      return '—';
+    }
+  };
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
@@ -62,13 +88,15 @@ export const Usuarios: React.FC = () => {
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Participación</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>¿Dolor?</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Última Interacción</th>
-              <th style={{ padding: '1.25rem 1.5rem' }}></th>
+              <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Pausas</th>
+              <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Alta</th>
+              <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Estado</th>
             </tr>
           </thead>
           <tbody>
             {usuariosFiltrados.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron usuarios.</td>
+                <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron usuarios.</td>
               </tr>
             )}
             {usuariosFiltrados.map((usuario, idx) => (
@@ -91,8 +119,18 @@ export const Usuarios: React.FC = () => {
                   )}
                 </td>
                 <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{usuario.interaccion}</td>
-                <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                  <button style={{ color: 'var(--text-muted)' }}><MoreVertical size={20} /></button>
+                <td style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.95rem' }}>{usuario.cantidadPausas}</td>
+                <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.fechaCreacion)}</td>
+                <td style={{ padding: '1.25rem 1.5rem' }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                    padding: '0.3rem 0.75rem', borderRadius: '999px',
+                    backgroundColor: '#ecfdf5', color: '#059669',
+                    fontSize: '0.78rem', fontWeight: 600,
+                  }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#10b981' }} />
+                    {usuario.estado}
+                  </span>
                 </td>
               </tr>
             ))}
