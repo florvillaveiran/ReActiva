@@ -26,8 +26,8 @@ const pricingLevels = [
   { 
     teamSize: "Hasta 150 emp.", 
     monthlyPrice: "USD 2.925", 
-    discountedPrice: "USD 7.897,50", 
-    discountedMonthly: "USD 2.632,50",
+    discountedPrice: "USD 7.899", 
+    discountedMonthly: "USD 2.633",
     note: "" 
   },
   { 
