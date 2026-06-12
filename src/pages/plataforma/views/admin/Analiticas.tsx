@@ -259,7 +259,7 @@ const PERIODO_LABELS: Record<PeriodoKey, string> = {
 };
 
 const EMPRESA_LABELS: Record<EmpresaKey, string> = {
-  all: 'General (Todas las empresas)',
+  all: 'Todas',
   empresa1: 'Empresa Alpha',
   empresa2: 'Empresa Beta',
   empresa3: 'Empresa Gamma',
@@ -329,12 +329,12 @@ export const Analiticas: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas Detalladas</h2>
         
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <div style={{ position: 'relative' }}>
-            <Filter size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Filter size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
-              style={{ paddingLeft: '2.5rem', width: '220px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
+              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '160px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
               value={filtro}
               onChange={(e) => setFiltro(e.target.value as EmpresaKey)}
             >
@@ -344,11 +344,11 @@ export const Analiticas: React.FC = () => {
             </select>
           </div>
 
-          <div style={{ position: 'relative' }}>
-            <Calendar size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
-              style={{ paddingLeft: '2.5rem', width: '180px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
+              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '160px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value as PeriodoKey)}
             >
@@ -358,9 +358,14 @@ export const Analiticas: React.FC = () => {
             </select>
           </div>
 
-          <button className="btn-primary" onClick={handleDescargarPDF} disabled={generandoPDF}>
-            <Download size={20} />
-            {generandoPDF ? 'Generando...' : 'Descargar informe (PDF)'}
+          <button
+            className="btn-primary"
+            onClick={handleDescargarPDF}
+            disabled={generandoPDF}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
+          >
+            <Download size={16} />
+            {generandoPDF ? 'Generando...' : 'Descargar informe'}
           </button>
         </div>
       </div>

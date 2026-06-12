@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { Search, MapPin, Users, ChevronLeft, Building, Plus } from 'lucide-react';
+import { Search, MapPin, Users, ChevronLeft, Building, Plus, Phone, Mail, User } from 'lucide-react';
 
 type EstadoPago = 'abonado' | 'pendiente';
 
-// Estado normalizado: todas las empresas en la plataforma están 'Activa'.
-// (Si en el futuro se incorpora "Inactiva" como estado, ampliar el literal.)
-const mockEmpresas: { id: number; nombre: string; ubicacion: string; empleados: number; estado: 'Activa'; rrhhEmail: string; rrhhPhone: string; pago: EstadoPago }[] = [
-  { id: 1, nombre: 'Empresa Alpha', ubicacion: 'Madrid, España',    empleados: 450, estado: 'Activa', rrhhEmail: 'rrhh@alpha.com',     rrhhPhone: '+34 600 123 456', pago: 'abonado' },
-  { id: 2, nombre: 'Empresa Beta',  ubicacion: 'Bogotá, Colombia',  empleados: 320, estado: 'Activa', rrhhEmail: 'contacto@beta.co',   rrhhPhone: '+57 300 987 654', pago: 'abonado' },
-  { id: 3, nombre: 'Empresa Gamma', ubicacion: 'CDMX, México',      empleados: 890, estado: 'Activa', rrhhEmail: 'rh@gamma.mx',        rrhhPhone: '+52 55 1234 5678', pago: 'pendiente' },
+const mockEmpresas: { id: number; nombre: string; ubicacion: string; empleados: number; estado: 'Activa'; contactoNombre: string; rrhhEmail: string; rrhhPhone: string; pago: EstadoPago }[] = [
+  { id: 1, nombre: 'Empresa Alpha', ubicacion: 'Madrid, España',    empleados: 450, estado: 'Activa', contactoNombre: 'María González',  rrhhEmail: 'rrhh@alpha.com',     rrhhPhone: '+34 600 123 456', pago: 'abonado' },
+  { id: 2, nombre: 'Empresa Beta',  ubicacion: 'Bogotá, Colombia',  empleados: 320, estado: 'Activa', contactoNombre: 'Carlos Ramírez',  rrhhEmail: 'contacto@beta.co',   rrhhPhone: '+57 300 987 654', pago: 'abonado' },
+  { id: 3, nombre: 'Empresa Gamma', ubicacion: 'CDMX, México',      empleados: 890, estado: 'Activa', contactoNombre: 'Ana Martínez',    rrhhEmail: 'rh@gamma.mx',        rrhhPhone: '+52 55 1234 5678', pago: 'pendiente' },
 ];
 
 const PAGO_STYLES: Record<EstadoPago, { bg: string; color: string; dot: string; label: string }> = {
@@ -41,16 +39,16 @@ export const Empresas: React.FC = () => {
             <input type="number" className="input-field" placeholder="Ej: 150" />
           </div>
           <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label className="form-label">Email Contacto RRHH</label>
-            <input type="email" className="input-field" placeholder="rrhh@empresa.com" />
+            <label className="form-label">Nombre de Contacto</label>
+            <input type="text" className="input-field" placeholder="Ej: María González" />
           </div>
           <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label className="form-label">Nombre de Contacto</label>
-            <input type="text" className="input-field" placeholder="Ej: María González" required />
+            <label className="form-label">Celular de Contacto</label>
+            <input type="tel" className="input-field" placeholder="+54 9 11 1234 5678" />
           </div>
           <div className="form-group" style={{ marginBottom: '2.5rem' }}>
-            <label className="form-label">Celular de Contacto</label>
-            <input type="tel" className="input-field" placeholder="+34 600 123 456" required />
+            <label className="form-label">Email de Contacto</label>
+            <input type="email" className="input-field" placeholder="contacto@empresa.com" />
           </div>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
             <button className="btn-secondary" onClick={() => setVista('lista')}>Cancelar</button>
@@ -65,8 +63,12 @@ export const Empresas: React.FC = () => {
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>Empresas Registradas</h2>
-        <button className="btn-primary" onClick={() => setVista('nueva')}>
-          <Plus size={20} />
+        <button
+          className="btn-primary"
+          onClick={() => setVista('nueva')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
+        >
+          <Plus size={18} />
           Nueva Empresa
         </button>
       </div>
@@ -87,29 +89,51 @@ export const Empresas: React.FC = () => {
         {mockEmpresas.map(empresa => {
           const pago = PAGO_STYLES[empresa.pago];
           return (
-            <div key={empresa.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem' }}>
-              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-secondary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Building size={24} color="var(--primary-color)" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.25rem' }}>{empresa.nombre}</h3>
-                  <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><MapPin size={16} /> {empresa.ubicacion}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Users size={16} /> {empresa.empleados} empleados</span>
+            <div key={empresa.id} className="card" style={{ padding: '1.5rem' }}>
+              {/* Fila superior: logo + nombre + estado */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-secondary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Building size={24} color="var(--primary-color)" />
                   </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.2rem' }}>{empresa.nombre}</h3>
+                    <div style={{ display: 'flex', gap: '1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><MapPin size={14} /> {empresa.ubicacion}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Users size={14} /> {empresa.empleados} empleados</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badge de pago */}
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.4rem 0.9rem', borderRadius: '999px',
+                  backgroundColor: pago.bg, color: pago.color,
+                  fontSize: '0.82rem', fontWeight: 600, flexShrink: 0,
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: pago.dot, flexShrink: 0 }} />
+                  {pago.label}
                 </div>
               </div>
 
-              {/* Estado de pago mensual */}
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.4rem 0.9rem', borderRadius: '999px',
-                backgroundColor: pago.bg, color: pago.color,
-                fontSize: '0.82rem', fontWeight: 600,
-              }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: pago.dot, flexShrink: 0 }} />
-                {pago.label}
+              {/* Separador + info de contacto */}
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.85rem' }}>
+                <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.55rem' }}>Contacto</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 2rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 }}>
+                    <User size={14} color="var(--primary-color)" />
+                    {empresa.contactoNombre}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 }}>
+                    <Phone size={14} color="var(--primary-color)" />
+                    {empresa.rrhhPhone}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 }}>
+                    <Mail size={14} color="var(--primary-color)" />
+                    {empresa.rrhhEmail}
+                  </span>
+                </div>
               </div>
             </div>
           );

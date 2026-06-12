@@ -742,12 +742,17 @@ export const UsuarioDashboard: React.FC = () => {
                       cursor: puedeCompletar ? 'pointer' : 'not-allowed',
                       transition: 'all 0.2s',
                       boxShadow: puedeCompletar ? '0 4px 12px rgba(0, 194, 168, 0.25)' : 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
                     {!isAvailable ? (
-                      activeStatusObj?.status === 'locked' ? <><Lock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Bloqueada</> : 'Hecha'
+                      activeStatusObj?.status === 'locked' ? <><Lock size={14} style={{ marginRight: 6 }} />Bloqueada</> : 'Hecha'
                     ) : (!videoVisto && requiereVideo) ? (
-                      <><Play size={14} style={{ verticalAlign: 'middle', marginRight: 6, fill: 'white' }} />Mirá el video</>
+                      <><Play size={14} style={{ marginRight: 6, fill: 'white' }} />Mirá el video</>
                     ) : 'Completar pausa'}
                   </button>
                 </div>
