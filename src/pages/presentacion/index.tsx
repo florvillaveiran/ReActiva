@@ -11,6 +11,7 @@ import Benefits from './components/Benefits';
 import Pricing from './components/Pricing';
 import Contact from './components/Contact';
 import Comparison from './components/Comparison';
+import Solution from './components/Solution';
 import { ChevronUp, ChevronDown, MousePointer2 } from 'lucide-react';
 
 const slides = [
@@ -18,6 +19,7 @@ const slides = [
   { id: 'que-es', component: WhatIs },
   { id: 'costo', component: SedentaryCost },
   { id: 'metodologia', component: Methodology },
+  { id: 'solucion', component: Solution },
   { id: 'beneficios', component: Benefits },
   { id: 'plataforma', component: PlatformFeatures },
   { id: 'analisis', component: SpaceAnalysis },
