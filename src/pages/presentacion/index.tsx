@@ -96,7 +96,7 @@ function App() {
   const CurrentComponent = slides[currentSlide].component;
 
   return (
-    <div className="fixed inset-0 bg-brand-cream overflow-hidden font-sans selection:bg-brand-primary/20">
+    <div id="presentacion-root" className="fixed inset-0 bg-brand-cream overflow-hidden font-sans selection:bg-brand-primary/20">
 
 
 

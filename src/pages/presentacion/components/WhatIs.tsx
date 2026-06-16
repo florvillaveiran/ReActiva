@@ -1,27 +1,27 @@
 import { motion } from 'motion/react';
-import { BicepsFlexed, Brain, Zap } from 'lucide-react';
+import { Zap, Target, Rocket } from 'lucide-react';
 
 const cardData = [
   {
-    title: "Previene dolores",
-    description: "Optimiza la postura y reduce la tensión muscular durante la jornada.",
-    icon: BicepsFlexed,
-    bgColor: "bg-[#C8E6C9]",
-    iconColor: "text-brand-primary",
-    accentColor: "bg-brand-tertiary-container"
+    title: "Más energía",
+    description: "Pequeños momentos de movimiento que ayudan a recuperar vitalidad y reducir el cansancio.",
+    icon: Zap,
+    bgColor: "bg-[#FFF8E1]",
+    iconColor: "text-[#F9A825]",
+    accentColor: "bg-amber-200"
   },
   {
-    title: "Reduce estrés",
-    description: "Técnicas de relajación diseñadas para aliviar la fatiga mental y mejorar el bienestar emocional.",
-    icon: Brain,
+    title: "Más foco",
+    description: "Actividades para despejar la mente, mejorar la atención y la claridad.",
+    icon: Target,
     bgColor: "bg-[#E3F2FD]",
     iconColor: "text-[#1E88E5]",
     accentColor: "bg-blue-200"
   },
   {
-    title: "Mejora el rendimiento",
-    description: "Recupera la energía y el enfoque con movimientos dinamizadores.",
-    icon: Zap,
+    title: "Más productividad",
+    description: "Promovemos equipos más activos, motivados y eficientes.",
+    icon: Rocket,
     bgColor: "bg-[#E0F2F1]",
     iconColor: "text-[#26A69A]",
     accentColor: "bg-brand-tertiary-container"

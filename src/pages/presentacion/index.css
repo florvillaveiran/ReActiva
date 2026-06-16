@@ -23,16 +23,12 @@
   --radius-4xl: 4rem;
 }
 
-@layer base {
-  body {
-    @apply bg-brand-cream text-brand-on-surface font-sans;
-  }
-}
+/* Global body styles removed to prevent bleed */
 
-.glass-card {
+#presentacion-root .glass-card {
   @apply bg-white/70 backdrop-blur-md border border-white/30 shadow-xl;
 }
 
-.tonal-layer {
+#presentacion-root .tonal-layer {
   @apply bg-white shadow-[0_20px_40px_-15px_rgba(18,108,64,0.05)];
 }
