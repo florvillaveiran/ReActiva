@@ -18,11 +18,11 @@ const slides = [
   { id: 'que-es', component: WhatIs },
   { id: 'costo', component: SedentaryCost },
   { id: 'metodologia', component: Methodology },
+  { id: 'beneficios', component: Benefits },
   { id: 'plataforma', component: PlatformFeatures },
   { id: 'analisis', component: SpaceAnalysis },
   { id: 'servicios', component: Services },
   { id: 'comparativa', component: Comparison },
-  { id: 'beneficios', component: Benefits },
   { id: 'precios', component: Pricing },
   { id: 'contacto', component: Contact },
 ];
