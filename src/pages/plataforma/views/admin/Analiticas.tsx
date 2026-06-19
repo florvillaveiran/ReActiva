@@ -7,7 +7,7 @@ import { useAdminStats } from '../../hooks/useAdminStats';
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 type EmpresaKey = 'all' | 'empresa1' | 'empresa2' | 'empresa3';
-type PeriodoKey = 'semana' | 'mes' | 'trimestre' | 'anio';
+type PeriodoKey = 'semanal' | 'mensual' | 'anual' | 'personalizado';
 
 interface AnaliticaSetBase {
   zonas: { name: string; valor: number }[];
@@ -49,13 +49,11 @@ const enrichSet = (base: AnaliticaSetBase): AnaliticaSet => {
   };
 };
 
-// ─── Mocks por empresa y período ───────────────────────────────────────────
-// Cada empresa tiene un perfil distinto; cada período tiene una granularidad propia.
-// TODO(backend): reemplazar por fetch a /api/admin/analytics?empresa=...&periodo=...
+// ─── Mocks por empresa y período ───────────────────────
 const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> = {
   // ── Vista General (Todas las empresas) ──────────────────────────────────
   all: {
-    semana: {
+    semanal: {
       zonas: [
         { name: 'Espalda Baja', valor: 42 }, { name: 'Cuello', valor: 28 },
         { name: 'Hombros', valor: 18 }, { name: 'Muñecas', valor: 12 },
@@ -66,7 +64,7 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Vie', energia: 4.0, satisfaccion: 90, participacion: 94 },
       ],
     },
-    mes: {
+    mensual: {
       zonas: [
         { name: 'Espalda Baja', valor: 45 }, { name: 'Cuello', valor: 30 },
         { name: 'Hombros', valor: 15 }, { name: 'Muñecas', valor: 10 },
@@ -78,18 +76,7 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Sem 4', energia: 4.1, satisfaccion: 92, participacion: 95 },
       ],
     },
-    trimestre: {
-      zonas: [
-        { name: 'Espalda Baja', valor: 48 }, { name: 'Cuello', valor: 32 },
-        { name: 'Hombros', valor: 14 }, { name: 'Muñecas', valor: 6 },
-      ],
-      evolucion: [
-        { name: 'Mes 1', energia: 3.1, satisfaccion: 72, participacion: 78 },
-        { name: 'Mes 2', energia: 3.6, satisfaccion: 83, participacion: 86 },
-        { name: 'Mes 3', energia: 4.0, satisfaccion: 90, participacion: 93 },
-      ],
-    },
-    anio: {
+    anual: {
       zonas: [
         { name: 'Espalda Baja', valor: 50 }, { name: 'Cuello', valor: 28 },
         { name: 'Hombros', valor: 15 }, { name: 'Muñecas', valor: 7 },
@@ -101,10 +88,19 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'T4', energia: 4.2, satisfaccion: 93, participacion: 95 },
       ],
     },
+    personalizado: {
+      zonas: [
+        { name: 'Espalda Baja', valor: 45 }, { name: 'Cuello', valor: 30 },
+      ],
+      evolucion: [
+        { name: 'Inicio', energia: 3.2, satisfaccion: 75, participacion: 80 },
+        { name: 'Fin', energia: 4.1, satisfaccion: 92, participacion: 95 },
+      ],
+    },
   },
   // ── Empresa Alpha ───────────────────────────────────────────────────────
   empresa1: {
-    semana: {
+    semanal: {
       zonas: [
         { name: 'Cuello', valor: 52 }, { name: 'Espalda Baja', valor: 30 },
         { name: 'Hombros', valor: 15 }, { name: 'Rodillas', valor: 3 },
@@ -115,7 +111,7 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Vie', energia: 4.2, satisfaccion: 92, participacion: 96 },
       ],
     },
-    mes: {
+    mensual: {
       zonas: [
         { name: 'Cuello', valor: 50 }, { name: 'Espalda Baja', valor: 35 },
         { name: 'Hombros', valor: 15 }, { name: 'Rodillas', valor: 0 },
@@ -127,18 +123,7 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Sem 4', energia: 4.3, satisfaccion: 94, participacion: 97 },
       ],
     },
-    trimestre: {
-      zonas: [
-        { name: 'Cuello', valor: 48 }, { name: 'Espalda Baja', valor: 34 },
-        { name: 'Hombros', valor: 14 }, { name: 'Rodillas', valor: 4 },
-      ],
-      evolucion: [
-        { name: 'Mes 1', energia: 3.2, satisfaccion: 74, participacion: 82 },
-        { name: 'Mes 2', energia: 3.7, satisfaccion: 84, participacion: 89 },
-        { name: 'Mes 3', energia: 4.1, satisfaccion: 91, participacion: 95 },
-      ],
-    },
-    anio: {
+    anual: {
       zonas: [
         { name: 'Cuello', valor: 46 }, { name: 'Espalda Baja', valor: 36 },
         { name: 'Hombros', valor: 13 }, { name: 'Rodillas', valor: 5 },
@@ -150,10 +135,19 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'T4', energia: 4.3, satisfaccion: 94, participacion: 97 },
       ],
     },
+    personalizado: {
+      zonas: [
+        { name: 'Cuello', valor: 50 }, { name: 'Espalda Baja', valor: 35 },
+      ],
+      evolucion: [
+        { name: 'Inicio', energia: 3.4, satisfaccion: 78, participacion: 85 },
+        { name: 'Fin', energia: 4.3, satisfaccion: 94, participacion: 97 },
+      ],
+    },
   },
   // ── Empresa Beta ────────────────────────────────────────────────────────
   empresa2: {
-    semana: {
+    semanal: {
       zonas: [
         { name: 'Espalda Baja', valor: 48 }, { name: 'Hombros', valor: 28 },
         { name: 'Cuello', valor: 18 }, { name: 'Piernas', valor: 6 },
@@ -164,7 +158,7 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Vie', energia: 3.8, satisfaccion: 84, participacion: 87 },
       ],
     },
-    mes: {
+    mensual: {
       zonas: [
         { name: 'Espalda Baja', valor: 50 }, { name: 'Hombros', valor: 25 },
         { name: 'Cuello', valor: 20 }, { name: 'Piernas', valor: 5 },
@@ -176,18 +170,7 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Sem 4', energia: 3.9, satisfaccion: 86, participacion: 89 },
       ],
     },
-    trimestre: {
-      zonas: [
-        { name: 'Espalda Baja', valor: 52 }, { name: 'Hombros', valor: 24 },
-        { name: 'Cuello', valor: 18 }, { name: 'Piernas', valor: 6 },
-      ],
-      evolucion: [
-        { name: 'Mes 1', energia: 2.8, satisfaccion: 65, participacion: 70 },
-        { name: 'Mes 2', energia: 3.3, satisfaccion: 76, participacion: 80 },
-        { name: 'Mes 3', energia: 3.7, satisfaccion: 85, participacion: 88 },
-      ],
-    },
-    anio: {
+    anual: {
       zonas: [
         { name: 'Espalda Baja', valor: 54 }, { name: 'Hombros', valor: 22 },
         { name: 'Cuello', valor: 18 }, { name: 'Piernas', valor: 6 },
@@ -199,10 +182,19 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'T4', energia: 3.8, satisfaccion: 87, participacion: 90 },
       ],
     },
+    personalizado: {
+      zonas: [
+        { name: 'Espalda Baja', valor: 50 }, { name: 'Hombros', valor: 25 },
+      ],
+      evolucion: [
+        { name: 'Inicio', energia: 2.9, satisfaccion: 68, participacion: 72 },
+        { name: 'Fin', energia: 3.9, satisfaccion: 86, participacion: 89 },
+      ],
+    },
   },
   // ── Empresa Gamma ───────────────────────────────────────────────────────
   empresa3: {
-    semana: {
+    semanal: {
       zonas: [
         { name: 'Espalda Alta', valor: 38 }, { name: 'Cuello', valor: 32 },
         { name: 'Muñecas', valor: 22 }, { name: 'Hombros', valor: 8 },
@@ -213,7 +205,7 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Vie', energia: 3.4, satisfaccion: 76, participacion: 80 },
       ],
     },
-    mes: {
+    mensual: {
       zonas: [
         { name: 'Espalda Alta', valor: 40 }, { name: 'Cuello', valor: 30 },
         { name: 'Muñecas', valor: 20 }, { name: 'Hombros', valor: 10 },
@@ -225,18 +217,7 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Sem 4', energia: 3.5, satisfaccion: 78, participacion: 82 },
       ],
     },
-    trimestre: {
-      zonas: [
-        { name: 'Espalda Alta', valor: 42 }, { name: 'Cuello', valor: 28 },
-        { name: 'Muñecas', valor: 20 }, { name: 'Hombros', valor: 10 },
-      ],
-      evolucion: [
-        { name: 'Mes 1', energia: 2.5, satisfaccion: 58, participacion: 62 },
-        { name: 'Mes 2', energia: 2.9, satisfaccion: 68, participacion: 72 },
-        { name: 'Mes 3', energia: 3.3, satisfaccion: 76, participacion: 80 },
-      ],
-    },
-    anio: {
+    anual: {
       zonas: [
         { name: 'Espalda Alta', valor: 44 }, { name: 'Cuello', valor: 28 },
         { name: 'Muñecas', valor: 18 }, { name: 'Hombros', valor: 10 },
@@ -248,16 +229,24 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'T4', energia: 3.5, satisfaccion: 80, participacion: 84 },
       ],
     },
+    personalizado: {
+      zonas: [
+        { name: 'Espalda Alta', valor: 40 }, { name: 'Cuello', valor: 30 },
+      ],
+      evolucion: [
+        { name: 'Inicio', energia: 2.6, satisfaccion: 60, participacion: 65 },
+        { name: 'Fin', energia: 3.5, satisfaccion: 78, participacion: 82 },
+      ],
+    },
   },
 };
 
 const PERIODO_LABELS: Record<PeriodoKey, string> = {
-  semana: 'Esta semana',
-  mes: 'Este mes',
-  trimestre: 'Último trimestre',
-  anio: 'Último año',
+  semanal: 'Semanal',
+  mensual: 'Mensual',
+  anual: 'Anual',
+  personalizado: 'Personalizado',
 };
-
 const EMPRESA_LABELS: Record<EmpresaKey, string> = {
   all: 'Todas',
   empresa1: 'Empresa Alpha',
@@ -267,7 +256,18 @@ const EMPRESA_LABELS: Record<EmpresaKey, string> = {
 
 export const Analiticas: React.FC = () => {
   const [filtro, setFiltro] = useState<EmpresaKey>('all');
-  const [periodo, setPeriodo] = useState<PeriodoKey>('mes');
+  const [periodo, setPeriodo] = useState<PeriodoKey>('mensual');
+  
+  // Selectores secundarios condicionales
+  const [semanaSel, setSemanaSel] = useState('Semana del 7 al 13 de julio');
+  const [mesSel, setMesSel] = useState('Julio 2026');
+  const [anioSel, setAnioSel] = useState('2026');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+  
+  // Comparativas
+  const [comparar, setComparar] = useState(false);
+
   const [generandoPDF, setGenerandoPDF] = useState(false);
   const reporteRef = useRef<HTMLDivElement>(null);
 
@@ -279,7 +279,7 @@ export const Analiticas: React.FC = () => {
   // Cualquier otro caso → mock correspondiente a (empresa, periodo). enrichSet agrega foco, dolor, impacto y kpis.
   const data = useMemo<AnaliticaSet>(() => {
     const mock = enrichSet(ANALITICAS_MOCK[filtro][periodo]);
-    if (filtro === 'all' && periodo === 'mes' && stats.hayDatos) {
+    if (filtro === 'all' && periodo === 'mensual' && stats.hayDatos) {
       const evolucionReal = stats.evolucion.map((p, i) => ({
         ...p,
         foco: mock.evolucion[i]?.foco ?? 0,
@@ -329,12 +329,13 @@ export const Analiticas: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas Detalladas</h2>
         
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Empresa */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Filter size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
-              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '160px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
+              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
               value={filtro}
               onChange={(e) => setFiltro(e.target.value as EmpresaKey)}
             >
@@ -344,19 +345,86 @@ export const Analiticas: React.FC = () => {
             </select>
           </div>
 
+          {/* Período (Principal) */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
-              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '160px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
+              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
               value={periodo}
-              onChange={(e) => setPeriodo(e.target.value as PeriodoKey)}
+              onChange={(e) => {
+                setPeriodo(e.target.value as PeriodoKey);
+                setComparar(false); // Resetear comparativa al cambiar período
+              }}
             >
               {(Object.keys(PERIODO_LABELS) as PeriodoKey[]).map(k => (
                 <option key={k} value={k}>{PERIODO_LABELS[k]}</option>
               ))}
             </select>
           </div>
+
+          {/* Selectores Secundarios */}
+          {periodo === 'semanal' && (
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <select
+                className="input-field"
+                style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '220px', backgroundColor: 'var(--bg-color)' }}
+                value={semanaSel}
+                onChange={(e) => setSemanaSel(e.target.value)}
+              >
+                <option value="Semana del 7 al 13 de julio">Semana del 7 al 13 de julio</option>
+                <option value="Semana del 30 al 6 de julio">Semana del 30 al 6 de julio</option>
+                <option value="Semana del 23 al 29 de junio">Semana del 23 al 29 de junio</option>
+              </select>
+            </div>
+          )}
+
+          {periodo === 'mensual' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <select
+                className="input-field"
+                style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)' }}
+                value={mesSel}
+                onChange={(e) => setMesSel(e.target.value)}
+              >
+                <option value="Julio 2026">Julio 2026</option>
+                <option value="Junio 2026">Junio 2026</option>
+                <option value="Mayo 2026">Mayo 2026</option>
+              </select>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
+                Comparar con mes anterior
+              </label>
+            </div>
+          )}
+
+          {periodo === 'anual' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <select
+                className="input-field"
+                style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '100px', backgroundColor: 'var(--bg-color)' }}
+                value={anioSel}
+                onChange={(e) => setAnioSel(e.target.value)}
+              >
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+              </select>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
+                Comparar con año anterior
+              </label>
+            </div>
+          )}
+
+          {periodo === 'personalizado' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input type="date" className="input-field" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
+              <span style={{ color: 'var(--text-muted)' }}>-</span>
+              <input type="date" className="input-field" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
+            </div>
+          )}
+
+          <div style={{ flexGrow: 1 }} />
 
           <button
             className="btn-primary"
@@ -365,7 +433,7 @@ export const Analiticas: React.FC = () => {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
           >
             <Download size={16} />
-            {generandoPDF ? 'Generando...' : 'Descargar informe'}
+            {generandoPDF ? 'Generando...' : 'Generar informe'}
           </button>
         </div>
       </div>
