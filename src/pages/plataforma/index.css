@@ -254,3 +254,551 @@
   border: 1px solid var(--border-color) !important;
   box-shadow: var(--shadow-md) !important;
 }
+
+/* ---- ReActiva Tips ---- */
+#plataforma-root .tips-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: fadeIn 0.3s ease-out;
+  padding-bottom: 1.5rem;
+}
+
+#plataforma-root .tips-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+#plataforma-root .tips-header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-color);
+  line-height: 1.15;
+}
+
+#plataforma-root .tips-header p {
+  margin-top: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  max-width: 620px;
+}
+
+#plataforma-root .tips-header-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background-color: #ecfdf5;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #a7f3d0;
+  flex-shrink: 0;
+}
+
+#plataforma-root .tips-highlight-card {
+  background: linear-gradient(135deg, #f0fdf9 0%, #ffffff 100%);
+  border: 1px solid #d1fae5;
+  border-radius: 20px;
+  padding: 1.35rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+}
+
+#plataforma-root .tips-highlight-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+#plataforma-root .tips-daily-card {
+  background: linear-gradient(135deg, #f0fdf9 0%, #ffffff 100%);
+  border: 1px solid #d1fae5;
+  border-radius: 20px;
+  padding: 1.35rem 1.5rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+}
+
+#plataforma-root .tips-daily-card p {
+  color: var(--text-color);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  max-width: 780px;
+  font-weight: 600;
+}
+
+#plataforma-root .tips-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--primary-color);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.65rem;
+}
+
+#plataforma-root .tips-detail-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+#plataforma-root .tips-detail-heading h2 {
+  color: var(--text-color);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+#plataforma-root .tips-detail-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background-color: #ecfdf5;
+  color: #059669;
+  font-size: 0.74rem;
+  font-weight: 700;
+  border: 1px solid #a7f3d0;
+  white-space: nowrap;
+}
+
+#plataforma-root .tips-detail-main {
+  color: var(--text-color);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  max-width: 760px;
+  font-weight: 650;
+  margin-bottom: 1rem;
+}
+
+#plataforma-root .tips-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+#plataforma-root .tips-detail-block {
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid #dff7ee;
+  border-radius: 14px;
+  padding: 0.9rem;
+}
+
+#plataforma-root .tips-detail-block h3 {
+  color: #047857;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.45rem;
+}
+
+#plataforma-root .tips-detail-block p,
+#plataforma-root .tips-detail-block li {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.48;
+}
+
+#plataforma-root .tips-detail-block ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+#plataforma-root .tips-detail-block li {
+  position: relative;
+  padding-left: 1rem;
+}
+
+#plataforma-root .tips-detail-block li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.58em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+}
+
+#plataforma-root .tips-apply-button,
+#plataforma-root .tips-card-button {
+  border: none;
+  border-radius: 999px;
+  background-color: var(--primary-color);
+  color: #ffffff;
+  font-family: var(--font);
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+#plataforma-root .tips-apply-button {
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 194, 168, 0.22);
+  flex-shrink: 0;
+}
+
+#plataforma-root .tips-apply-button:hover,
+#plataforma-root .tips-card-button:hover {
+  background-color: var(--primary-hover);
+}
+
+#plataforma-root .tips-apply-button:active,
+#plataforma-root .tips-card-button:active {
+  transform: scale(0.98);
+}
+
+#plataforma-root .tips-apply-button.is-applied {
+  background-color: #ecfdf5;
+  color: #059669;
+  box-shadow: none;
+  border: 1px solid #a7f3d0;
+}
+
+#plataforma-root .tips-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+#plataforma-root .tips-card {
+  background-color: #ffffff;
+  border: 1px solid #eef0f3;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  min-height: 290px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+#plataforma-root .tips-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#plataforma-root .tips-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#plataforma-root .tips-card h2 {
+  color: var(--text-color);
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+#plataforma-root .tips-card-description {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+#plataforma-root .tips-recommendation {
+  background-color: #f8fafc;
+  border: 1px solid #eef0f3;
+  border-radius: 14px;
+  padding: 0.85rem;
+  margin-top: auto;
+}
+
+#plataforma-root .tips-recommendation span {
+  display: block;
+  color: var(--primary-color);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+#plataforma-root .tips-recommendation p {
+  color: var(--text-color);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+#plataforma-root .tips-card-button {
+  align-self: flex-start;
+  padding: 0.68rem 1.05rem;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #10b981 100%);
+  box-shadow: 0 4px 12px rgba(0, 194, 168, 0.2);
+  letter-spacing: 0.02em;
+}
+
+#plataforma-root .tips-card-button:hover {
+  background: linear-gradient(135deg, var(--primary-hover) 0%, #059669 100%);
+  box-shadow: 0 7px 16px rgba(0, 194, 168, 0.24);
+  transform: translateY(-1px);
+}
+
+#plataforma-root .tips-detail-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  gap: 0.9rem;
+}
+
+#plataforma-root .tips-back-button {
+  align-self: flex-start;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: border-color 0.2s, color 0.2s, background-color 0.2s;
+}
+
+#plataforma-root .tips-back-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: #f0fdf9;
+}
+
+#plataforma-root .tips-full-header {
+  background: linear-gradient(135deg, #f0fdf9 0%, #ffffff 100%);
+  border: 1px solid #d1fae5;
+  border-radius: 20px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+}
+
+#plataforma-root .tips-full-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#plataforma-root .tips-full-copy {
+  min-width: 0;
+}
+
+#plataforma-root .tips-full-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+
+#plataforma-root .tips-full-meta > span:first-child {
+  color: var(--primary-color);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#plataforma-root .tips-full-header h1 {
+  color: var(--text-color);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 0.28rem;
+}
+
+#plataforma-root .tips-full-header p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.42;
+  max-width: 680px;
+}
+
+#plataforma-root .tips-full-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+#plataforma-root .tips-full-card {
+  background-color: #ffffff;
+  border: 1px solid #eef0f3;
+  border-radius: 16px;
+  padding: 0.9rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+#plataforma-root .tips-full-card-primary,
+#plataforma-root .tips-challenge-card {
+  border-color: #d1fae5;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf9 100%);
+}
+
+#plataforma-root .tips-full-card-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--primary-color);
+  margin-bottom: 0.45rem;
+}
+
+#plataforma-root .tips-full-card-label span {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#plataforma-root .tips-full-card p,
+#plataforma-root .tips-full-card li {
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  line-height: 1.42;
+}
+
+#plataforma-root .tips-full-card-primary p,
+#plataforma-root .tips-challenge-card p {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+#plataforma-root .tips-full-card ol,
+#plataforma-root .tips-full-card ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  padding-left: 1rem;
+}
+
+#plataforma-root .tips-full-card ul {
+  list-style: none;
+  padding-left: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+#plataforma-root .tips-full-card ul li {
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  background-color: #f8fafc;
+  border: 1px solid #eef0f3;
+  line-height: 1.2;
+}
+
+#plataforma-root .tips-note {
+  margin-top: 0.55rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eef0f3;
+  font-size: 0.72rem !important;
+  font-style: italic;
+}
+
+#plataforma-root .tips-full-apply {
+  align-self: flex-start;
+  padding: 0.72rem 1.15rem;
+}
+
+@media (max-width: 1180px) {
+  #plataforma-root .tips-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #plataforma-root .tips-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #plataforma-root .tips-full-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  #plataforma-root .sidebar {
+    position: static;
+    width: 100%;
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  #plataforma-root .app-container {
+    flex-direction: column;
+  }
+
+  #plataforma-root .main-content {
+    margin-left: 0;
+    padding: 1.25rem;
+  }
+
+  #plataforma-root .tips-header {
+    align-items: flex-start;
+  }
+
+  #plataforma-root .tips-highlight-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  #plataforma-root .tips-full-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #plataforma-root .tips-full-header h1 {
+    font-size: 1.45rem;
+  }
+
+  #plataforma-root .tips-full-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #plataforma-root .tips-detail-heading {
+    flex-direction: column;
+  }
+
+  #plataforma-root .tips-detail-badge {
+    align-self: flex-start;
+  }
+
+  #plataforma-root .tips-apply-button {
+    width: 100%;
+  }
+
+  #plataforma-root .tips-full-apply {
+    align-self: stretch;
+  }
+
+  #plataforma-root .tips-grid {
+    grid-template-columns: 1fr;
+  }
+}
