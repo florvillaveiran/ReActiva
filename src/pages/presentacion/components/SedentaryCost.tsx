@@ -1,210 +1,202 @@
 import { motion } from 'motion/react';
-import { 
-  UserMinus, Monitor, Briefcase, TrendingUp, 
-  Zap, Brain, BarChart2, BriefcaseMedical, RefreshCw, 
-  ArrowRight, ArrowDown, Building2, BookOpen 
+import {
+  UserMinus,
+  Monitor,
+  Briefcase,
+  TrendingUp,
+  Zap,
+  Brain,
+  BarChart2,
+  BriefcaseMedical,
+  RefreshCw,
+  ArrowRight,
+  ArrowDown,
+  Building2,
 } from 'lucide-react';
+
+const mainStat = {
+  value: 'Hasta 3x',
+  label: 'mayores pérdidas que el ausentismo',
+};
+
+const secondaryStats = [
+  {
+    icon: UserMinus,
+    value: '50%',
+    label: 'dolor musculoesquelético',
+    color: 'text-red-600',
+    bg: 'bg-red-50',
+  },
+  {
+    icon: Monitor,
+    value: '65-75%',
+    label: 'posición sentada',
+    color: 'text-orange-500',
+    bg: 'bg-orange-50',
+  },
+  {
+    icon: Briefcase,
+    value: '60-80%',
+    label: 'trabajan con molestias',
+    color: 'text-amber-500',
+    bg: 'bg-amber-50',
+  },
+];
 
 export default function SedentaryCost() {
   return (
-    <section className="min-h-screen px-4 md:px-8 py-12 flex flex-col items-center justify-center bg-[#FDFBF9] overflow-hidden">
-      <div className="max-w-[1200px] w-full flex flex-col gap-8 md:gap-10">
-        
-        {/* Header */}
+    <section className="h-full px-5 md:px-10 py-8 md:py-10 flex items-start justify-center bg-[#FDFBF9] overflow-hidden">
+      <div className="presentation-safe max-w-[1240px] w-full flex flex-col gap-2.5">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center md:text-left"
+          className="text-center md:text-left shrink-0"
         >
-          <h2 className="font-display text-4xl md:text-5xl lg:text-[56px] text-[#0B1B3D] tracking-tight mb-3 font-bold">
-            El costo del sedentarismo
+          <h2 className="font-display text-[1.95rem] leading-[1.05] md:text-[2.95rem] text-[#0B1B3D] tracking-tight mb-1 font-bold">
+            El costo del sedentar<span className="relative inline-block">ı<span className="absolute top-[0.13em] left-1/2 -translate-x-1/2 w-[0.18em] h-[0.18em] bg-brand-primary rounded-full"></span></span>smo
           </h2>
-          <p className="font-sans text-lg md:text-2xl text-gray-600 font-medium">
+          <p className="font-sans text-[0.92rem] md:text-base text-gray-600 font-medium leading-tight">
             Un problema silencioso que impacta todos los días en tu empresa.
           </p>
         </motion.div>
 
-        {/* Main Content: Cards */}
-        <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8 w-full relative">
-          
-          {/* Left Card */}
-          <motion.div 
+        <div className="grid grid-cols-1 lg:grid-cols-[1.18fr_auto_0.82fr] items-stretch gap-4 lg:gap-5 w-full relative">
+          <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="flex-1 bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] p-6 md:p-10 w-full"
+            className="bg-white border border-red-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[28px] md:rounded-[30px] px-6 py-4 md:px-8 md:py-4 w-full"
           >
-            <h3 className="text-red-500 text-sm md:text-sm font-bold tracking-[0.15em] mb-8 text-center uppercase">
+            <h3 className="text-red-500 text-[10px] md:text-xs font-bold tracking-[0.18em] mb-3 md:mb-4 text-center uppercase">
               Datos que no podemos ignorar
             </h3>
-            <div className="flex flex-col gap-8">
-              {/* Stat 1 */}
-              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0">
-                  <UserMinus size={28} strokeWidth={1.5} />
+
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-5 md:gap-6 rounded-[22px] bg-red-50/70 border border-red-100 px-5 py-3.5 md:px-6 md:py-3.5">
+                <div className="w-14 h-14 md:w-[60px] md:h-[60px] rounded-full bg-white text-red-600 flex items-center justify-center shrink-0 shadow-sm">
+                  <TrendingUp size={27} strokeWidth={1.6} />
                 </div>
-                <div className="flex flex-col pt-1">
-                  <span className="text-3xl md:text-[38px] font-bold text-red-600 mb-1 leading-none">50%</span>
-                  <span className="text-gray-700 text-sm md:text-[15px] font-medium leading-snug">
-                    de los trabajadores de oficina reportan dolor musculoesquelético.
+                <div className="flex flex-col">
+                  <span className="text-[2.5rem] md:text-[3rem] font-bold text-red-600 leading-none tracking-tight">
+                    {mainStat.value}
+                  </span>
+                  <span className="text-[#0B1B3D] text-sm md:text-base font-bold leading-tight mt-1">
+                    {mainStat.label}
                   </span>
                 </div>
               </div>
-              {/* Stat 2 */}
-              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
-                  <Monitor size={28} strokeWidth={1.5} />
-                </div>
-                <div className="flex flex-col pt-1">
-                  <span className="text-3xl md:text-[38px] font-bold text-orange-500 mb-1 leading-none">65–75%</span>
-                  <span className="text-gray-700 text-sm md:text-[15px] font-medium leading-snug">
-                    de la jornada laboral transcurre en posición sentada.
-                  </span>
-                </div>
-              </div>
-              {/* Stat 3 */}
-              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
-                  <Briefcase size={28} strokeWidth={1.5} />
-                </div>
-                <div className="flex flex-col pt-1">
-                  <span className="text-3xl md:text-[38px] font-bold text-amber-500 mb-1 leading-none">60–80%</span>
-                  <span className="text-gray-700 text-sm md:text-[15px] font-medium leading-snug">
-                    de quienes presentan dolor continúan trabajando con molestias (presentismo).
-                  </span>
-                </div>
-              </div>
-              {/* Stat 4 */}
-              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                  <TrendingUp size={28} strokeWidth={1.5} />
-                </div>
-                <div className="flex flex-col pt-1">
-                  <span className="text-3xl md:text-[38px] font-bold text-red-600 mb-1 leading-none">Hasta 3x</span>
-                  <span className="text-gray-700 text-sm md:text-[15px] font-medium leading-snug">
-                    más costo: el presentismo puede generar mayores pérdidas que el ausentismo.
-                  </span>
-                </div>
+
+              <div className="flex flex-col gap-2.5">
+                {secondaryStats.map((stat, index) => (
+                  <div key={index} className="flex items-center gap-5 rounded-2xl bg-white border border-slate-100 px-5 py-2.5 md:px-6 md:py-3">
+                    <div className={`w-11 h-11 md:w-12 md:h-12 rounded-full ${stat.bg} ${stat.color} flex items-center justify-center shrink-0`}>
+                      <stat.icon size={21} strokeWidth={1.6} />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className={`text-3xl md:text-[1.95rem] font-bold ${stat.color} leading-none tracking-tight`}>
+                        {stat.value}
+                      </span>
+                      <span className="text-[#0B1B3D] text-[0.84rem] md:text-[0.92rem] font-bold leading-snug mt-0.5">
+                        {stat.label}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>
 
-          {/* Middle Arrow */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.3 }}
-            className="hidden lg:flex items-center justify-center w-14 h-14 rounded-full bg-white shadow-[0_4px_20px_rgb(0,0,0,0.08)] shrink-0 z-10"
+            className="hidden lg:flex self-center items-center justify-center w-11 h-11 rounded-full bg-white shadow-[0_4px_20px_rgb(0,0,0,0.08)] shrink-0 z-10"
           >
-            <ArrowRight className="text-red-600" size={24} strokeWidth={3} />
+            <ArrowRight className="text-red-600" size={20} strokeWidth={3} />
           </motion.div>
 
-          {/* Right Card */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="flex-1 bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] p-6 md:p-10 w-full flex flex-col h-full min-h-[580px]"
+            className="bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[28px] md:rounded-[30px] px-5 py-5 md:px-6 md:py-6 w-full flex flex-col min-h-[390px] lg:max-w-[420px] justify-self-center"
           >
-            <h3 className="text-green-700 text-sm md:text-sm font-bold tracking-[0.15em] mb-12 text-center uppercase">
+            <h3 className="text-green-700 text-[10px] md:text-xs font-bold tracking-[0.18em] mb-4 md:mb-5 text-center uppercase">
               Lo que le cuesta a tu empresa
             </h3>
-            
+
             <div className="flex-1 flex flex-col items-center justify-center w-full">
-              {/* Flow Items */}
-              <div className="flex items-center gap-5 w-full max-w-[280px]">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-yellow-50 text-yellow-500 flex items-center justify-center shrink-0">
-                  <Zap size={28} strokeWidth={1.5} />
+              <div className="flex items-center gap-3.5 md:gap-4 w-full max-w-[245px]">
+                <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-yellow-50 text-yellow-500 flex items-center justify-center shrink-0">
+                  <Zap size={23} strokeWidth={1.6} />
                 </div>
-                <span className="text-xl md:text-2xl font-bold text-[#0B1B3D]">Menos energía</span>
-              </div>
-              
-              <ArrowDown className="text-gray-300 my-4" size={20} strokeWidth={2} />
-              
-              <div className="flex items-center gap-5 w-full max-w-[280px]">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                  <Brain size={28} strokeWidth={1.5} />
-                </div>
-                <span className="text-xl md:text-2xl font-bold text-[#0B1B3D]">Menos foco</span>
+                <span className="text-lg md:text-xl font-bold text-[#0B1B3D]">Menos energía</span>
               </div>
 
-              <ArrowDown className="text-gray-300 my-4" size={20} strokeWidth={2} />
+              <ArrowDown className="text-gray-300 my-2" size={17} strokeWidth={2} />
 
-              <div className="flex items-center gap-5 w-full max-w-[280px]">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-green-50 text-green-600 flex items-center justify-center shrink-0">
-                  <BarChart2 size={28} strokeWidth={1.5} />
+              <div className="flex items-center gap-3.5 md:gap-4 w-full max-w-[245px]">
+                <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                  <Brain size={23} strokeWidth={1.6} />
                 </div>
-                <span className="text-xl md:text-2xl font-bold text-[#0B1B3D]">Menor rendimiento</span>
+                <span className="text-lg md:text-xl font-bold text-[#0B1B3D]">Menos foco</span>
               </div>
 
-              {/* Forked Arrow SVG */}
-              <div className="w-full max-w-[340px] h-14 relative mt-4 mb-2 flex justify-center">
-                <svg width="260" height="50" viewBox="0 0 260 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M130 0 V20" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4 4" />
-                  <path d="M40 20 H220" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4 4" />
-                  <path d="M40 20 V45" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4 4" />
-                  <path d="M220 20 V45" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4 4" />
-                  {/* Left arrow head */}
-                  <path d="M35 40 L40 45 L45 40" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  {/* Right arrow head */}
-                  <path d="M215 40 L220 45 L225 40" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <ArrowDown className="text-gray-300 my-2" size={17} strokeWidth={2} />
+
+              <div className="flex items-center gap-3.5 md:gap-4 w-full max-w-[245px]">
+                <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                  <BarChart2 size={23} strokeWidth={1.6} />
+                </div>
+                <span className="text-lg md:text-xl font-bold text-[#0B1B3D] leading-tight">Menor rendimiento</span>
+              </div>
+
+              <div className="w-full max-w-[280px] h-10 relative mt-2 mb-0 flex justify-center">
+                <svg width="220" height="40" viewBox="0 0 220 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M110 0 V18" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4 4" />
+                  <path d="M35 18 H185" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4 4" />
+                  <path d="M35 18 V36" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4 4" />
+                  <path d="M185 18 V36" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="4 4" />
+                  <path d="M30 31 L35 36 L40 31" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M180 31 L185 36 L190 31" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
 
-              {/* Fork Results */}
-              <div className="flex justify-between w-full max-w-[380px] px-2">
+              <div className="flex justify-between w-full max-w-[315px] px-2">
                 <div className="flex flex-col items-center flex-1">
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0 mb-3">
-                    <BriefcaseMedical size={28} strokeWidth={1.5} />
+                  <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0 mb-1.5">
+                    <BriefcaseMedical size={23} strokeWidth={1.6} />
                   </div>
-                  <span className="text-[17px] md:text-xl font-bold text-[#0B1B3D] text-center leading-tight">Más ausentismo</span>
+                  <span className="text-sm md:text-base font-bold text-[#0B1B3D] text-center leading-tight">Más ausentismo</span>
                 </div>
                 <div className="flex flex-col items-center flex-1">
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center shrink-0 mb-3">
-                    <RefreshCw size={28} strokeWidth={1.5} />
+                  <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center shrink-0 mb-1.5">
+                    <RefreshCw size={23} strokeWidth={1.6} />
                   </div>
-                  <span className="text-[17px] md:text-xl font-bold text-[#0B1B3D] text-center leading-tight">Mayor rotación</span>
+                  <span className="text-sm md:text-base font-bold text-[#0B1B3D] text-center leading-tight">Mayor rotación</span>
                 </div>
               </div>
-
             </div>
           </motion.div>
         </div>
 
-        {/* Bottom Banner */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="w-full bg-[#F3F6F4] rounded-2xl p-4 md:p-6 flex flex-col sm:flex-row items-center sm:justify-center gap-4 md:gap-5 border border-gray-100"
+          className="w-full max-w-[1120px] mx-auto mt-4 md:mt-5 bg-[#F3F6F4] rounded-2xl p-3 md:p-4 flex flex-col sm:flex-row items-center sm:justify-center gap-3 md:gap-4 border border-gray-100 shrink-0"
         >
-          <div className="w-12 h-12 rounded-full border-2 border-green-600 bg-transparent text-green-600 flex items-center justify-center shrink-0">
-            <Building2 size={24} strokeWidth={2} />
+          <div className="w-9 h-9 rounded-full border-2 border-green-600 bg-transparent text-green-600 flex items-center justify-center shrink-0">
+            <Building2 size={18} strokeWidth={2} />
           </div>
-          <p className="text-[#0B1B3D] text-base md:text-xl font-medium text-center sm:text-left">
+          <p className="text-[#0B1B3D] text-sm md:text-base font-medium text-center sm:text-left">
             El sedentarismo no solo afecta a las personas.{' '}
-            {/* The user specifically requested this to be red */}
             <span className="text-red-600 font-bold">También afecta los resultados.</span>
           </p>
         </motion.div>
-
-        {/* Footnote */}
-        <div className="w-full flex items-center justify-between pb-4">
-          <div className="flex items-center gap-2 text-gray-400">
-            <BookOpen size={14} className="shrink-0" />
-            <span className="text-[11px] md:text-xs font-medium italic">
-              Datos basados en revisiones sistemáticas sobre comportamiento sedentario y salud ocupacional.
-            </span>
-          </div>
-          <div className="hidden md:block">
-            <span className="font-display font-bold text-xl text-green-600">Re<span className="text-[#0B1B3D]">Activa</span></span>
-          </div>
-        </div>
-
       </div>
     </section>
   );
 }
-
