@@ -13,6 +13,7 @@ import { Analiticas } from './views/admin/Analiticas';
 import { Contenido } from './views/admin/Contenido';
 import { Emails } from './views/admin/Emails';
 import { EmpresaOnboarding } from './views/EmpresaOnboarding';
+import { UsuarioOnboarding } from './views/UsuarioOnboarding';
 import './index.css';
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
 
           {/* Redirección por defecto */}
           <Route path="onboarding/empresa/:token" element={<EmpresaOnboarding />} />
+          <Route path="onboarding/usuario/:token" element={<UsuarioOnboarding />} />
           <Route path="*" element={<Navigate to="login" replace />} />
         </Routes>
       </div>

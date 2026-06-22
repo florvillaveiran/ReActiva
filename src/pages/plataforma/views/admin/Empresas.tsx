@@ -175,6 +175,7 @@ export const Empresas: React.FC = () => {
   const [selected, setSelected] = useState<Empresa | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newNombre, setNewNombre] = useState('');
+  const [newUbicacion, setNewUbicacion] = useState('');
   const [newResponsable, setNewResponsable] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
@@ -194,10 +195,10 @@ export const Empresas: React.FC = () => {
   );
 
   const handleGenerateLink = () => {
-    if (!newNombre || !newResponsable || !newEmail) return alert('Completa todos los campos');
+    if (!newNombre || !newUbicacion || !newResponsable || !newEmail) return alert('Completa todos los campos obligatorios');
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const link = `${window.location.origin}/plataforma/onboarding/empresa/${token}`;
-    addEmpresa({ id: Date.now(), nombre: newNombre, ubicacion: 'Por definir', empleados: [], estado: 'Pendiente onboarding', contactoNombre: newResponsable, rrhhEmail: newEmail, token });
+    addEmpresa({ id: Date.now(), nombre: newNombre, ubicacion: newUbicacion, empleados: [], estado: 'Pendiente onboarding', contactoNombre: newResponsable, rrhhEmail: newEmail, token });
     loadEmpresas();
     setGeneratedLink(link);
   };
@@ -209,7 +210,7 @@ export const Empresas: React.FC = () => {
   };
 
   const handleCloseModal = () => {
-    setIsModalOpen(false); setNewNombre(''); setNewResponsable(''); setNewEmail(''); setGeneratedLink('');
+    setIsModalOpen(false); setNewNombre(''); setNewUbicacion(''); setNewResponsable(''); setNewEmail(''); setGeneratedLink('');
   };
 
   return (
@@ -288,15 +289,19 @@ export const Empresas: React.FC = () => {
             {!generatedLink ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nombre de la empresa</label>
+                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nombre de la empresa <span style={{color: '#dc2626'}}>*</span></label>
                   <input type="text" className="input-field" placeholder="Ej: TechCorp" value={newNombre} onChange={e => setNewNombre(e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nombre del responsable</label>
+                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Ubicación <span style={{color: '#dc2626'}}>*</span></label>
+                  <input type="text" className="input-field" placeholder="Ej: México - Ciudad de México" value={newUbicacion} onChange={e => setNewUbicacion(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nombre del responsable <span style={{color: '#dc2626'}}>*</span></label>
                   <input type="text" className="input-field" placeholder="Ej: Laura Martínez" value={newResponsable} onChange={e => setNewResponsable(e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email del responsable</label>
+                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email del responsable <span style={{color: '#dc2626'}}>*</span></label>
                   <input type="email" className="input-field" placeholder="correo@empresa.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>

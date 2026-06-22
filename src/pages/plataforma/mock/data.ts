@@ -15,12 +15,25 @@ export interface Empresa {
 export interface Usuario {
   id: number;
   nombre: string;
-  edad: number;
+  edad?: number;
   email: string;
   empresa_id: number;
   participacion: number; // %
   dolor: boolean;
   ultima_interaccion: string; // ISO date
+  estado: 'Activo' | 'Inactivo';
+  fechaIngreso: string;
+  passwordTemporal?: string;
+  requiereCambioPassword?: boolean;
+  onboardingData?: any;
+}
+
+export interface InvitacionUsuario {
+  token: string;
+  empresa_id: number;
+  responsable?: string;
+  emailEnviado?: string;
+  fechaCreacion: string;
 }
 
 export interface Video {
@@ -58,6 +71,7 @@ export interface MockDB {
   videos: Video[];
   progresos: Progreso[];
   formularios: Formulario[];
+  invitacionesUsuarios: InvitacionUsuario[];
 }
 
 const defaultData: MockDB = {
@@ -70,22 +84,24 @@ const defaultData: MockDB = {
     {
       id: 1,
       nombre: 'Ana Pérez',
-      edad: 35,
       email: 'ana@example.com',
       empresa_id: 1,
       participacion: 80,
       dolor: false,
       ultima_interaccion: new Date().toISOString(),
+      estado: 'Activo',
+      fechaIngreso: new Date().toISOString(),
     },
     {
       id: 2,
       nombre: 'Luis Gómez',
-      edad: 42,
       email: 'luis@example.com',
       empresa_id: 1,
       participacion: 65,
       dolor: true,
       ultima_interaccion: new Date().toISOString(),
+      estado: 'Activo',
+      fechaIngreso: new Date().toISOString(),
     },
   ],
   videos: [
@@ -108,13 +124,21 @@ const defaultData: MockDB = {
   ],
   progresos: [],
   formularios: [],
+  invitacionesUsuarios: [],
 };
 
 export const getDB = (): MockDB => {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw) {
     try {
-      return JSON.parse(raw) as MockDB;
+      const parsed = JSON.parse(raw) as MockDB;
+      if (!parsed.invitacionesUsuarios) parsed.invitacionesUsuarios = [];
+      if (!parsed.empresas) parsed.empresas = [];
+      if (!parsed.usuarios) parsed.usuarios = [];
+      if (!parsed.videos) parsed.videos = [];
+      if (!parsed.progresos) parsed.progresos = [];
+      if (!parsed.formularios) parsed.formularios = [];
+      return parsed;
     } catch (e) {
       console.error('Failed to parse mock DB, resetting.', e);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
@@ -164,4 +188,20 @@ export const updateEmpresa = (e: Empresa) => {
 
 export const getEmpresaByToken = (token: string): Empresa | undefined => {
   return getDB().empresas.find(e => e.token === token);
+};
+
+export const addInvitacionUsuario = (inv: InvitacionUsuario) => {
+  const db = getDB();
+  db.invitacionesUsuarios.push(inv);
+  setDB(db);
+};
+
+export const getInvitacionUsuarioByToken = (token: string): InvitacionUsuario | undefined => {
+  return getDB().invitacionesUsuarios.find(i => i.token === token);
+};
+
+export const addUsuario = (u: Usuario) => {
+  const db = getDB();
+  db.usuarios.push(u);
+  setDB(db);
 };
