@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, AlertCircle, Building, Mail, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, Activity, Zap, Heart, BatteryCharging, TrendingUp, TrendingDown, Minus, AlertTriangle, Calendar, Download } from 'lucide-react';
-import { getDB, addInvitacionUsuario, Empresa, Usuario } from '../../mock/data';
+import { Search, AlertCircle, Building, Mail, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, Activity, Zap, Heart, BatteryCharging, TrendingUp, TrendingDown, Minus, AlertTriangle, Calendar, Download, Trash2 } from 'lucide-react';
+import { getDB, setDB, addInvitacionUsuario, Empresa, Usuario } from '../../mock/data';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -486,6 +486,23 @@ export const Usuarios: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleEliminarUsuario = (event: React.MouseEvent<HTMLButtonElement>, id: number, nombre: string) => {
+    event.stopPropagation();
+    const confirmar = window.confirm(`Eliminar a ${nombre} por completo?`);
+    if (!confirmar) return;
+
+    const db = getDB();
+    db.usuarios = db.usuarios.filter((usuario) => usuario.id !== id);
+    db.empresas = db.empresas.map((empresa) => ({
+      ...empresa,
+      empleados: empresa.empleados.filter((usuarioId) => usuarioId !== id),
+    }));
+    db.progresos = db.progresos.filter((progreso) => progreso.usuario_id !== id);
+    db.formularios = db.formularios.filter((formulario) => formulario.usuario_id !== id);
+    setDB(db);
+    loadData();
+  };
+
   const formatFecha = (iso: string) => {
     try { return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }); } catch { return '—'; }
   };
@@ -549,7 +566,30 @@ export const Usuarios: React.FC = () => {
                 </td>
                 <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.fechaIngreso || usuario.ultima_interaccion)}</td>
                 <td style={{ padding: '1.25rem 1.5rem' }}>
-                  <Badge label={usuario.estado || 'Activo'} bg="#ecfdf5" color="#059669" />
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
+                    <Badge label={usuario.estado || 'Activo'} bg="#ecfdf5" color="#059669" />
+                    <button
+                      type="button"
+                      onClick={(event) => handleEliminarUsuario(event, usuario.id, usuario.nombre)}
+                      aria-label={`Eliminar a ${usuario.nombre}`}
+                      title={`Eliminar a ${usuario.nombre}`}
+                      style={{
+                        width: 34,
+                        height: 34,
+                        border: '1px solid #fecaca',
+                        borderRadius: '999px',
+                        backgroundColor: '#fef2f2',
+                        color: '#dc2626',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
