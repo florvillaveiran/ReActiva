@@ -73,6 +73,7 @@ export const Contenido: React.FC = () => {
   const [diaModal, setDiaModal]    = useState<number|null>(null);
   const [offsetSem, setOffset]     = useState(0);
   const [empresa, setEmpresa]      = useState('Todas las empresas');
+  const [recordatorio, setRecordatorio] = useState('15 minutos antes');
 
   const lunes = getLunesOfWeek(hoy, offsetSem);
   const rangoLabel = (() => {
@@ -342,6 +343,26 @@ export const Contenido: React.FC = () => {
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Hora</label>
                 <input type="time" className="input-field" defaultValue="08:00" style={{fontSize:'0.875rem'}}/>
+              </div>
+            </div>
+
+            <div style={{marginBottom:'1.25rem'}}>
+              <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Enviar recordatorio (Email Automático)</label>
+              <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
+                <select className="input-field" value={recordatorio} onChange={e=>setRecordatorio(e.target.value)} style={{fontSize:'0.875rem',flex:1,minWidth:'150px'}}>
+                  <option value="Sin recordatorio">Sin recordatorio</option>
+                  <option value="15 minutos antes">15 minutos antes</option>
+                  <option value="30 minutos antes">30 minutos antes</option>
+                  <option value="1 hora antes">1 hora antes</option>
+                  <option value="2 horas antes">2 horas antes</option>
+                  <option value="Personalizado">Personalizado...</option>
+                </select>
+                {recordatorio === 'Personalizado' && (
+                  <div style={{display:'flex',alignItems:'center',gap:'0.4rem',flex:1,minWidth:'120px'}}>
+                    <input type="number" className="input-field" placeholder="Minutos" style={{fontSize:'0.875rem',width:'80px'}}/>
+                    <span style={{fontSize:'0.8rem',color:'#64748b'}}>min. antes</span>
+                  </div>
+                )}
               </div>
             </div>
 

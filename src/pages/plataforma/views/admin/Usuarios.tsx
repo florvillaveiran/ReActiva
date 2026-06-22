@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, AlertCircle, Building, Mail, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, Activity, Zap, Heart, BatteryCharging, TrendingUp, AlertTriangle, Calendar, Download } from 'lucide-react';
+import { Search, AlertCircle, Building, Mail, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, Activity, Zap, Heart, BatteryCharging, TrendingUp, TrendingDown, Minus, AlertTriangle, Calendar, Download } from 'lucide-react';
 import { getDB, addInvitacionUsuario, Empresa, Usuario } from '../../mock/data';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
 import html2canvas from 'html2canvas';
@@ -80,7 +80,12 @@ const generarMockAnaliticas = (periodo: string, data: any) => {
       foco: Math.round(last.foco),
       impacto: Math.round(last.impacto),
       energia: Math.round(last.energiaPct),
-    }
+    },
+    zonasDolor: [
+      { zona: 'Cervical', tendencia: 'Disminuyó', color: '#10b981', icon: 'down' },
+      { zona: 'Lumbar', tendencia: 'Se mantuvo', color: '#f59e0b', icon: 'minus' },
+      { zona: 'Hombros', tendencia: 'Aumentó', color: '#ef4444', icon: 'up' },
+    ]
   };
 };
 
@@ -92,6 +97,8 @@ const getLabelBienestar = (pct: number) => pct < 40 ? 'Bajo' : pct < 70 ? 'Medio
 const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined; onBack: () => void }> = ({ usuario, empresa, onBack }) => {
   const [activeTab, setActiveTab] = useState<'resumen' | 'analiticas'>('resumen');
   const [periodo, setPeriodo] = useState('mensual');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
   const [generandoPDF, setGenerandoPDF] = useState(false);
   const reporteRef = useRef<HTMLDivElement>(null);
 
@@ -224,13 +231,21 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
           {activeTab === 'analiticas' && (
             <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   <Calendar size={18} color="var(--text-muted)" />
                   <select className="input-field" value={periodo} onChange={(e) => setPeriodo(e.target.value)} style={{ width: '180px', backgroundColor: 'white' }}>
                     <option value="semanal">Última Semana</option>
                     <option value="mensual">Último Mes</option>
                     <option value="anual">Último Año</option>
+                    <option value="personalizado">Personalizado</option>
                   </select>
+                  {periodo === 'personalizado' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input type="date" className="input-field" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }} />
+                      <span style={{color: '#64748b'}}>-</span>
+                      <input type="date" className="input-field" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }} />
+                    </div>
+                  )}
                 </div>
                 <button
                   className="btn-primary"
@@ -297,6 +312,20 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
                   <MetricCard icon={<Zap size={18} />} label="Energía Percibida" inicial={data.energia} actual={getLabelEnergia(analiticasData.kpis.energia)} />
                   <MetricCard icon={<BatteryCharging size={18} />} label="Fatiga" inicial={data.fatiga} actual={getLabelFatiga(100 - analiticasData.kpis.energia)} />
                   <MetricCard icon={<Heart size={18} />} label="Bienestar" inicial={data.bienestar} actual={getLabelBienestar(analiticasData.kpis.impacto)} />
+                </div>
+
+                {/* ── ZONAS DE DOLOR ── */}
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>Zonas de dolor reportadas</h3>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+                  {analiticasData.zonasDolor.map((z, idx) => (
+                    <div key={idx} className="card" style={{ flex: '1 1 200px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontWeight: 700, color: '#334155' }}>{z.zona}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: z.color, fontSize: '0.85rem', fontWeight: 700 }}>
+                        {z.icon === 'up' ? <TrendingUp size={16} /> : z.icon === 'down' ? <TrendingDown size={16} /> : <Minus size={16} />}
+                        {z.tendencia}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* ── GRÁFICOS ── */}
