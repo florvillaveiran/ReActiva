@@ -4,6 +4,12 @@ export interface Empresa {
   nombre: string;
   ubicacion: string;
   empleados: number[]; // array de user ids
+  estado?: 'Activa' | 'Pendiente onboarding' | 'Inactiva';
+  contactoNombre?: string;
+  rrhhEmail?: string;
+  fechaOnboarding?: string;
+  token?: string;
+  onboardingData?: any;
 }
 
 export interface Usuario {
@@ -56,8 +62,9 @@ export interface MockDB {
 
 const defaultData: MockDB = {
   empresas: [
-    { id: 1, nombre: 'Acme Corp', ubicacion: 'Buenos Aires', empleados: [1, 2] },
-    { id: 2, nombre: 'Globex', ubicacion: 'São Paulo', empleados: [] },
+    { id: 1, nombre: 'Empresa Alpha', ubicacion: 'Madrid, España', empleados: [1, 2], estado: 'Activa', contactoNombre: 'María González', rrhhEmail: 'rrhh@alpha.com' },
+    { id: 2, nombre: 'Empresa Beta', ubicacion: 'Bogotá, Colombia', empleados: [], estado: 'Activa', contactoNombre: 'Carlos Ramírez', rrhhEmail: 'contacto@beta.co' },
+    { id: 3, nombre: 'Empresa Gamma', ubicacion: 'CDMX, México', empleados: [], estado: 'Pendiente onboarding', contactoNombre: 'Ana Martínez', rrhhEmail: 'rh@gamma.mx', token: 'demo-token-123' },
   ],
   usuarios: [
     {
@@ -142,4 +149,19 @@ export const updateUsuario = (u: Usuario) => {
   setDB(db);
 };
 
-// more CRUD utils can be added as needed
+export const addEmpresa = (e: Empresa) => {
+  const db = getDB();
+  db.empresas.push(e);
+  setDB(db);
+};
+
+export const updateEmpresa = (e: Empresa) => {
+  const db = getDB();
+  const idx = db.empresas.findIndex((x) => x.id === e.id);
+  if (idx >= 0) db.empresas[idx] = e;
+  setDB(db);
+};
+
+export const getEmpresaByToken = (token: string): Empresa | undefined => {
+  return getDB().empresas.find(e => e.token === token);
+};
