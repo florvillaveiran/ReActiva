@@ -110,6 +110,10 @@ export default function Benefits() {
             </p>
           </div>
         </motion.div>
+
+        <p className="mt-3 text-center text-[10px] text-gray-400 md:mt-4 md:text-xs">
+          * Datos basados en revisiones sistemáticas sobre comportamiento sedentario y salud ocupacional.
+        </p>
       </div>
     </section>
   );

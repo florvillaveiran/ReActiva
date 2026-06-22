@@ -196,6 +196,10 @@ export default function SedentaryCost() {
             <span className="text-red-600 font-bold">También afecta los resultados.</span>
           </p>
         </motion.div>
+
+        <p className="text-center text-[10px] md:text-xs text-gray-400 mt-1 md:mt-2">
+          * Datos basados en revisiones sistemáticas sobre comportamiento sedentario y salud ocupacional.
+        </p>
       </div>
     </section>
   );

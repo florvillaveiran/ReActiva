@@ -61,13 +61,13 @@ export default function Pricing() {
                      <Star fill="currentColor" size={20} />
                   </div>
                   <div className="relative z-10">
-                     <h3 className="font-bold text-pink-900 text-lg mb-1 uppercase">2 semanas GRATIS</h3>
-                     <p className="text-pink-600 font-bold text-xs tracking-wide uppercase">SIN COMPROMISO</p>
+                     <h3 className="font-bold text-pink-900 text-[1.05rem] mb-0.5 uppercase tracking-tight">2 SEMANAS DE PRUEBA PILOTO</h3>
+                     <p className="text-pink-600 font-bold text-[0.7rem] tracking-wide uppercase">SIN COSTO</p>
                   </div>
               </div>
 
               <p className="font-sans text-base md:text-[1.05rem] text-brand-on-surface-variant max-w-sm mb-6 leading-relaxed font-medium">
-                Invierta en el activo más valioso de su empresa: su gente.
+                Invierta en el activo más valioso de su empresa: el humano.
               </p>
 
               <div className="space-y-2.5">
@@ -92,8 +92,9 @@ export default function Pricing() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="lg:col-span-7 bg-white rounded-[28px] shadow-2xl border border-slate-50 overflow-hidden"
+            className="lg:col-span-7 flex flex-col"
           >
+            <div className="bg-white rounded-[28px] shadow-2xl border border-slate-50 overflow-hidden">
             {/* Table Header */}
             <div className="bg-brand-primary p-4 px-5 md:px-6 grid grid-cols-12 gap-2 md:gap-4 items-center text-white font-bold text-[10px] md:text-xs uppercase tracking-wider">
                <span className="col-span-4">EQUIPO DE HASTA</span>
@@ -112,7 +113,7 @@ export default function Pricing() {
                     <div className="col-span-4 text-center">
                        <span className={`text-sm md:text-base font-bold tracking-tighter ${lvl.isCustom ? 'text-brand-primary' : 'text-slate-700'}`}>
                           {lvl.monthlyPrice}
-                          {!lvl.isCustom && <span className="text-xs text-slate-400 font-medium ml-0.5 md:ml-1">/ mes</span>}
+                          {!lvl.isCustom && <span className="text-[10px] md:text-xs text-slate-400 font-medium ml-0.5 md:ml-1">/MES</span>}
                        </span>
                     </div>
                     <div className="col-span-4 text-right font-bold tracking-tighter">
@@ -134,6 +135,10 @@ export default function Pricing() {
                  </div>
                ))}
             </div>
+            </div>
+            <p className="text-[10px] md:text-[11px] text-slate-400 italic mt-3 pl-3">
+              Precios expresados a valor MEP.
+            </p>
           </motion.div>
         </div>
       </div>

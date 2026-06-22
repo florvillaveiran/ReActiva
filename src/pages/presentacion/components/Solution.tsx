@@ -85,7 +85,7 @@ export default function Solution() {
           </span>
           <span className="mx-auto mb-2 block h-0.5 w-7 rounded-full bg-brand-primary" />
           <h2 className="font-display text-[2rem] font-bold leading-[1.02] tracking-tight text-[#0B1B3D] md:text-[3.25rem]">
-            Impulsa equipos
+            ReActiva impulsa equipos
             <br />
             que <span className="text-[#10A64A]">rinden mejor</span>
           </h2>

@@ -4,7 +4,7 @@ import { Rocket, Target, Zap } from 'lucide-react';
 const cardData = [
   {
     title: 'Potencial humano',
-    description: 'Fortalecemos las capacidades de las personas para mejorar su desempeño laboral y bienestar diario.',
+    description: 'Potenciamos las capacidades de las personas para mejorar su desempeño laboral y bienestar diario.',
     icon: Zap,
     bgColor: 'bg-[#FFF1D7]',
     iconColor: 'text-[#F5A400]',
@@ -42,8 +42,8 @@ export default function WhatIs() {
             ¿Qué es <span className="text-[#0B1B3D]">ReActiva</span>?
           </h2>
           <p className="font-sans text-[0.92rem] md:text-[1.05rem] text-[#172033] font-medium leading-tight max-w-3xl">
-            Un programa integral de bienestar con ejercicios personalizados, guiados y
-            <br className="hidden md:block" /> adaptados al entorno laboral.
+            Un programa integral de bienestar con plataforma propia que ofrece
+            <br className="hidden md:block" /> ejercicios personalizados, guiados y adaptados al entorno laboral.
           </p>
         </motion.div>
 
@@ -55,7 +55,7 @@ export default function WhatIs() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white min-h-[210px] md:min-h-[295px] px-5 py-7 md:px-8 md:py-8 rounded-[22px] md:rounded-[32px] flex flex-col items-center justify-center text-center shadow-lg border border-slate-100"
+              className="bg-white h-full min-h-[210px] md:min-h-[295px] px-5 pt-8 pb-6 md:px-8 md:pt-12 md:pb-8 rounded-[22px] md:rounded-[32px] flex flex-col items-center justify-start text-center shadow-lg border border-slate-100"
             >
               <div className={`w-12 h-12 md:w-14 md:h-14 ${card.bgColor} rounded-full flex items-center justify-center mb-5 md:mb-6`}>
                 <card.icon className={`${card.iconColor}`} size={22} strokeWidth={2.4} />
