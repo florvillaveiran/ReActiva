@@ -6,15 +6,15 @@ import jsPDF from 'jspdf';
 import { useAdminStats } from '../../hooks/useAdminStats';
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
-type EmpresaKey = 'all' | 'empresa1' | 'empresa2' | 'empresa3';
-type PeriodoKey = 'semanal' | 'mensual' | 'anual' | 'personalizado';
+export type EmpresaKey = 'all' | 'empresa1' | 'empresa2' | 'empresa3';
+export type PeriodoKey = 'semanal' | 'mensual' | 'anual' | 'personalizado';
 
-interface AnaliticaSetBase {
+export interface AnaliticaSetBase {
   zonas: { name: string; valor: number }[];
   evolucion: { name: string; energia: number; satisfaccion: number; participacion: number }[];
 }
 
-interface AnaliticaSet {
+export interface AnaliticaSet {
   zonas: { name: string; valor: number }[];
   evolucion: { name: string; energia: number; satisfaccion: number; participacion: number; foco: number; dolor: number; impacto: number; energiaPct: number }[];
   kpis: {
@@ -27,7 +27,7 @@ interface AnaliticaSet {
 }
 
 // Deriva foco, dolor, impacto, energiaPct y KPIs a partir de los datos base.
-const enrichSet = (base: AnaliticaSetBase): AnaliticaSet => {
+export const enrichSet = (base: AnaliticaSetBase): AnaliticaSet => {
   const evolucion = base.evolucion.map(p => {
     const foco = Math.min(100, Math.round(p.satisfaccion * 0.92 + 6));
     const dolor = Math.max(0, Math.round(100 - p.satisfaccion - 5));
@@ -50,7 +50,7 @@ const enrichSet = (base: AnaliticaSetBase): AnaliticaSet => {
 };
 
 // ─── Mocks por empresa y período ───────────────────────
-const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> = {
+export const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> = {
   // ── Vista General (Todas las empresas) ──────────────────────────────────
   all: {
     semanal: {
@@ -241,13 +241,13 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
   },
 };
 
-const PERIODO_LABELS: Record<PeriodoKey, string> = {
+export const PERIODO_LABELS: Record<PeriodoKey, string> = {
   semanal: 'Semanal',
   mensual: 'Mensual',
   anual: 'Anual',
   personalizado: 'Personalizado',
 };
-const EMPRESA_LABELS: Record<EmpresaKey, string> = {
+export const EMPRESA_LABELS: Record<EmpresaKey, string> = {
   all: 'Todas',
   empresa1: 'Empresa Alpha',
   empresa2: 'Empresa Beta',
@@ -269,7 +269,9 @@ export const Analiticas: React.FC = () => {
   const [comparar, setComparar] = useState(false);
 
   const [generandoPDF, setGenerandoPDF] = useState(false);
-  const reporteRef = useRef<HTMLDivElement>(null);
+  const chartPartRef = useRef<HTMLDivElement>(null);
+  const chartDolorRef = useRef<HTMLDivElement>(null);
+  const chartFocoRef = useRef<HTMLDivElement>(null);
 
   // Stats reales del usuario demo (en vivo desde localStorage).
   // TODO(backend): reemplazar por fetch a /api/admin/analiticas?empresa=...&periodo=... y borrar mocks.
@@ -303,22 +305,274 @@ export const Analiticas: React.FC = () => {
   }, [filtro, periodo, stats]);
 
   const handleDescargarPDF = async () => {
-    if (!reporteRef.current) return;
-    
+    if (!chartPartRef.current || !chartDolorRef.current || !chartFocoRef.current) return;
     setGenerandoPDF(true);
+
+    // Datos del período anterior para comparativas
+    const periodoAnteriorMap: Record<PeriodoKey, PeriodoKey> = {
+      semanal: 'mensual', mensual: 'semanal', anual: 'mensual', personalizado: 'mensual'
+    };
+    const dataAnterior = enrichSet(ANALITICAS_MOCK[filtro][periodoAnteriorMap[periodo]]);
+    const diffPart = data.kpis.participacion - dataAnterior.kpis.participacion;
+    const diffDolor = data.kpis.dolor - dataAnterior.kpis.dolor;
+    const diffFoco = data.kpis.foco - dataAnterior.kpis.foco;
+    const diffEnergia = data.kpis.energia - dataAnterior.kpis.energia;
+    const signo = (n: number) => n >= 0 ? `+${n}%` : `${n}%`;
+    const periodoLabel = periodo === 'semanal' ? semanaSel : periodo === 'mensual' ? mesSel : periodo === 'anual' ? anioSel : `${fechaDesde} – ${fechaHasta}`;
+    const empresaLabel = EMPRESA_LABELS[filtro];
+
     try {
-      const canvas = await html2canvas(reporteRef.current, { scale: 2, useCORS: true, backgroundColor: '#F7F9FB' });
-      const imgData = canvas.toDataURL('image/png');
-      
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      const empresaSlug = EMPRESA_LABELS[filtro].replace(/[^a-zA-Z0-9]+/g, '_');
-      pdf.save(`Reporte_Reactiva_${empresaSlug}_${periodo}.pdf`);
-    } catch (error) {
-      console.error("Error al generar PDF:", error);
+      const W = pdf.internal.pageSize.getWidth();
+      const H = pdf.internal.pageSize.getHeight();
+
+      // Helper de texto centrado
+      const cx = (txt: string, size: number) => { pdf.setFontSize(size); return (W - pdf.getTextWidth(txt)) / 2; };
+      // Helper para texto con salto de línea automático
+      const wrapText = (txt: string, x: number, y: number, maxW: number, lineH: number) => {
+        const lines = pdf.splitTextToSize(txt, maxW) as string[];
+        pdf.text(lines, x, y);
+        return y + lines.length * lineH;
+      };
+
+      // ═════════════════════════════════════════
+      // PÁGINA 1: PORTADA Y RESUMEN EJECUTIVO
+      // ═════════════════════════════════════════
+
+      // Banda de color superior
+      pdf.setFillColor(20, 184, 166); // teal-500
+      pdf.rect(0, 0, W, 60, 'F');
+
+      // Acento decorativo
+      pdf.setFillColor(13, 148, 136); // teal-600
+      pdf.rect(0, 52, W, 8, 'F');
+
+      // Título en la banda
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(28);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Método ReActiva', cx('Método ReActiva', 28), 28);
+      pdf.setFontSize(13);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Informe Ejecutivo de Bienestar Corporativo', cx('Informe Ejecutivo de Bienestar Corporativo', 13), 40);
+
+      // Metadatos
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`Empresa: ${empresaLabel}`, 20, 78);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(71, 85, 105);
+      pdf.text(`Período analizado: ${periodoLabel}  |  Generado: ${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`, 20, 85);
+
+      // Línea separadora
+      pdf.setDrawColor(226, 232, 240);
+      pdf.line(20, 91, W - 20, 91);
+
+      // Sección: ¿Qué ocurrió?
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(20, 184, 166);
+      pdf.text('01 / ¿Qué ocurrió?', 20, 103);
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(51, 65, 85);
+      const resumenText = `Durante el período "${periodoLabel}", ${empresaLabel} registró una participación promedio del ${data.kpis.participacion}% (${signo(diffPart)} vs. período anterior). La energía percibida por los colaboradores alcanzó ${data.kpis.energia}% (${signo(diffEnergia)}), mientras que el foco y la concentración se situaron en ${data.kpis.foco}% (${signo(diffFoco)}). Los niveles de dolor musculoesquelético autoreportado marcaron ${data.kpis.dolor}% (${signo(diffDolor)}).`;
+      let y = wrapText(resumenText, 20, 112, W - 40, 5.5);
+
+      // KPIs con comparativa
+      y += 8;
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('INDICADORES CLAVE DEL PERÍODO', 20, y);
+      y += 6;
+
+      const kpisData = [
+        { l: 'Participación', v: data.kpis.participacion, d: diffPart, color: [20, 184, 166] },
+        { l: 'Foco', v: data.kpis.foco, d: diffFoco, color: [59, 130, 246] },
+        { l: 'Impacto Pausa', v: data.kpis.impacto, d: 0, color: [147, 51, 234] },
+        { l: 'Dolor', v: data.kpis.dolor, d: diffDolor, color: [244, 63, 94] },
+        { l: 'Energía', v: data.kpis.energia, d: diffEnergia, color: [245, 158, 11] },
+      ] as const;
+
+      const colW = (W - 40) / kpisData.length;
+      kpisData.forEach((k, i) => {
+        const x = 20 + i * colW;
+        pdf.setFillColor(248, 250, 252);
+        pdf.roundedRect(x, y, colW - 2, 22, 2, 2, 'F');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.setTextColor(k.color[0], k.color[1], k.color[2]);
+        pdf.text(`${k.v}%`, x + 4, y + 9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(k.l.toUpperCase(), x + 4, y + 15);
+        if (k.d !== 0) {
+          const color = k.l === 'Dolor' ? (k.d < 0 ? [16, 185, 129] : [244, 63, 94]) : (k.d >= 0 ? [16, 185, 129] : [244, 63, 94]);
+          pdf.setTextColor(color[0], color[1], color[2]);
+          pdf.text(signo(k.d) + ' vs anterior', x + 4, y + 20);
+        }
+      });
+      y += 30;
+
+      // ═════════════════════════════════════════
+      // PÁGINA 2: ANÁLISIS GRÁFICO
+      // ═════════════════════════════════════════
+      pdf.addPage();
+
+      // Mini encabezado de página
+      pdf.setFillColor(20, 184, 166);
+      pdf.rect(0, 0, W, 12, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('MÉTODO REACTIVA  |  ANÁLISIS GRÁFICO', 20, 8);
+      pdf.text(empresaLabel.toUpperCase(), W - 20 - pdf.getTextWidth(empresaLabel.toUpperCase()), 8);
+
+      pdf.setFontSize(13);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('02 / Análisis Visual de Indicadores', 20, 28);
+
+      // Gráfico Participación
+      const canvasPart = await html2canvas(chartPartRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      pdf.addImage(canvasPart.toDataURL('image/png'), 'PNG', 20, 36, W - 40, 55);
+
+      // Gráfico Dolor
+      const canvasDolor = await html2canvas(chartDolorRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      pdf.addImage(canvasDolor.toDataURL('image/png'), 'PNG', 20, 98, (W - 44) / 2, 55);
+
+      // Gráfico Foco
+      const canvasFoco = await html2canvas(chartFocoRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      pdf.addImage(canvasFoco.toDataURL('image/png'), 'PNG', 22 + (W - 44) / 2, 98, (W - 44) / 2, 55);
+
+      // ═════════════════════════════════════════
+      // PÁGINA 3: ¿QUÉ SIGNIFICA + IMPACTO ORG.
+      // ═════════════════════════════════════════
+      pdf.addPage();
+      pdf.setFillColor(20, 184, 166);
+      pdf.rect(0, 0, W, 12, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('MÉTODO REACTIVA  |  INTERPRETACIÓN', 20, 8);
+      pdf.text(empresaLabel.toUpperCase(), W - 20 - pdf.getTextWidth(empresaLabel.toUpperCase()), 8);
+
+      let yp3 = 26;
+      pdf.setFontSize(13);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('03 / ¿Qué significa para la empresa?', 20, yp3); yp3 += 10;
+
+      const interp = [
+        { titulo: 'Adherencia y Hábito', texto: diffPart >= 0
+          ? `La participación subió ${signo(diffPart)}, evidenciando que los colaboradores están incorporando las pausas activas como parte de su rutina. Este resultado es altamente positivo y reduce el riesgo de fatiga acumulada.`
+          : `La participación bajó ${signo(diffPart)}, lo que puede indicar pérdida de motivación o sobrecarga operativa. Requiere atención en el próximo ciclo.` },
+        { titulo: 'Bienestar Musculoesquelético', texto: diffDolor <= 0
+          ? `El dolor autoreportado disminuyó ${signo(-diffDolor)}, confirmando que las pausas orientadas a movilidad articular están generando mejoras físicas tangibles en los equipos.`
+          : `El dolor musculoesquelético aumentó ${signo(diffDolor)}. Puede deberse a meses de alta intensidad postural. Se sugiere reforzar el contenido de elongación y pausas focalizadas en zona lumbar y cervical.` },
+        { titulo: 'Concentración y Productividad', texto: `El índice de foco del ${data.kpis.foco}% (${signo(diffFoco)}) tiene correlación directa con la capacidad de atención sostenida de los equipos. Un foco elevado reduce errores operacionales y mejora los tiempos de respuesta.` },
+      ];
+
+      interp.forEach(({ titulo, texto }) => {
+        pdf.setFillColor(240, 253, 250);
+        pdf.roundedRect(20, yp3, W - 40, 30, 2, 2, 'F');
+        pdf.setDrawColor(20, 184, 166);
+        pdf.line(20, yp3, 20, yp3 + 30);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(13, 148, 136);
+        pdf.text(titulo, 25, yp3 + 7);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.setTextColor(51, 65, 85);
+        const lines = pdf.splitTextToSize(texto, W - 50) as string[];
+        pdf.text(lines, 25, yp3 + 14);
+        yp3 += 36;
+      });
+
+      // Impacto Organizacional
+      yp3 += 4;
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('Impacto Organizacional', 20, yp3); yp3 += 8;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(71, 85, 105);
+
+      const riesgoDolor = data.kpis.dolor > 50 ? 'ALTO' : data.kpis.dolor > 30 ? 'MODERADO' : 'BAJO';
+      const impactoText = `Con una participación del ${data.kpis.participacion}% y un nivel de dolor ${riesgoDolor.toLowerCase()}, el programa ReActiva está ${data.kpis.participacion >= 75 ? 'generando un impacto positivo y sostenido' : 'construyendo una base de bienestar que requiere refuerzo'} en la organización. Colaboradores con menor dolor musculoesquelético presentan hasta un 23% más de productividad percibida, lo que se traduce en reducción de ausentismo y mayor retención de talento.`;
+      yp3 = wrapText(impactoText, 20, yp3, W - 40, 5);
+
+      // ═════════════════════════════════════════
+      // PÁGINA 4: ¿QUÉ RECOMENDAMOS?
+      // ═════════════════════════════════════════
+      pdf.addPage();
+      pdf.setFillColor(20, 184, 166);
+      pdf.rect(0, 0, W, 12, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('MÉTODO REACTIVA  |  PLAN DE ACCIÓN', 20, 8);
+      pdf.text(empresaLabel.toUpperCase(), W - 20 - pdf.getTextWidth(empresaLabel.toUpperCase()), 8);
+
+      let yp4 = 26;
+      pdf.setFontSize(13);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('04 / ¿Qué recomendamos hacer a continuación?', 20, yp4); yp4 += 10;
+
+      const recomendaciones = [
+        data.kpis.participacion < 70
+          ? 'Activar la campaña de Reenganche Automático en el módulo de Emails para los usuarios con más de 5 días de inactividad.'
+          : 'Mantener la frecuencia actual de publicación de videos y reforzar la racha de participación con el Email de Reconocimiento.',
+        data.kpis.dolor > 40
+          ? 'Priorizar contenido de movilidad articular y elongación de zona lumbar, cervical y hombros en la programación del próximo período.'
+          : 'El nivel de dolor es saludable. Incorporar progresivamente contenido de fortalecimiento funcional para prevenir regresiones.',
+        data.kpis.foco < 75
+          ? 'Programar las pausas activas en el horario de mayor demanda cognitiva de cada empresa (típicamente entre 10:00 y 12:00 hrs).'
+          : 'La concentración está en niveles óptimos. Considerar compartir este resultado con RRHH como evidencia del ROI del programa.',
+        `Programar el próximo informe ejecutivo en ${periodoLabel === 'Julio 2026' ? 'Agosto 2026' : 'el próximo período'} para verificar la evolución de los indicadores clave.`,
+      ];
+
+      recomendaciones.forEach((r, i) => {
+        pdf.setFillColor(i % 2 === 0 ? 248 : 240, i % 2 === 0 ? 250 : 253, i % 2 === 0 ? 252 : 250);
+        pdf.roundedRect(20, yp4, W - 40, 22, 2, 2, 'F');
+        pdf.setFillColor(20, 184, 166);
+        pdf.circle(25, yp4 + 8, 3, 'F');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(8);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(`${i + 1}`, 24.1, yp4 + 10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.setTextColor(51, 65, 85);
+        const rlines = pdf.splitTextToSize(r, W - 55) as string[];
+        pdf.text(rlines, 32, yp4 + 7);
+        yp4 += 27;
+      });
+
+      // Firma institucional
+      yp4 += 10;
+      pdf.setDrawColor(226, 232, 240);
+      pdf.line(20, yp4, W - 20, yp4); yp4 += 8;
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(20, 184, 166);
+      pdf.text('metodoreactiva.com', 20, yp4);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(148, 163, 184);
+      pdf.text('Informe generado automáticamente por la plataforma ReActiva. Datos basados en registros de colaboradores activos.', W - 20 - pdf.getTextWidth('Informe generado automáticamente por la plataforma ReActiva. Datos basados en registros de colaboradores activos.'), yp4);
+
+      // Guardar
+      const slug = empresaLabel.replace(/[^a-zA-Z0-9]+/g, '_');
+      pdf.save(`ReActiva_Informe_${slug}_${periodo}.pdf`);
+    } catch (err) {
+      console.error('Error generando PDF:', err);
     } finally {
       setGenerandoPDF(false);
     }
@@ -438,15 +692,8 @@ export const Analiticas: React.FC = () => {
         </div>
       </div>
 
-      {/* Contenedor referenciado para el PDF */}
-      <div ref={reporteRef} style={{ padding: generandoPDF ? '2rem' : '0' }}>
-        
-        {generandoPDF && (
-          <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-            <h1 style={{ color: 'var(--primary-color)', fontSize: '2rem', fontWeight: 700 }}>Método Reactiva</h1>
-            <p className="text-muted">Reporte de Bienestar Corporativo · {EMPRESA_LABELS[filtro]} · {PERIODO_LABELS[periodo]}</p>
-          </div>
-        )}
+      {/* Contenedor de la interfaz analítica (no capturado en PDF) */}
+      <div>
 
         {/* ─── KPIs (5 mini cards) ─────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
@@ -574,6 +821,55 @@ export const Analiticas: React.FC = () => {
               </ResponsiveContainer>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ─── Contenedores ocultos SOLO para capturar gráficos al generar PDF ─── */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <div ref={chartPartRef} style={{ width: '760px', height: '300px', backgroundColor: '#ffffff', padding: '0.5rem' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data.evolucion} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={13} />
+              <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={13} />
+              <Tooltip />
+              <Bar dataKey="participacion" name="Participación (%)" fill="#14b8a6" radius={[4, 4, 0, 0]} barSize={36} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div ref={chartDolorRef} style={{ width: '370px', height: '280px', backgroundColor: '#ffffff', padding: '0.5rem' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data.evolucion} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="pdfDolor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={13} />
+              <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={13} />
+              <Tooltip />
+              <Area type="monotone" dataKey="dolor" name="Dolor (%)" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#pdfDolor)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div ref={chartFocoRef} style={{ width: '370px', height: '280px', backgroundColor: '#ffffff', padding: '0.5rem' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data.evolucion} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="pdfFoco" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={13} />
+              <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={13} />
+              <Tooltip />
+              <Area type="monotone" dataKey="foco" name="Foco (%)" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#pdfFoco)" />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
