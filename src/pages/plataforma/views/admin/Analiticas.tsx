@@ -1,9 +1,8 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
-import { Download, Filter, Calendar } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { Filter, Calendar } from 'lucide-react';
 import { useAdminStats } from '../../hooks/useAdminStats';
+import { ReportGenerator } from '../../components/ReportGenerator';
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 type EmpresaKey = 'all' | 'empresa1' | 'empresa2' | 'empresa3';
@@ -268,9 +267,6 @@ export const Analiticas: React.FC = () => {
   // Comparativas
   const [comparar, setComparar] = useState(false);
 
-  const [generandoPDF, setGenerandoPDF] = useState(false);
-  const reporteRef = useRef<HTMLDivElement>(null);
-
   // Stats reales del usuario demo (en vivo desde localStorage).
   // TODO(backend): reemplazar por fetch a /api/admin/analiticas?empresa=...&periodo=... y borrar mocks.
   const stats = useAdminStats();
@@ -294,7 +290,7 @@ export const Analiticas: React.FC = () => {
           participacion: stats.adherencia,
           dolor: mock.kpis.dolor,
           foco: mock.kpis.foco,
-          impacto: stats.impactoPercibido ?? mock.kpis.impacto,
+          impacto: mock.kpis.impacto,
           energia: stats.energiaPromedio != null ? Math.round((stats.energiaPromedio / 5) * 100) : mock.kpis.energia,
         },
       };
@@ -302,27 +298,37 @@ export const Analiticas: React.FC = () => {
     return mock;
   }, [filtro, periodo, stats]);
 
-  const handleDescargarPDF = async () => {
-    if (!reporteRef.current) return;
-    
-    setGenerandoPDF(true);
-    try {
-      const canvas = await html2canvas(reporteRef.current, { scale: 2, useCORS: true, backgroundColor: '#F7F9FB' });
-      const imgData = canvas.toDataURL('image/png');
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      const empresaSlug = EMPRESA_LABELS[filtro].replace(/[^a-zA-Z0-9]+/g, '_');
-      pdf.save(`Reporte_Reactiva_${empresaSlug}_${periodo}.pdf`);
-    } catch (error) {
-      console.error("Error al generar PDF:", error);
-    } finally {
-      setGenerandoPDF(false);
+  const reportPeriodoLabel = periodo === 'semanal'
+    ? semanaSel
+    : periodo === 'mensual'
+      ? mesSel
+      : periodo === 'anual'
+        ? anioSel
+        : fechaDesde && fechaHasta
+          ? `${fechaDesde} a ${fechaHasta}`
+          : PERIODO_LABELS[periodo];
+
+  const reportRange = useMemo(() => {
+    if (periodo === 'personalizado') return { from: fechaDesde, to: fechaHasta };
+    if (periodo === 'anual') return { from: `${anioSel}-01-01`, to: `${anioSel}-12-31` };
+    if (periodo === 'mensual') {
+      const months: Record<string, string> = {
+        Enero: '01', Febrero: '02', Marzo: '03', Abril: '04', Mayo: '05', Junio: '06',
+        Julio: '07', Agosto: '08', Septiembre: '09', Octubre: '10', Noviembre: '11', Diciembre: '12',
+      };
+      const [monthName, year] = mesSel.split(' ');
+      const month = months[monthName];
+      if (!month || !year) return { from: '', to: '' };
+      const lastDay = new Date(Number(year), Number(month), 0).getDate();
+      return { from: `${year}-${month}-01`, to: `${year}-${month}-${String(lastDay).padStart(2, '0')}` };
     }
-  };
+    const weeklyRanges: Record<string, { from: string; to: string }> = {
+      'Semana del 7 al 13 de julio': { from: '2026-07-07', to: '2026-07-13' },
+      'Semana del 30 al 6 de julio': { from: '2026-06-30', to: '2026-07-06' },
+      'Semana del 23 al 29 de junio': { from: '2026-06-23', to: '2026-06-29' },
+    };
+    return weeklyRanges[semanaSel] ?? { from: '', to: '' };
+  }, [anioSel, fechaDesde, fechaHasta, mesSel, periodo, semanaSel]);
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
@@ -426,27 +432,17 @@ export const Analiticas: React.FC = () => {
 
           <div style={{ flexGrow: 1 }} />
 
-          <button
-            className="btn-primary"
-            onClick={handleDescargarPDF}
-            disabled={generandoPDF}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
-          >
-            <Download size={16} />
-            {generandoPDF ? 'Generando...' : 'Generar informe'}
-          </button>
+          <ReportGenerator
+            currentData={data}
+            currentEmpresaLabel={EMPRESA_LABELS[filtro]}
+            periodoLabel={reportPeriodoLabel}
+            periodFrom={reportRange.from}
+            periodTo={reportRange.to}
+          />
         </div>
       </div>
 
-      {/* Contenedor referenciado para el PDF */}
-      <div ref={reporteRef} style={{ padding: generandoPDF ? '2rem' : '0' }}>
-        
-        {generandoPDF && (
-          <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-            <h1 style={{ color: 'var(--primary-color)', fontSize: '2rem', fontWeight: 700 }}>Método Reactiva</h1>
-            <p className="text-muted">Reporte de Bienestar Corporativo · {EMPRESA_LABELS[filtro]} · {PERIODO_LABELS[periodo]}</p>
-          </div>
-        )}
+      <div>
 
         {/* ─── KPIs (5 mini cards) ─────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
