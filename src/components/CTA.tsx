@@ -40,7 +40,7 @@ export const CTA = () => {
             transition={{ delay: 0.1 }}
             className="text-xl md:text-2xl text-slate-300 mb-12 max-w-2xl mx-auto"
           >
-            Probalo gratis por 15 días. Resultados visibles y comprobados.
+            Prueba piloto por 15 días. Resultados visibles y comprobados.
           </motion.p>
           
           <motion.a 
@@ -55,13 +55,13 @@ export const CTA = () => {
             transition={{ delay: 0.2 }}
             className="px-10 py-5 rounded-full bg-[#10b981] text-white font-bold text-xl hover:bg-[#059669] transition-colors flex items-center justify-center gap-3 mx-auto mb-20 shadow-2xl shadow-emerald-900/50"
           >
-            Agendá tu reunión gratuita <ArrowRight className="w-6 h-6" />
+            Agendá tu reunión sin costo <ArrowRight className="w-6 h-6" />
           </motion.a>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: CheckCircle2, title: "Sin compromiso", desc: "Cancela cuando quieras" },
-              { icon: Clock, title: "15 días gratis", desc: "Experiencia completa" },
+              { icon: Clock, title: "15 días sin costo", desc: "Experiencia completa" },
               { icon: TrendingUp, title: "Resultados inmediatos", desc: "Visibles en los primeros 15 días" }
             ].map((item, i) => (
               <motion.div 

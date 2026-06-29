@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Clock, Mail, Users, BarChart3, ArrowRight } from 'lucide-react';
+import { Clock, Monitor, Users, BarChart3, ArrowRight } from 'lucide-react';
 
 export const Solucion = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -8,15 +8,15 @@ export const Solucion = () => {
   const features = [
     { 
       icon: Clock, 
-      title: "Pausas activas 3 días por semana", 
-      desc: "2 pausas por día de 5-10 minutos cada una. Diseñadas para no interrumpir el flujo de trabajo y reactivar la energía.", 
+      title: "Micro-entrenamientos 3 días por semana", 
+      desc: "2 entrenamientos por día de 5-10 minutos cada una. Diseñadas para no interrumpir el flujo de trabajo y reactivar la energía.", 
       image: "/pausas-activas.png" 
     },
     { 
-      icon: Mail, 
-      title: "Videos asincrónicos por email", 
-      desc: "Contenido enviado automáticamente para que cada miembro del equipo lo haga a su propio ritmo y tiempo.", 
-      image: "/email-video.png" 
+      icon: Monitor, 
+      title: "Plataforma propia con acceso personalizado", 
+      desc: "Microentrenamientos, seguimiento y métricas integrados en un solo lugar.", 
+      image: "/plataforma-propia.png" 
     },
     { 
       icon: Users, 

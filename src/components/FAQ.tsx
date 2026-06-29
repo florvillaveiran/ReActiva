@@ -20,12 +20,12 @@ export const FAQ = () => {
       a: "Sí, ofrecemos 15 días de prueba sin costo para que puedan experimentar el impacto real en la energía y el clima del equipo antes de tomar una decisión."
     },
     {
-      q: "¿Cuánto tiempo toman las pausas activas?",
-      a: "Cada pausa dura entre 5 y 10 minutos. Están pensadas para ser breves y efectivas, reactivando el cuerpo sin interrumpir el flujo productivo de la jornada."
+      q: "¿Cuánto tiempo toman los micro-entrenamientos?",
+      a: "Cada entrenamiento dura entre 5 y 10 minutos. Están pensados para ser breves y efectivos, reactivando el cuerpo sin interrumpir el flujo productivo de la jornada."
     },
     {
       q: "¿Cómo miden los resultados?",
-      a: "Utilizamos formularios de seguimiento y reportes mensuales que enviamos a RRHH. Medimos niveles de energía, reducción de molestias físicas y satisfacción general del equipo."
+      a: "Nuestra plataforma registra la participación de los colaboradores y recopila información mediante formularios de seguimiento. Con esos datos elaboramos reportes mensuales para RR. HH., donde se visualizan indicadores de adherencia, bienestar, energía, molestias físicas y satisfacción del equipo, facilitando el seguimiento del impacto del programa."
     }
   ];
 

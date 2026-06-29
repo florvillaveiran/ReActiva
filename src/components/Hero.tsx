@@ -38,7 +38,7 @@ export const Hero = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="text-lg md:text-xl text-slate-300 leading-relaxed mb-10 max-w-xl"
           >
-            Y su salud, tu mejor inversión. Transformamos la rutina laboral con pausas activas 100% online, 3 días por semana, efectivas y fáciles de aplicar.
+            Y su salud, tu mejor inversión. Transformamos la rutina laboral con micro-entrenamientos 100% online, 3 días por semana, efectivos y fáciles de aplicar.
           </motion.p>
           
           <motion.div 
@@ -71,16 +71,10 @@ export const Hero = () => {
             transition={{ duration: 0.5, delay: 0.7 }}
             className="flex flex-wrap items-center gap-6 text-sm font-medium text-slate-300 mb-2 md:mb-12"
           >
-            {[
-              "Prueba gratuita",
-              "Sin compromiso",
-              "Resultados inmediatos"
-            ].map((text, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-[#10b981]" />
-                <span>{text}</span>
-              </div>
-            ))}
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-[#10b981]" />
+              <span>Prueba piloto sin costo</span>
+            </div>
           </motion.div>
         </div>
       </div>

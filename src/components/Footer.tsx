@@ -11,7 +11,7 @@ export const Footer = () => {
           <div className="md:col-span-2">
             <Logo scrolled={true} className="mb-6" />
             <p className="text-slate-600 max-w-sm leading-relaxed">
-              Transformamos la rutina laboral con pausas activas breves, efectivas y fáciles de aplicar.
+              La plataforma de microentrenamientos que impulsa equipos más saludables, enfocados y productivos.
             </p>
           </div>
           
