@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Users, Building, Plus, Mail, User, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, AlertCircle, Target, Clock, Briefcase, TrendingUp, Zap } from 'lucide-react';
-import { getDB, addEmpresa, updateEmpresa, Empresa } from '../../mock/data';
+import { Search, MapPin, Users, Building, Plus, Mail, User, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, AlertCircle, Target, Clock, Briefcase, TrendingUp, Zap, Trash2 } from 'lucide-react';
+import { getDB, setDB, addEmpresa, Empresa } from '../../mock/data';
 
 const ESTADO_STYLES: Record<string, { bg: string; color: string; dot: string }> = {
   'Activa':               { bg: '#ecfdf5', color: '#059669', dot: '#10b981' },
@@ -213,6 +213,24 @@ export const Empresas: React.FC = () => {
     setIsModalOpen(false); setNewNombre(''); setNewUbicacion(''); setNewResponsable(''); setNewEmail(''); setGeneratedLink('');
   };
 
+  const handleEliminarEmpresa = (event: React.MouseEvent<HTMLButtonElement>, id: number, nombre: string) => {
+    event.stopPropagation();
+    const confirmar = window.confirm(`Eliminar ${nombre} por completo?`);
+    if (!confirmar) return;
+
+    const db = getDB();
+    const empresa = db.empresas.find((item) => item.id === id);
+    const usuariosEmpresa = new Set(empresa?.empleados || []);
+
+    db.empresas = db.empresas.filter((item) => item.id !== id);
+    db.usuarios = db.usuarios.filter((usuario) => usuario.empresa_id !== id);
+    db.invitacionesUsuarios = db.invitacionesUsuarios.filter((invitacion) => invitacion.empresa_id !== id);
+    db.progresos = db.progresos.filter((progreso) => !usuariosEmpresa.has(progreso.usuario_id));
+    db.formularios = db.formularios.filter((formulario) => !usuariosEmpresa.has(formulario.usuario_id));
+    setDB(db);
+    loadEmpresas();
+  };
+
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
@@ -256,9 +274,34 @@ export const Empresas: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem', borderRadius: '999px', backgroundColor: s.bg, color: s.color, fontSize: '0.82rem', fontWeight: 600, flexShrink: 0 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: s.dot }} />
-                  {est}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.6rem', flexShrink: 0 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem', borderRadius: '999px', backgroundColor: s.bg, color: s.color, fontSize: '0.82rem', fontWeight: 600 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: s.dot }} />
+                    {est}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(event) => handleEliminarEmpresa(event, empresa.id, empresa.nombre)}
+                    aria-label={`Eliminar ${empresa.nombre}`}
+                    title={`Eliminar ${empresa.nombre}`}
+                    style={{
+                      border: 'none',
+                      backgroundColor: '#fef2f2',
+                      color: '#dc2626',
+                      borderRadius: '999px',
+                      padding: '0.38rem 0.75rem',
+                      fontFamily: 'var(--font)',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    Eliminar
+                  </button>
                 </div>
               </div>
               <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.85rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem 2rem' }}>

@@ -62,6 +62,30 @@ export interface Formulario {
   tipo: 'diario' | 'semanal';
 }
 
+export interface EmailAutomation {
+  id: string;
+  active: boolean;
+  companyId: number | 'all';
+  segment: string;
+  scheduleTime: string;
+  offsetMinutes: number;
+  template: string;
+  subject: string;
+  body: string;
+  attachReport?: boolean;
+}
+
+export interface EmailEvent {
+  id: string;
+  automationId: string;
+  companyId?: number;
+  userId?: number;
+  sentAt: string;
+  openedAt?: string;
+  clickedAt?: string;
+  pauseCompletedAt?: string;
+}
+
 /** Helper to persist and retrieve mock data from localStorage */
 export const STORAGE_KEY = 'metodo-reactiva-mock';
 
@@ -72,6 +96,8 @@ export interface MockDB {
   progresos: Progreso[];
   formularios: Formulario[];
   invitacionesUsuarios: InvitacionUsuario[];
+  emailAutomations: EmailAutomation[];
+  emailEvents: EmailEvent[];
 }
 
 const defaultData: MockDB = {
@@ -125,6 +151,8 @@ const defaultData: MockDB = {
   progresos: [],
   formularios: [],
   invitacionesUsuarios: [],
+  emailAutomations: [],
+  emailEvents: [],
 };
 
 export const getDB = (): MockDB => {
@@ -138,6 +166,8 @@ export const getDB = (): MockDB => {
       if (!parsed.videos) parsed.videos = [];
       if (!parsed.progresos) parsed.progresos = [];
       if (!parsed.formularios) parsed.formularios = [];
+      if (!parsed.emailAutomations) parsed.emailAutomations = [];
+      if (!parsed.emailEvents) parsed.emailEvents = [];
       return parsed;
     } catch (e) {
       console.error('Failed to parse mock DB, resetting.', e);
