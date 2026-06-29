@@ -29,7 +29,7 @@
   --radius-md: 16px;
   --radius-lg: 24px;
 
-  --sidebar-width: 240px;
+  --sidebar-width: 260px;
   --font: 'Inter', system-ui, sans-serif;
 
   /* Reset dentro del root de la plataforma */
@@ -2316,6 +2316,256 @@
 #plataforma-root .tips-full-apply {
   align-self: flex-start;
   padding: 0.72rem 1.15rem;
+}
+
+/* ---- Automation Wizard Modal ---- */
+#plataforma-root .wizard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+#plataforma-root .wizard-modal {
+  width: min(800px, 100%);
+  max-height: calc(100vh - 4rem);
+  background-color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: plataforma-fadeIn 0.2s ease-out;
+}
+
+#plataforma-root .wizard-head {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#plataforma-root .wizard-head h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+#plataforma-root .wizard-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+#plataforma-root .wizard-steps {
+  width: 200px;
+  background-color: #f8fafc;
+  border-right: 1px solid var(--border-color);
+  padding: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+#plataforma-root .wizard-step {
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+#plataforma-root .wizard-step:hover {
+  background-color: #f1f5f9;
+}
+
+#plataforma-root .wizard-step.active {
+  color: var(--primary-color);
+  border-left-color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+#plataforma-root .wizard-step.completed {
+  color: #10b981;
+}
+
+#plataforma-root .wizard-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+#plataforma-root .wizard-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+#plataforma-root .wizard-content p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+#plataforma-root .wizard-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc;
+}
+
+/* Trigger Grid */
+#plataforma-root .wizard-trigger-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+#plataforma-root .wizard-trigger-card {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: white;
+}
+
+#plataforma-root .wizard-trigger-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 194, 168, 0.08);
+}
+
+#plataforma-root .wizard-trigger-card.active {
+  border-color: var(--primary-color);
+  background-color: var(--primary-light);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+#plataforma-root .wizard-trigger-card h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#plataforma-root .wizard-trigger-card p {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* Audience Grid */
+#plataforma-root .wizard-audience-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+#plataforma-root .wizard-audience-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  background-color: white;
+}
+
+#plataforma-root .wizard-audience-option:hover {
+  background-color: #f8fafc;
+}
+
+#plataforma-root .wizard-audience-option input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+#plataforma-root .wizard-audience-option span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Dynamic Conditions */
+#plataforma-root .wizard-condition-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  background-color: #f8fafc;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+#plataforma-root .wizard-condition-row select,
+#plataforma-root .wizard-condition-row input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+}
+
+#plataforma-root .wizard-condition-row button {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Preview Card */
+#plataforma-root .wizard-preview-card {
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  background-color: white;
+}
+#plataforma-root .wizard-preview-row {
+  display: flex;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+#plataforma-root .wizard-preview-row:last-child {
+  border-bottom: none;
+}
+#plataforma-root .wizard-preview-label {
+  width: 140px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+#plataforma-root .wizard-preview-value {
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 1180px) {

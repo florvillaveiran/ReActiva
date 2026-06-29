@@ -18,6 +18,14 @@ import {
   UserPlus,
   Users,
   X,
+  Plus,
+  ArrowRight,
+  Zap,
+  Target,
+  SlidersHorizontal,
+  LayoutTemplate,
+  CheckCircle,
+  Trash2
 } from 'lucide-react';
 import {
   Bar,
@@ -142,6 +150,43 @@ const SEGMENTS = [
   { value: 'rrhh', label: 'Responsables de RRHH' },
 ];
 
+const TRIGGERS = [
+  { id: 'user_register', title: 'Usuario se registra', icon: <UserPlus size={18} /> },
+  { id: 'company_onboarding', title: 'Empresa completa onboarding', icon: <Building2 size={18} /> },
+  { id: 'before_pause', title: 'Antes de una pausa activa', icon: <Clock3 size={18} /> },
+  { id: 'after_pause', title: 'Después de una pausa activa', icon: <CheckCircle2 size={18} /> },
+  { id: 'no_pause', title: 'Usuario no realizó la pausa', icon: <X size={18} /> },
+  { id: 'form_completed', title: 'Completa formulario semanal', icon: <FileText size={18} /> },
+  { id: 'pain_reported', title: 'Reporta dolor', icon: <Activity size={18} /> },
+  { id: 'low_energy', title: 'Cambio de energía', icon: <Zap size={18} /> },
+];
+
+interface ConditionRule {
+  field: string;
+  operator: string;
+  value: string;
+}
+
+export interface CustomAutomation {
+  id: string;
+  name: string;
+  description: string;
+  active: boolean;
+  triggerId: string;
+  audiences: string[];
+  conditions: ConditionRule[];
+  timing: {
+    delay: string;
+    days: string[];
+    timeFrom: string;
+    timeTo: string;
+  };
+  template: {
+    subject: string;
+    body: string;
+  };
+}
+
 const buildDefaults = (): EmailAutomation[] => AUTOMATION_DEFINITIONS.map((definition, index) => ({
   id: definition.id,
   active: index !== 3,
@@ -188,9 +233,19 @@ export const Emails: React.FC = () => {
   const [view, setView] = useState<EmailView>('automatizaciones');
   const [database, setDatabase] = useState<MockDB | null>(null);
   const [automations, setAutomations] = useState<EmailAutomation[]>([]);
+  const [customAutomations, setCustomAutomations] = useState<CustomAutomation[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EmailAutomation | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
+  
+  // Wizard State
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [wizardData, setWizardData] = useState<CustomAutomation>({
+    id: '', name: '', description: '', active: true, triggerId: '', audiences: [], conditions: [],
+    timing: { delay: 'Inmediatamente', days: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'], timeFrom: '09:00', timeTo: '18:00' },
+    template: { subject: '', body: '' }
+  });
 
   useEffect(() => {
     const db = getDB();
@@ -201,13 +256,18 @@ export const Emails: React.FC = () => {
     }
     setDatabase(db);
     setAutomations(merged);
+    
+    try {
+      const storedCustom = JSON.parse(localStorage.getItem('reactiva_custom_automations') || '[]');
+      setCustomAutomations(storedCustom);
+    } catch (e) {}
   }, []);
 
   const companies = database?.empresas ?? [];
   const users = database?.usuarios ?? [];
   const videos = database?.videos ?? [];
   const events = database?.emailEvents ?? [];
-  const activeCount = automations.filter(item => item.active).length;
+  const activeCount = automations.filter(item => item.active).length + customAutomations.filter(item => item.active).length;
   const nextVideo = getNextScheduledVideo(videos, 'all');
   const editingDefinition = AUTOMATION_DEFINITIONS.find(item => item.id === editingId);
 
@@ -219,8 +279,17 @@ export const Emails: React.FC = () => {
     setAutomations(next);
   };
 
+  const persistCustomAutomations = (next: CustomAutomation[]) => {
+    setCustomAutomations(next);
+    localStorage.setItem('reactiva_custom_automations', JSON.stringify(next));
+  };
+
   const toggleAutomation = (id: string) => {
     persistAutomations(automations.map(item => item.id === id ? { ...item, active: !item.active } : item));
+  };
+  
+  const toggleCustomAutomation = (id: string) => {
+    persistCustomAutomations(customAutomations.map(item => item.id === id ? { ...item, active: !item.active } : item));
   };
 
   const openAutomation = (id: string) => {
@@ -237,6 +306,14 @@ export const Emails: React.FC = () => {
     window.setTimeout(() => setSavedNotice(false), 1800);
     setEditingId(null);
     setDraft(null);
+  };
+  
+  const saveWizard = () => {
+    const newAutomation = { ...wizardData, id: `custom_${Date.now()}` };
+    persistCustomAutomations([...customAutomations, newAutomation]);
+    setShowWizard(false);
+    setSavedNotice(true);
+    window.setTimeout(() => setSavedNotice(false), 1800);
   };
 
   const scopedUsers = useMemo(() => {
@@ -269,6 +346,289 @@ export const Emails: React.FC = () => {
     };
   }), [events]);
 
+  const startWizard = () => {
+    setWizardStep(1);
+    setWizardData({
+      id: '', name: '', description: '', active: true, triggerId: '', audiences: [], conditions: [],
+      timing: { delay: 'Inmediatamente', days: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'], timeFrom: '09:00', timeTo: '18:00' },
+      template: { subject: '', body: '' }
+    });
+    setShowWizard(true);
+  };
+
+  const WizardContent = () => {
+    switch (wizardStep) {
+      case 1:
+        return (
+          <div className="wizard-content">
+            <h3>Información general</h3>
+            <p>Definí el nombre y estado de tu nueva regla.</p>
+            
+            <label className="automation-full-field" style={{ marginBottom: '1.5rem', display: 'block' }}>
+              Nombre de la automatización
+              <input 
+                className="input-field" 
+                placeholder="Ej: Retorno de inactivos con dolor" 
+                value={wizardData.name} 
+                onChange={e => setWizardData({...wizardData, name: e.target.value})} 
+              />
+            </label>
+            <label className="automation-full-field" style={{ marginBottom: '2rem', display: 'block' }}>
+              Descripción (opcional)
+              <input 
+                className="input-field" 
+                placeholder="Breve explicación interna" 
+                value={wizardData.description} 
+                onChange={e => setWizardData({...wizardData, description: e.target.value})} 
+              />
+            </label>
+            
+            <div className="automation-enable-row" style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.95rem' }}>Activar automatización</strong>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>El sistema comenzará a monitorear esta regla al guardar.</span>
+              </div>
+              <label className="automation-toggle">
+                <input type="checkbox" checked={wizardData.active} onChange={() => setWizardData({ ...wizardData, active: !wizardData.active })} />
+                <span />
+              </label>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="wizard-content">
+            <h3>¿Qué dispara esta automatización?</h3>
+            <p>Seleccioná el evento que dará inicio a la regla.</p>
+            <div className="wizard-trigger-grid">
+              {TRIGGERS.map(trigger => (
+                <div 
+                  key={trigger.id} 
+                  className={`wizard-trigger-card ${wizardData.triggerId === trigger.id ? 'active' : ''}`}
+                  onClick={() => setWizardData({...wizardData, triggerId: trigger.id})}
+                >
+                  <h4>{trigger.icon} {trigger.title}</h4>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="wizard-content">
+            <h3>¿A quién se envía?</h3>
+            <p>Elegí uno o más grupos de destinatarios.</p>
+            <div className="wizard-audience-grid">
+              {SEGMENTS.map(seg => (
+                <label key={seg.value} className="wizard-audience-option">
+                  <input 
+                    type="checkbox" 
+                    checked={wizardData.audiences.includes(seg.value)}
+                    onChange={(e) => {
+                      const newAuds = e.target.checked 
+                        ? [...wizardData.audiences, seg.value]
+                        : wizardData.audiences.filter(a => a !== seg.value);
+                      setWizardData({...wizardData, audiences: newAuds});
+                    }}
+                  />
+                  <span>{seg.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="wizard-content">
+            <h3>Condiciones (opcionales)</h3>
+            <p>Agregá reglas para refinar exactamente cuándo se envía.</p>
+            
+            <div style={{ marginBottom: '1.5rem' }}>
+              {wizardData.conditions.map((cond, idx) => (
+                <div key={idx} className="wizard-condition-row">
+                  <select 
+                    value={cond.field}
+                    onChange={e => {
+                      const newConds = [...wizardData.conditions];
+                      newConds[idx].field = e.target.value;
+                      setWizardData({...wizardData, conditions: newConds});
+                    }}
+                  >
+                    <option value="">Seleccionar campo</option>
+                    <option value="participacion">Participación (%)</option>
+                    <option value="dolor">Tiene dolor</option>
+                    <option value="empresa">Empresa</option>
+                    <option value="dias_inactivo">Días inactivo</option>
+                  </select>
+                  
+                  <select
+                    value={cond.operator}
+                    onChange={e => {
+                      const newConds = [...wizardData.conditions];
+                      newConds[idx].operator = e.target.value;
+                      setWizardData({...wizardData, conditions: newConds});
+                    }}
+                  >
+                    <option value="=">Igual a</option>
+                    <option value="!=">Distinto a</option>
+                    <option value=">">Mayor que</option>
+                    <option value="<">Menor que</option>
+                  </select>
+                  
+                  <input 
+                    placeholder="Valor..."
+                    value={cond.value}
+                    onChange={e => {
+                      const newConds = [...wizardData.conditions];
+                      newConds[idx].value = e.target.value;
+                      setWizardData({...wizardData, conditions: newConds});
+                    }}
+                  />
+                  
+                  <button onClick={() => {
+                    const newConds = [...wizardData.conditions];
+                    newConds.splice(idx, 1);
+                    setWizardData({...wizardData, conditions: newConds});
+                  }}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <button 
+              className="btn-secondary" 
+              onClick={() => setWizardData({...wizardData, conditions: [...wizardData.conditions, {field: '', operator: '=', value: ''}]})}
+            >
+              <Plus size={16} style={{ marginRight: '6px' }} /> Agregar regla (Y)
+            </button>
+          </div>
+        );
+      case 5:
+        return (
+          <div className="wizard-content">
+            <h3>Momento del envío</h3>
+            <p>Configurá el retraso y la ventana horaria de envío.</p>
+            
+            <label className="automation-full-field" style={{ marginBottom: '1.5rem', display: 'block' }}>
+              ¿Cuándo se envía?
+              <select 
+                className="input-field"
+                value={wizardData.timing.delay}
+                onChange={e => setWizardData({...wizardData, timing: {...wizardData.timing, delay: e.target.value}})}
+              >
+                <option>Inmediatamente</option>
+                <option>15 minutos después</option>
+                <option>30 minutos</option>
+                <option>1 hora</option>
+                <option>1 día</option>
+                <option>3 días</option>
+              </select>
+            </label>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <strong style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px' }}>Días permitidos</strong>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].map(day => (
+                  <label key={day} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '20px', cursor: 'pointer', backgroundColor: wizardData.timing.days.includes(day) ? 'var(--primary-light)' : 'white', borderColor: wizardData.timing.days.includes(day) ? 'var(--primary-color)' : 'var(--border-color)' }}>
+                    <input 
+                      type="checkbox" 
+                      style={{ display: 'none' }}
+                      checked={wizardData.timing.days.includes(day)}
+                      onChange={e => {
+                        const newDays = e.target.checked 
+                          ? [...wizardData.timing.days, day] 
+                          : wizardData.timing.days.filter(d => d !== day);
+                        setWizardData({...wizardData, timing: {...wizardData.timing, days: newDays}});
+                      }}
+                    />
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: wizardData.timing.days.includes(day) ? 'var(--primary-color)' : 'var(--text-color)', textTransform: 'capitalize' }}>{day}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <label className="automation-full-field">
+                Horario Desde
+                <input type="time" className="input-field" value={wizardData.timing.timeFrom} onChange={e => setWizardData({...wizardData, timing: {...wizardData.timing, timeFrom: e.target.value}})} />
+              </label>
+              <label className="automation-full-field">
+                Horario Hasta
+                <input type="time" className="input-field" value={wizardData.timing.timeTo} onChange={e => setWizardData({...wizardData, timing: {...wizardData.timing, timeTo: e.target.value}})} />
+              </label>
+            </div>
+          </div>
+        );
+      case 6:
+        return (
+          <div className="wizard-content">
+            <h3>Plantilla y contenido</h3>
+            <p>Redactá el mensaje que recibirán los usuarios cuando se cumplan las condiciones.</p>
+            
+            <label className="automation-full-field" style={{ marginBottom: '1.5rem', display: 'block' }}>
+              Asunto del correo
+              <input 
+                className="input-field" 
+                placeholder="Ej: Tenemos algo para ayudarte..." 
+                value={wizardData.template.subject}
+                onChange={e => setWizardData({...wizardData, template: {...wizardData.template, subject: e.target.value}})}
+              />
+            </label>
+            
+            <label className="automation-full-field" style={{ display: 'block' }}>
+              Cuerpo del mensaje (acepta variables como {'{{nombre}}'})
+              <textarea 
+                className="input-field" 
+                rows={8} 
+                placeholder="Hola {{nombre}}..."
+                value={wizardData.template.body}
+                onChange={e => setWizardData({...wizardData, template: {...wizardData.template, body: e.target.value}})}
+              />
+            </label>
+          </div>
+        );
+      case 7:
+        const tTitle = TRIGGERS.find(t => t.id === wizardData.triggerId)?.title || 'No seleccionado';
+        return (
+          <div className="wizard-content">
+            <h3>Resumen final</h3>
+            <p>Revisá que todo esté correcto antes de guardar la automatización.</p>
+            
+            <div className="wizard-preview-card">
+              <div className="wizard-preview-row">
+                <span className="wizard-preview-label">Nombre</span>
+                <span className="wizard-preview-value">{wizardData.name || '-'}</span>
+              </div>
+              <div className="wizard-preview-row">
+                <span className="wizard-preview-label">Estado</span>
+                <span className="wizard-preview-value" style={{ color: wizardData.active ? '#10b981' : '#64748b' }}>
+                  {wizardData.active ? 'Activo' : 'Inactivo'}
+                </span>
+              </div>
+              <div className="wizard-preview-row">
+                <span className="wizard-preview-label">Disparador</span>
+                <span className="wizard-preview-value">{tTitle}</span>
+              </div>
+              <div className="wizard-preview-row">
+                <span className="wizard-preview-label">Destinatarios</span>
+                <span className="wizard-preview-value">{wizardData.audiences.length} segmento(s) seleccionado(s)</span>
+              </div>
+              <div className="wizard-preview-row">
+                <span className="wizard-preview-label">Condiciones</span>
+                <span className="wizard-preview-value">{wizardData.conditions.length} regla(s) extra</span>
+              </div>
+              <div className="wizard-preview-row">
+                <span className="wizard-preview-label">Envío</span>
+                <span className="wizard-preview-value">{wizardData.timing.delay} ({wizardData.timing.timeFrom} a {wizardData.timing.timeTo})</span>
+              </div>
+            </div>
+          </div>
+        );
+      default: return null;
+    }
+  };
+
   return (
     <div className="email-center">
       <header className="email-center-header">
@@ -276,12 +636,17 @@ export const Emails: React.FC = () => {
           <h2 className="header-title">Correos automáticos</h2>
           <p>Configurá qué mensajes se envían, a quiénes y en qué momento.</p>
         </div>
-        <div className="email-view-switch" role="tablist">
-          <button className={view === 'automatizaciones' ? 'active' : ''} onClick={() => setView('automatizaciones')}>
-            <Bell size={16} /> Automatizaciones
-          </button>
-          <button className={view === 'rendimiento' ? 'active' : ''} onClick={() => setView('rendimiento')}>
-            <BarChart3 size={16} /> Rendimiento
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div className="email-view-switch" role="tablist">
+            <button className={view === 'automatizaciones' ? 'active' : ''} onClick={() => setView('automatizaciones')}>
+              <Bell size={16} /> Automatizaciones
+            </button>
+            <button className={view === 'rendimiento' ? 'active' : ''} onClick={() => setView('rendimiento')}>
+              <BarChart3 size={16} /> Rendimiento
+            </button>
+          </div>
+          <button className="btn-primary" onClick={startWizard} style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+            <Plus size={16} style={{ marginRight: '6px' }} /> Nueva automatización
           </button>
         </div>
       </header>
@@ -295,18 +660,63 @@ export const Emails: React.FC = () => {
             </div>
             <div>
               <span>Automatizaciones inactivas</span>
-              <strong>{automations.length - activeCount}</strong>
+              <strong>{(automations.length + customAutomations.length) - activeCount}</strong>
             </div>
             <div>
               <span>Próximo envío programado</span>
               <strong>{nextVideo ? `${nextVideo.dia} ${nextVideo.hora}` : 'Sin contenido próximo'}</strong>
             </div>
-            <button className="btn-secondary" onClick={() => setView('rendimiento')}>
-              <BarChart3 size={16} /> Ver rendimiento
-            </button>
+            <div>
+              <span>Reglas personalizadas</span>
+              <strong>{customAutomations.length}</strong>
+            </div>
           </section>
 
           <section className="automation-grid">
+            {/* Custom Automations Render */}
+            {customAutomations.map(custom => {
+              const triggerObj = TRIGGERS.find(t => t.id === custom.triggerId);
+              return (
+                <article
+                  key={custom.id}
+                  className={`automation-card${custom.active ? ' is-active' : ''}`}
+                >
+                  <div className="automation-card-top">
+                    <div className="automation-icon" style={{ backgroundColor: 'var(--primary-color)', color: 'white' }}>
+                      <Zap size={20} />
+                    </div>
+                    <label className="automation-toggle" onClick={event => event.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={custom.active}
+                        onChange={() => toggleCustomAutomation(custom.id)}
+                        aria-label={`${custom.active ? 'Desactivar' : 'Activar'} ${custom.name}`}
+                      />
+                      <span />
+                    </label>
+                  </div>
+                  <div className="automation-card-copy">
+                    <div className="automation-title-row">
+                      <h3>{custom.name}</h3>
+                      <span className={custom.active ? 'status-active' : 'status-inactive'}>
+                        {custom.active ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </div>
+                    <p>{custom.description || 'Automatización personalizada'}</p>
+                  </div>
+                  <div className="automation-condition">
+                    <Clock3 size={15} />
+                    <span>{triggerObj?.title || 'Personalizado'}</span>
+                  </div>
+                  <div className="automation-card-footer">
+                    <span>{custom.audiences.length} segmento(s) destino</span>
+                    <ChevronRight size={18} />
+                  </div>
+                </article>
+              );
+            })}
+
+            {/* Predefined Automations Render */}
             {AUTOMATION_DEFINITIONS.map(definition => {
               const automation = automations.find(item => item.id === definition.id);
               if (!automation) return null;
@@ -364,9 +774,6 @@ export const Emails: React.FC = () => {
               <h3>Rendimiento de automatizaciones</h3>
               <p>Los resultados se calculan únicamente con eventos registrados por la plataforma.</p>
             </div>
-            <button className="btn-secondary" onClick={() => setView('automatizaciones')}>
-              Volver a automatizaciones
-            </button>
           </div>
 
           <div className="email-kpis">
@@ -407,13 +814,70 @@ export const Emails: React.FC = () => {
         </section>
       )}
 
+      {/* CUSTOM AUTOMATION WIZARD MODAL */}
+      {showWizard && (
+        <div className="wizard-backdrop" onClick={() => setShowWizard(false)}>
+          <div className="wizard-modal" onClick={e => e.stopPropagation()}>
+            <div className="wizard-head">
+              <h2><Zap size={22} color="var(--primary-color)" /> Nueva automatización</h2>
+              <button onClick={() => setShowWizard(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20}/></button>
+            </div>
+            
+            <div className="wizard-body">
+              <div className="wizard-steps">
+                {[
+                  { step: 1, label: 'Información general', icon: <FileText size={16} /> },
+                  { step: 2, label: 'Disparador', icon: <Zap size={16} /> },
+                  { step: 3, label: 'Audiencia', icon: <Users size={16} /> },
+                  { step: 4, label: 'Condiciones', icon: <SlidersHorizontal size={16} /> },
+                  { step: 5, label: 'Momento', icon: <Clock3 size={16} /> },
+                  { step: 6, label: 'Plantilla', icon: <LayoutTemplate size={16} /> },
+                  { step: 7, label: 'Vista previa', icon: <Target size={16} /> },
+                ].map(s => (
+                  <div 
+                    key={s.step} 
+                    className={`wizard-step ${wizardStep === s.step ? 'active' : ''} ${wizardStep > s.step ? 'completed' : ''}`}
+                    onClick={() => setWizardStep(s.step)}
+                  >
+                    {wizardStep > s.step ? <CheckCircle size={16} /> : s.icon}
+                    <span>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {WizardContent()}
+            </div>
+            
+            <div className="wizard-footer">
+              <button 
+                className="btn-secondary" 
+                onClick={() => wizardStep > 1 ? setWizardStep(wizardStep - 1) : setShowWizard(false)}
+              >
+                {wizardStep > 1 ? 'Anterior' : 'Cancelar'}
+              </button>
+              
+              {wizardStep < 7 ? (
+                <button className="btn-primary" onClick={() => setWizardStep(wizardStep + 1)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  Siguiente paso <ArrowRight size={16} />
+                </button>
+              ) : (
+                <button className="btn-primary" onClick={saveWizard} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Save size={16} /> Guardar automatización
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PREDEFINED AUTOMATION DRAWER */}
       {editingDefinition && draft && (
         <div className="automation-drawer-backdrop" onClick={() => { setEditingId(null); setDraft(null); }}>
           <aside className="automation-drawer" onClick={event => event.stopPropagation()}>
             <div className="automation-drawer-head">
               <div className="automation-icon">{editingDefinition.icon}</div>
               <div>
-                <span>Configurar automatización</span>
+                <span>Configurar automatización predefinida</span>
                 <h3>{editingDefinition.name}</h3>
               </div>
               <button onClick={() => { setEditingId(null); setDraft(null); }} title="Cerrar"><X size={20} /></button>

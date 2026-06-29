@@ -7,6 +7,7 @@ import { AdminDashboard } from './views/admin/Dashboard';
 import { UsuarioDashboard } from './views/usuario/Dashboard';
 import { UsuarioProgreso } from './views/usuario/Progreso';
 import { UsuarioTips } from './views/usuario/Tips';
+import { Academia } from './views/usuario/Academia';
 import { Empresas } from './views/admin/Empresas';
 import { Usuarios } from './views/admin/Usuarios';
 import { Analiticas } from './views/admin/Analiticas';
@@ -38,6 +39,7 @@ function App() {
             <Route index element={<UsuarioDashboard />} />
             <Route path="progreso" element={<UsuarioProgreso />} />
             <Route path="tips" element={<UsuarioTips />} />
+            <Route path="academia" element={<Academia />} />
           </Route>
 
           {/* Redirección por defecto */}

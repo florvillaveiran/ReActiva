@@ -330,6 +330,31 @@ export const Analiticas: React.FC = () => {
     return weeklyRanges[semanaSel] ?? { from: '', to: '' };
   }, [anioSel, fechaDesde, fechaHasta, mesSel, periodo, semanaSel]);
 
+  const zonasSorted = [...data.zonas].sort((a, b) => b.valor - a.valor);
+  const predominant = zonasSorted.length > 0 && zonasSorted[0].valor > 0 ? zonasSorted[0].name : null;
+  const totalZonas = zonasSorted.reduce((sum, z) => sum + z.valor, 0);
+
+  const insights = useMemo(() => {
+    const msgs = [];
+    if (data.kpis.participacion > 80) msgs.push('📈 La participación general se mantiene en niveles excelentes.');
+    else if (data.kpis.participacion > 0 && data.kpis.participacion < 50) msgs.push('⚠️ La participación ha estado por debajo del objetivo esperado.');
+    else if (data.kpis.participacion > 0) msgs.push('📈 La participación general muestra una base sólida y estable.');
+    
+    if (data.kpis.energia > 70) msgs.push('💪 La energía promedio mostró una evolución muy positiva.');
+    else if (data.kpis.energia > 0 && data.kpis.energia < 40) msgs.push('🔋 Se detectan niveles bajos de energía sostenida en el equipo.');
+    
+    if (predominant) msgs.push(`🎯 El foco preventivo principal debería orientarse a la zona ${predominant.toLowerCase()}.`);
+    
+    if (data.kpis.impacto > 80) msgs.push('👏 El impacto percibido de las pausas continúa en aumento.');
+    
+    if (data.kpis.foco > 75) msgs.push('🧠 La capacidad de concentración se reporta en valores óptimos.');
+    else if (data.kpis.foco > 0 && data.kpis.foco < 50) msgs.push('⚠️ Se detectan dificultades recurrentes para sostener el foco.');
+
+    if (msgs.length === 0) msgs.push('✅ Todos los indicadores se encuentran dentro de los parámetros esperados.');
+    
+    return msgs.slice(0, 4);
+  }, [data.kpis, predominant]);
+
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
@@ -481,25 +506,26 @@ export const Analiticas: React.FC = () => {
             </div>
           </div>
 
-          {/* Dolor */}
-          <div className="card" style={{ padding: '1.25rem' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Dolor</h3>
-            <div style={{ height: '180px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorDolor" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
-                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }} />
-                  <Area type="monotone" dataKey="dolor" name="Dolor (%)" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorDolor)" />
-                </AreaChart>
-              </ResponsiveContainer>
+          {/* Zonas de Dolor */}
+          <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-color)' }}>Zonas de dolor reportadas</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+              {predominant ? `Predomina dolor ${predominant.toLowerCase()}.` : totalZonas === 0 ? 'Sin reportes de dolor.' : 'Sin una zona predominante.'}
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, overflowY: 'auto' }}>
+              {zonasSorted.filter(z => z.valor > 0).map(z => {
+                 const pct = Math.round((z.valor / totalZonas) * 100) || 0;
+                 return (
+                   <div key={z.name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                     <span style={{ fontSize: '0.85rem', width: '85px', flexShrink: 0, color: 'var(--text-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{z.name}</span>
+                     <div style={{ flex: 1, height: '8px', backgroundColor: '#fff1f2', borderRadius: '4px', overflow: 'hidden' }}>
+                       <div style={{ width: `${pct}%`, height: '100%', backgroundColor: '#f43f5e', borderRadius: '4px' }} />
+                     </div>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', width: '35px', textAlign: 'right' }}>{pct}%</span>
+                   </div>
+                 )
+              })}
             </div>
           </div>
 
@@ -569,6 +595,18 @@ export const Analiticas: React.FC = () => {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        </div>
+
+        {/* ─── Insights Automáticos ────────────────────────────────────────── */}
+        <div className="card" style={{ padding: '1.5rem', marginTop: '1.25rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--text-color)' }}>Insights del período</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            {insights.map((insight, idx) => (
+              <div key={idx} style={{ padding: '1rem 1.25rem', backgroundColor: 'var(--bg-secondary-color)', borderRadius: '12px', fontSize: '0.92rem', color: 'var(--text-color)', lineHeight: 1.4 }}>
+                {insight}
+              </div>
+            ))}
           </div>
         </div>
       </div>
