@@ -336,37 +336,37 @@ export const Analiticas: React.FC = () => {
 
   const insights = useMemo(() => {
     const msgs = [];
-    if (data.kpis.participacion > 80) msgs.push('📈 La participación general se mantiene en niveles excelentes.');
-    else if (data.kpis.participacion > 0 && data.kpis.participacion < 50) msgs.push('⚠️ La participación ha estado por debajo del objetivo esperado.');
-    else if (data.kpis.participacion > 0) msgs.push('📈 La participación general muestra una base sólida y estable.');
+    if (data.kpis.participacion > 80) msgs.push({ icon: '📈', text: 'Participación general en niveles excelentes.' });
+    else if (data.kpis.participacion > 0 && data.kpis.participacion < 50) msgs.push({ icon: '⚠️', text: 'Participación por debajo del objetivo esperado.' });
+    else if (data.kpis.participacion > 0) msgs.push({ icon: '📈', text: 'Participación estable durante todo el mes.' });
     
-    if (data.kpis.energia > 70) msgs.push('💪 La energía promedio mostró una evolución muy positiva.');
-    else if (data.kpis.energia > 0 && data.kpis.energia < 40) msgs.push('🔋 Se detectan niveles bajos de energía sostenida en el equipo.');
+    if (data.kpis.energia > 70) msgs.push({ icon: '💪', text: 'La energía promedio continúa mejorando.' });
+    else if (data.kpis.energia > 0 && data.kpis.energia < 40) msgs.push({ icon: '🔋', text: 'Niveles bajos de energía sostenida en el equipo.' });
     
-    if (predominant) msgs.push(`🎯 El foco preventivo principal debería orientarse a la zona ${predominant.toLowerCase()}.`);
+    if (predominant) msgs.push({ icon: '⚠️', text: `La principal zona de dolor reportada fue ${predominant.toLowerCase()}.` });
     
-    if (data.kpis.impacto > 80) msgs.push('👏 El impacto percibido de las pausas continúa en aumento.');
+    if (data.kpis.impacto > 80) msgs.push({ icon: '👏', text: 'El impacto percibido de las pausas continúa en aumento.' });
     
-    if (data.kpis.foco > 75) msgs.push('🧠 La capacidad de concentración se reporta en valores óptimos.');
-    else if (data.kpis.foco > 0 && data.kpis.foco < 50) msgs.push('⚠️ Se detectan dificultades recurrentes para sostener el foco.');
+    if (data.kpis.foco > 75) msgs.push({ icon: '🎯', text: 'El foco alcanzó valores altos de forma sostenida.' });
+    else if (data.kpis.foco > 0 && data.kpis.foco < 50) msgs.push({ icon: '⚠️', text: 'Dificultades recurrentes para sostener la concentración.' });
 
-    if (msgs.length === 0) msgs.push('✅ Todos los indicadores se encuentran dentro de los parámetros esperados.');
+    if (msgs.length === 0) msgs.push({ icon: '✅', text: 'Todos los indicadores dentro de los parámetros esperados.' });
     
     return msgs.slice(0, 4);
   }, [data.kpis, predominant]);
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas Detalladas</h2>
+    <div style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '3rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3.5rem', flexWrap: 'nowrap', gap: '1rem', overflowX: 'auto', paddingBottom: '5px' }}>
+        <h2 className="header-title" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '1.5rem', flexShrink: 0 }}>Analíticas</h2>
         
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'nowrap', flexShrink: 0 }}>
           {/* Empresa */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Filter size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <Filter size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.6rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
-              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
+              style={{ paddingLeft: '1.8rem', paddingRight: '0.5rem', width: 'auto', minWidth: '120px', backgroundColor: 'var(--bg-color)', fontWeight: 500, fontSize: '0.85rem' }}
               value={filtro}
               onChange={(e) => setFiltro(e.target.value as EmpresaKey)}
             >
@@ -377,15 +377,15 @@ export const Analiticas: React.FC = () => {
           </div>
 
           {/* Período (Principal) */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <Calendar size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.6rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
-              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
+              style={{ paddingLeft: '1.8rem', paddingRight: '0.5rem', width: 'auto', minWidth: '110px', backgroundColor: 'var(--bg-color)', fontWeight: 500, fontSize: '0.85rem' }}
               value={periodo}
               onChange={(e) => {
                 setPeriodo(e.target.value as PeriodoKey);
-                setComparar(false); // Resetear comparativa al cambiar período
+                setComparar(false);
               }}
             >
               {(Object.keys(PERIODO_LABELS) as PeriodoKey[]).map(k => (
@@ -396,10 +396,10 @@ export const Analiticas: React.FC = () => {
 
           {/* Selectores Secundarios */}
           {periodo === 'semanal' && (
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               <select
                 className="input-field"
-                style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '220px', backgroundColor: 'var(--bg-color)' }}
+                style={{ paddingLeft: '0.75rem', paddingRight: '0.5rem', width: 'auto', minWidth: '180px', backgroundColor: 'var(--bg-color)', fontSize: '0.85rem' }}
                 value={semanaSel}
                 onChange={(e) => setSemanaSel(e.target.value)}
               >
@@ -411,10 +411,10 @@ export const Analiticas: React.FC = () => {
           )}
 
           {periodo === 'mensual' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
               <select
                 className="input-field"
-                style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)' }}
+                style={{ paddingLeft: '0.75rem', paddingRight: '0.5rem', width: 'auto', minWidth: '100px', backgroundColor: 'var(--bg-color)', fontSize: '0.85rem' }}
                 value={mesSel}
                 onChange={(e) => setMesSel(e.target.value)}
               >
@@ -422,7 +422,7 @@ export const Analiticas: React.FC = () => {
                 <option value="Junio 2026">Junio 2026</option>
                 <option value="Mayo 2026">Mayo 2026</option>
               </select>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-color)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 <input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
                 Comparar con mes anterior
               </label>
@@ -430,17 +430,17 @@ export const Analiticas: React.FC = () => {
           )}
 
           {periodo === 'anual' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
               <select
                 className="input-field"
-                style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '100px', backgroundColor: 'var(--bg-color)' }}
+                style={{ paddingLeft: '0.75rem', paddingRight: '0.5rem', width: 'auto', minWidth: '80px', backgroundColor: 'var(--bg-color)', fontSize: '0.85rem' }}
                 value={anioSel}
                 onChange={(e) => setAnioSel(e.target.value)}
               >
                 <option value="2026">2026</option>
                 <option value="2025">2025</option>
               </select>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-color)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 <input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
                 Comparar con año anterior
               </label>
@@ -448,14 +448,14 @@ export const Analiticas: React.FC = () => {
           )}
 
           {periodo === 'personalizado' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input type="date" className="input-field" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+              <input type="date" className="input-field" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ width: '120px', padding: '0.4rem', fontSize: '0.85rem' }} />
               <span style={{ color: 'var(--text-muted)' }}>-</span>
-              <input type="date" className="input-field" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
+              <input type="date" className="input-field" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ width: '120px', padding: '0.4rem', fontSize: '0.85rem' }} />
             </div>
           )}
-
-          <div style={{ flexGrow: 1 }} />
+          
+          <div style={{ width: '0.5rem' }} />
 
           <ReportGenerator
             currentData={data}
@@ -470,7 +470,7 @@ export const Analiticas: React.FC = () => {
       <div>
 
         {/* ─── KPIs (5 mini cards) ─────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '2.5rem' }}>
           {[
             { label: 'Participación', value: data.kpis.participacion, color: 'var(--primary-color)', bg: '#f0fdfa' },
             { label: 'Foco',          value: data.kpis.foco,          color: '#3b82f6',              bg: '#eff6ff' },
@@ -507,22 +507,21 @@ export const Analiticas: React.FC = () => {
           </div>
 
           {/* Zonas de Dolor */}
-          <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-color)' }}>Zonas de dolor reportadas</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.75rem' }}>
               {predominant ? `Predomina dolor ${predominant.toLowerCase()}.` : totalZonas === 0 ? 'Sin reportes de dolor.' : 'Sin una zona predominante.'}
             </p>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, overflowY: 'auto' }}>
               {zonasSorted.filter(z => z.valor > 0).map(z => {
                  const pct = Math.round((z.valor / totalZonas) * 100) || 0;
                  return (
-                   <div key={z.name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                     <span style={{ fontSize: '0.85rem', width: '85px', flexShrink: 0, color: 'var(--text-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{z.name}</span>
-                     <div style={{ flex: 1, height: '8px', backgroundColor: '#fff1f2', borderRadius: '4px', overflow: 'hidden' }}>
+                   <div key={z.name} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' }}>{z.name}</span>
+                     <div style={{ width: '100%', height: '8px', backgroundColor: '#fff1f2', borderRadius: '4px', overflow: 'hidden' }}>
                        <div style={{ width: `${pct}%`, height: '100%', backgroundColor: '#f43f5e', borderRadius: '4px' }} />
                      </div>
-                     <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', width: '35px', textAlign: 'right' }}>{pct}%</span>
                    </div>
                  )
               })}
@@ -599,15 +598,16 @@ export const Analiticas: React.FC = () => {
         </div>
 
         {/* ─── Insights Automáticos ────────────────────────────────────────── */}
-        <div className="card" style={{ padding: '1.5rem', marginTop: '1.25rem' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--text-color)' }}>Insights del período</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+        <div className="card" style={{ padding: '1.75rem', marginTop: '2.5rem' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--text-color)' }}>Insights del período</h3>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {insights.map((insight, idx) => (
-              <div key={idx} style={{ padding: '1rem 1.25rem', backgroundColor: 'var(--bg-secondary-color)', borderRadius: '12px', fontSize: '0.92rem', color: 'var(--text-color)', lineHeight: 1.4 }}>
-                {insight}
-              </div>
+              <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.92rem', color: 'var(--text-color)' }}>
+                <span style={{ fontSize: '1.1rem' }}>{insight.icon}</span>
+                {insight.text}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
     </div>

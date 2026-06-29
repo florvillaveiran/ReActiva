@@ -734,9 +734,9 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
         className="btn-primary"
         onClick={() => setOpen(true)}
         disabled={generating}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap', padding: '0.45rem 0.85rem', fontSize: '0.85rem', minHeight: 'auto', borderRadius: '8px' }}
       >
-        <Download size={16} />
+        <Download size={15} />
         {generating ? 'Generando...' : 'Generar informe'}
       </button>
 
