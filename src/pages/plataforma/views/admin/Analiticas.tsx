@@ -356,8 +356,8 @@ export const Analiticas: React.FC = () => {
   }, [data.kpis, predominant]);
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '3rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3.5rem', flexWrap: 'nowrap', gap: '1rem', overflowX: 'auto', paddingBottom: '5px' }}>
+    <div style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'nowrap', gap: '1rem', overflowX: 'auto', paddingBottom: '5px' }}>
         <h2 className="header-title" style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '1.5rem', flexShrink: 0 }}>Analíticas</h2>
         
         <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'nowrap', flexShrink: 0 }}>
@@ -470,7 +470,7 @@ export const Analiticas: React.FC = () => {
       <div>
 
         {/* ─── KPIs (5 mini cards) ─────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
           {[
             { label: 'Participación', value: data.kpis.participacion, color: 'var(--primary-color)', bg: '#f0fdfa' },
             { label: 'Foco',          value: data.kpis.foco,          color: '#3b82f6',              bg: '#eff6ff' },
@@ -598,9 +598,9 @@ export const Analiticas: React.FC = () => {
         </div>
 
         {/* ─── Insights Automáticos ────────────────────────────────────────── */}
-        <div className="card" style={{ padding: '1.75rem', marginTop: '2.5rem' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--text-color)' }}>Insights del período</h3>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="card" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-color)' }}>Insights del período</h3>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             {insights.map((insight, idx) => (
               <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.92rem', color: 'var(--text-color)' }}>
                 <span style={{ fontSize: '1.1rem' }}>{insight.icon}</span>
