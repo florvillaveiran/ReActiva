@@ -4,6 +4,7 @@ import { getDB, setDB, addInvitacionUsuario, Empresa, Usuario } from '../../mock
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useAuth } from '../../context/AuthContext';
 
 // ── Components ───────────────────────────────────────────────────
 const Badge: React.FC<{ label: string; bg: string; color: string }> = ({ label, bg, color }) => (
@@ -430,6 +431,8 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
 
 // ── Main View ────────────────────────────────────────────────────
 export const Usuarios: React.FC = () => {
+  const { user } = useAuth();
+  const rrhhEmpresaId = user?.role === 'rrhh' ? user.empresa_id : undefined;
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [empresaFiltro, setEmpresaFiltro] = useState('all');
@@ -452,11 +455,16 @@ export const Usuarios: React.FC = () => {
   useEffect(() => { loadData(); }, []);
 
   if (selectedUser) {
+    if (rrhhEmpresaId && selectedUser.empresa_id !== rrhhEmpresaId) {
+      setSelectedUser(null);
+      return null;
+    }
     const emp = empresas.find(e => e.id === selectedUser.empresa_id);
     return <UsuarioDetalle usuario={selectedUser} empresa={emp} onBack={() => { loadData(); setSelectedUser(null); }} />;
   }
 
   const usuariosFiltrados = usuarios.filter(u => {
+    if (rrhhEmpresaId && u.empresa_id !== rrhhEmpresaId) return false;
     const coincideEmpresa = empresaFiltro === 'all' || u.empresa_id.toString() === empresaFiltro;
     const coincideBusqueda = u.nombre.toLowerCase().includes(search.toLowerCase());
     return coincideEmpresa && coincideBusqueda;
@@ -511,13 +519,15 @@ export const Usuarios: React.FC = () => {
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>Usuarios</h2>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <select className="input-field" style={{ width: '220px', backgroundColor: 'var(--bg-color)' }} value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
-            <option value="all">Todas las empresas</option>
-            {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-          </select>
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>Invitar Usuarios</button>
-        </div>
+        {!rrhhEmpresaId && (
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <select className="input-field" style={{ width: '220px', backgroundColor: 'var(--bg-color)' }} value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
+              <option value="all">Todas las empresas</option>
+              {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+            </select>
+            <button className="btn-primary" onClick={() => setIsModalOpen(true)}>Invitar Usuarios</button>
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: '2rem', padding: '1rem', display: 'flex', gap: '1rem' }}>
@@ -534,6 +544,7 @@ export const Usuarios: React.FC = () => {
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Nombre</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Empresa</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Participación</th>
+              <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Ultima interacción</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>¿Dolor?</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Ingreso</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Estado</th>
@@ -541,7 +552,7 @@ export const Usuarios: React.FC = () => {
           </thead>
           <tbody>
             {usuariosFiltrados.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron usuarios.</td></tr>
+              <tr><td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron usuarios.</td></tr>
             )}
             {usuariosFiltrados.map((usuario, idx) => (
               <tr 
@@ -561,6 +572,7 @@ export const Usuarios: React.FC = () => {
                     <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{usuario.participacion}%</span>
                   </div>
                 </td>
+                <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.ultima_interaccion || usuario.fechaIngreso)}</td>
                 <td style={{ padding: '1.25rem 1.5rem' }}>
                   {usuario.dolor ? <span className="badge badge-warning" style={{ gap: '0.25rem' }}><AlertCircle size={14} /> Sí</span> : <span className="text-muted">No</span>}
                 </td>
@@ -568,7 +580,7 @@ export const Usuarios: React.FC = () => {
                 <td style={{ padding: '1.25rem 1.5rem' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
                     <Badge label={usuario.estado || 'Activo'} bg="#ecfdf5" color="#059669" />
-                    <button
+                    {!rrhhEmpresaId && <button
                       type="button"
                       onClick={(event) => handleEliminarUsuario(event, usuario.id, usuario.nombre)}
                       aria-label={`Eliminar a ${usuario.nombre}`}
@@ -588,7 +600,7 @@ export const Usuarios: React.FC = () => {
                       }}
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </button>}
                   </div>
                 </td>
               </tr>

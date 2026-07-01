@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type Role = 'admin' | 'usuario';
+export type Role = 'admin' | 'usuario' | 'rrhh';
 
 export interface User {
   email: string;
   role: Role;
   name: string;
+  empresa_id?: number;
 }
 
 interface AuthContextType {
@@ -32,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const USERS = [
     { email: 'admin@reactiva.com', password: 'Reactiva2025', role: 'admin' as Role, name: 'Administrador' },
     { email: 'usuario@reactiva.com', password: 'Reactiva2025', role: 'usuario' as Role, name: 'Usuario Demo' },
+    { email: 'rrhh@alpha.com', password: 'Reactiva2025', role: 'rrhh' as Role, name: 'RRHH Empresa Alpha', empresa_id: 1 },
   ];
 
   const login = (email: string, password: string): boolean => {
@@ -40,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
     if (!found) return false;
 
-    const newUser: User = { email: found.email, role: found.role, name: found.name };
+    const newUser: User = { email: found.email, role: found.role, name: found.name, empresa_id: found.empresa_id };
     localStorage.setItem('reactiva_user', JSON.stringify(newUser));
     setUser(newUser);
     return true;

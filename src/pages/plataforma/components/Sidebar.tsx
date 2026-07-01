@@ -18,11 +18,17 @@ export const Sidebar: React.FC = () => {
   const userLinks = [
     { to: '/plataforma/usuario', icon: <PlaySquare size={20} />, label: 'Mi Programa', end: true },
     { to: '/plataforma/usuario/progreso', icon: <Activity size={20} />, label: 'Mi Progreso' },
-    { to: '/plataforma/usuario/tips', icon: <Lightbulb size={20} />, label: 'ReActiva Coach' },
+    { to: '/plataforma/usuario/coach', icon: <Lightbulb size={20} />, label: 'ReActiva Tips' },
     { to: '/plataforma/usuario/academia', icon: <GraduationCap size={20} />, label: 'Academia ReActiva' },
   ];
 
-  const links = user?.role === 'admin' ? adminLinks : userLinks;
+  const rrhhLinks = [
+    { to: '/plataforma/rrhh/analiticas', icon: <BarChart3 size={20} />, label: 'Analiticas' },
+    { to: '/plataforma/rrhh/usuarios', icon: <Users size={20} />, label: 'Usuarios' },
+    { to: '/plataforma/rrhh/empresas', icon: <Building2 size={20} />, label: 'Empresa' },
+  ];
+
+  const links = user?.role === 'admin' ? adminLinks : user?.role === 'rrhh' ? rrhhLinks : userLinks;
 
   return (
     <div className="sidebar">
@@ -35,7 +41,7 @@ export const Sidebar: React.FC = () => {
           <NavLink
             key={link.to}
             to={link.to}
-            end={link.end}
+            end={'end' in link ? link.end : undefined}
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',

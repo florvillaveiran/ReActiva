@@ -3,6 +3,12 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
+const homeForRole = (role: string) => {
+  if (role === 'admin') return '/plataforma/admin';
+  if (role === 'rrhh') return '/plataforma/rrhh';
+  return '/plataforma/usuario';
+};
+
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,7 +18,7 @@ export const Login: React.FC = () => {
   const { user, login } = useAuth();
 
   if (user) {
-    return <Navigate to={user.role === 'admin' ? '/plataforma/admin' : '/plataforma/usuario'} />;
+    return <Navigate to={homeForRole(user.role)} />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,8 +35,8 @@ export const Login: React.FC = () => {
     setLoading(false);
   };
 
-  const fillDemo = (role: 'admin' | 'usuario') => {
-    setEmail(role === 'admin' ? 'admin@reactiva.com' : 'usuario@reactiva.com');
+  const fillDemo = (role: 'admin' | 'usuario' | 'rrhh') => {
+    setEmail(role === 'admin' ? 'admin@reactiva.com' : role === 'rrhh' ? 'rrhh@alpha.com' : 'usuario@reactiva.com');
     setPassword('Reactiva2025');
     setError('');
   };
@@ -179,6 +185,20 @@ export const Login: React.FC = () => {
               onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
             >
               🙋 Usuario
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo('rrhh')}
+              style={{
+                flex: 1, padding: '0.6rem', fontSize: '0.8rem', fontWeight: 500,
+                border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--bg-color)', cursor: 'pointer',
+                color: 'var(--text-color)', transition: 'all 0.2s',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary-color)'}
+              onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              RRHH
             </button>
           </div>
         </div>

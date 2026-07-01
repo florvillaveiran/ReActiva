@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Users, Building, Plus, Mail, User, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, AlertCircle, Target, Clock, Briefcase, TrendingUp, Zap, Trash2 } from 'lucide-react';
 import { getDB, setDB, addEmpresa, Empresa } from '../../mock/data';
+import { useAuth } from '../../context/AuthContext';
 
 const ESTADO_STYLES: Record<string, { bg: string; color: string; dot: string }> = {
   'Activa':               { bg: '#ecfdf5', color: '#059669', dot: '#10b981' },
@@ -170,6 +171,8 @@ const EmpresaDetalle: React.FC<{ empresa: Empresa; onBack: () => void }> = ({ em
 
 // ── Main Empresas View ───────────────────────────────────────────
 export const Empresas: React.FC = () => {
+  const { user } = useAuth();
+  const rrhhEmpresaId = user?.role === 'rrhh' ? user.empresa_id : undefined;
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Empresa | null>(null);
@@ -190,8 +193,9 @@ export const Empresas: React.FC = () => {
   }
 
   const filtered = empresas.filter(e =>
-    e.nombre.toLowerCase().includes(search.toLowerCase()) ||
-    (e.ubicacion || '').toLowerCase().includes(search.toLowerCase())
+    (!rrhhEmpresaId || e.id === rrhhEmpresaId) &&
+    (e.nombre.toLowerCase().includes(search.toLowerCase()) ||
+    (e.ubicacion || '').toLowerCase().includes(search.toLowerCase()))
   );
 
   const handleGenerateLink = () => {
@@ -234,18 +238,20 @@ export const Empresas: React.FC = () => {
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <h2 className="header-title" style={{ marginBottom: 0 }}>Empresas Registradas</h2>
-        <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+        <h2 className="header-title" style={{ marginBottom: 0 }}>{rrhhEmpresaId ? 'Empresa' : 'Empresas Registradas'}</h2>
+        {!rrhhEmpresaId && <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
           <Plus size={18} /> Nueva Empresa
-        </button>
+        </button>}
       </div>
 
-      <div className="card" style={{ marginBottom: '2rem', padding: '1rem' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)' }} />
-          <input type="text" className="input-field" placeholder="Buscar empresa..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '3rem', border: 'none', backgroundColor: 'var(--bg-secondary-color)' }} />
+      {!rrhhEmpresaId && (
+        <div className="card" style={{ marginBottom: '2rem', padding: '1rem' }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)' }} />
+            <input type="text" className="input-field" placeholder="Buscar empresa..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '3rem', border: 'none', backgroundColor: 'var(--bg-secondary-color)' }} />
+          </div>
         </div>
-      </div>
+      )}
 
       <div style={{ display: 'grid', gap: '1.25rem' }}>
         {filtered.length === 0 && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron empresas.</div>}
@@ -279,7 +285,7 @@ export const Empresas: React.FC = () => {
                     <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: s.dot }} />
                     {est}
                   </div>
-                  <button
+                  {!rrhhEmpresaId && <button
                     type="button"
                     onClick={(event) => handleEliminarEmpresa(event, empresa.id, empresa.nombre)}
                     aria-label={`Eliminar ${empresa.nombre}`}
@@ -301,7 +307,7 @@ export const Empresas: React.FC = () => {
                   >
                     <Trash2 size={14} />
                     Eliminar
-                  </button>
+                  </button>}
                 </div>
               </div>
               <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.85rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem 2rem' }}>

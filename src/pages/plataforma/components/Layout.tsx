@@ -1,9 +1,15 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Role, useAuth } from '../context/AuthContext';
 import { Sidebar } from './Sidebar';
 
-export const Layout: React.FC<{ allowedRole?: 'admin' | 'usuario' }> = ({ allowedRole }) => {
+const homeForRole = (role: Role) => {
+  if (role === 'admin') return '/plataforma/admin';
+  if (role === 'rrhh') return '/plataforma/rrhh';
+  return '/plataforma/usuario';
+};
+
+export const Layout: React.FC<{ allowedRole?: Role }> = ({ allowedRole }) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -15,7 +21,7 @@ export const Layout: React.FC<{ allowedRole?: 'admin' | 'usuario' }> = ({ allowe
   }
 
   if (allowedRole && user.role !== allowedRole) {
-    return <Navigate to={user.role === 'admin' ? '/plataforma/admin' : '/plataforma/usuario'} />;
+    return <Navigate to={homeForRole(user.role)} />;
   }
 
   return (

@@ -7,7 +7,7 @@ import { AdminDashboard } from './views/admin/Dashboard';
 import { UsuarioDashboard } from './views/usuario/Dashboard';
 import { UsuarioProgreso } from './views/usuario/Progreso';
 import { UsuarioTips } from './views/usuario/Tips';
-import { Academia } from './views/usuario/Academia';
+import { UsuarioAcademia } from './views/usuario/Academia';
 import { Empresas } from './views/admin/Empresas';
 import { Usuarios } from './views/admin/Usuarios';
 import { Analiticas } from './views/admin/Analiticas';
@@ -34,12 +34,21 @@ function App() {
             <Route path="emails" element={<Emails />} />
           </Route>
 
+          {/* Rutas de RRHH */}
+          <Route path="rrhh" element={<Layout allowedRole="rrhh" />}>
+            <Route index element={<Navigate to="/plataforma/rrhh/analiticas" replace />} />
+            <Route path="empresas" element={<Empresas />} />
+            <Route path="usuarios" element={<Usuarios />} />
+            <Route path="analiticas" element={<Analiticas />} />
+          </Route>
+
           {/* Rutas de Usuario */}
           <Route path="usuario" element={<Layout allowedRole="usuario" />}>
             <Route index element={<UsuarioDashboard />} />
             <Route path="progreso" element={<UsuarioProgreso />} />
-            <Route path="tips" element={<UsuarioTips />} />
-            <Route path="academia" element={<Academia />} />
+            <Route path="coach" element={<UsuarioTips />} />
+            <Route path="academia" element={<UsuarioAcademia />} />
+            <Route path="tips" element={<Navigate to="/plataforma/usuario/coach" replace />} />
           </Route>
 
           {/* Redirección por defecto */}
