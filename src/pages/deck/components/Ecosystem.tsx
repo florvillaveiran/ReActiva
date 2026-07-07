@@ -85,72 +85,105 @@ export default function Ecosystem() {
               {/* Webcam dot */}
               <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#333]"></div>
               
-              {/* Screen content - Recreated Dashboard UI */}
-              <div className="bg-white w-full h-full rounded-[10px] md:rounded-[18px] overflow-hidden flex text-left font-sans">
+              {/* Screen content - Recreated New Dashboard UI */}
+              <div className="bg-[#F8FAFC] w-full h-full rounded-[10px] md:rounded-[18px] overflow-hidden flex text-left font-sans">
                 {/* Sidebar */}
-                <div className="w-[20%] h-full border-r border-slate-100 flex flex-col p-2 md:p-4">
-                   <div className="flex items-center gap-1.5 mb-6 md:mb-8 text-brand-primary">
-                     <div className="w-4 h-4 bg-brand-primary rounded-sm"></div>
-                     <span className="font-bold text-[0.5rem] md:text-xs">ReActiva</span>
+                <div className="w-[22%] bg-white h-full border-r border-slate-100 flex flex-col pt-3 md:pt-4">
+                   <div className="flex items-center gap-1.5 mb-4 md:mb-6 px-3 md:px-4">
+                     <img src="/logo-reactiva-dark.png" alt="ReActiva" className="h-3 md:h-5 object-contain" />
                    </div>
-                   <div className="flex flex-col gap-2 md:gap-3 text-[0.4rem] md:text-[0.65rem] text-slate-500 font-medium">
-                     <div className="flex items-center gap-2 text-brand-primary bg-emerald-50 p-1.5 rounded-md"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-brand-primary rounded-sm opacity-80"></div>Inicio</div>
-                     <div className="flex items-center gap-2 p-1.5"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-slate-300 rounded-sm"></div>Rutinas</div>
-                     <div className="flex items-center gap-2 p-1.5"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-slate-300 rounded-sm"></div>Tips</div>
-                     <div className="flex items-center gap-2 p-1.5"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-slate-300 rounded-sm"></div>Academia</div>
-                     <div className="flex items-center gap-2 p-1.5"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-slate-300 rounded-sm"></div>Espacio laboral</div>
+                   
+                   <div className="flex flex-col gap-1 md:gap-2 px-2 md:px-3 text-[0.4rem] md:text-[0.65rem] text-slate-500 font-medium">
+                     <div className="flex items-center gap-2 text-brand-primary bg-emerald-50 border border-emerald-200 p-1.5 md:p-2 rounded-lg">
+                       <Play className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" /> Mi Programa
+                     </div>
+                     <div className="flex items-center gap-2 p-1.5 md:p-2 hover:bg-slate-50 rounded-lg">
+                       <TrendingUp className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" /> Mi Progreso
+                     </div>
+                     <div className="flex items-center gap-2 p-1.5 md:p-2 hover:bg-slate-50 rounded-lg">
+                       <Lightbulb className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" /> ReActiva Tips
+                     </div>
+                     <div className="flex items-center gap-2 p-1.5 md:p-2 hover:bg-slate-50 rounded-lg">
+                       <Brain className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" /> Academia ReActiva
+                     </div>
+                   </div>
+
+                   <div className="mt-auto border-t border-slate-100 p-2 md:p-4">
+                     <div className="mb-2 md:mb-4">
+                       <div className="text-[0.45rem] md:text-[0.7rem] font-bold text-slate-800">Usuario Demo</div>
+                       <div className="text-[0.4rem] md:text-[0.6rem] text-slate-400">usuario</div>
+                     </div>
+                     <div className="flex items-center gap-1.5 text-[0.45rem] md:text-[0.65rem] font-semibold text-red-500">
+                       Cerrar sesión
+                     </div>
                    </div>
                 </div>
+
                 {/* Main Content */}
-                <div className="flex-1 p-3 md:p-6 flex flex-col">
-                   <div className="flex justify-end mb-4 md:mb-8">
-                     <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-full">
-                       <div className="w-4 h-4 rounded-full bg-slate-300"></div>
-                       <span className="text-[0.4rem] md:text-xs font-semibold text-slate-700">Bee</span>
+                <div className="flex-1 p-2 md:p-4 flex flex-col h-full overflow-hidden">
+                   
+                   {/* Top Header */}
+                   <div className="bg-white rounded-lg md:rounded-xl p-2 md:p-3 mb-2 md:mb-3 shadow-sm border border-slate-100 flex justify-between items-center">
+                     <div className="flex items-center gap-2 md:gap-3">
+                       <div className="text-[0.8rem] md:text-xl">👋</div>
+                       <div>
+                         <h1 className="text-[0.55rem] md:text-[0.95rem] font-bold text-slate-900 leading-tight">¡Hola, Francisco!</h1>
+                         <p className="text-[0.4rem] md:text-[0.65rem] text-slate-500">Demo activa en: <span className="text-brand-primary font-semibold">Lunes</span></p>
+                       </div>
+                     </div>
+                     
+                     <div className="flex items-center gap-4 md:gap-8">
+                       <div className="text-center">
+                         <div className="text-[0.35rem] md:text-[0.55rem] font-bold text-slate-400 tracking-wider">PROGRESO</div>
+                         <div className="text-[0.65rem] md:text-xl font-bold text-brand-primary leading-none">0%</div>
+                       </div>
+                       
+                       <div className="flex gap-1 md:gap-1.5">
+                         <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-[0.35rem] md:text-[0.6rem] font-bold">L</div>
+                         <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[0.35rem] md:text-[0.6rem] font-bold">M</div>
+                         <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[0.35rem] md:text-[0.6rem] font-bold">V</div>
+                       </div>
+                       
+                       <button className="hidden md:block text-[0.55rem] text-slate-500 border border-slate-200 px-2 py-1 rounded-md font-medium">
+                         ↺ Reiniciar demo
+                       </button>
                      </div>
                    </div>
                    
-                   <h1 className="text-[0.9rem] md:text-2xl font-bold text-slate-900 mb-0.5 md:mb-1">¡Hola, Equipo!</h1>
-                   <p className="text-[0.5rem] md:text-xs text-slate-500 mb-3 md:mb-5">Es momento de cuidar tu cuerpo<br/>y activar tu mejor versión.</p>
-                   
-                   <div>
-                     <button className="bg-brand-primary text-white text-[0.45rem] md:text-xs font-bold px-3 py-1.5 md:px-5 md:py-2.5 rounded-full mb-6 md:mb-10 shadow-md">
-                       Comenzar rutina de hoy ▶
-                     </button>
+                   {/* Video Area */}
+                   <div className="flex-1 bg-white rounded-lg md:rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col relative">
+                     
+                     {/* Video Player Mockup */}
+                     <div className="flex-1 bg-slate-900 relative group overflow-hidden">
+                       {/* Abstract placeholder background instead of the photo */}
+                       <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center opacity-80">
+                         {/* Play Button */}
+                         <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-110 cursor-pointer">
+                           <Play className="text-white w-4 h-4 md:w-6 md:h-6 ml-1" fill="currentColor" />
+                         </div>
+                       </div>
+                       
+                       {/* Overlay info */}
+                       <div className="absolute bottom-0 left-0 w-full p-3 md:p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                         <div className="inline-block bg-brand-primary text-white text-[0.35rem] md:text-[0.65rem] font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full mb-1 md:mb-2 uppercase tracking-wider">
+                           Recomendado ahora
+                         </div>
+                         <h2 className="text-white text-[0.8rem] md:text-2xl font-bold mb-1 md:mb-2 drop-shadow-md">Respiración consciente</h2>
+                         <div className="flex items-center gap-1 md:gap-2 text-white/90 text-[0.45rem] md:text-[0.85rem]">
+                           <span>🕒</span> 9 min de bienestar para tu cuerpo
+                         </div>
+                       </div>
+                     </div>
+                     
+                     {/* Video Footer */}
+                     <div className="bg-white p-2 md:p-4 flex justify-between items-center">
+                       <span className="text-[0.45rem] md:text-[0.85rem] font-medium text-slate-700">Mirá el video y después marcá la pausa como hecha.</span>
+                       <button className="bg-slate-200 text-slate-400 font-bold text-[0.45rem] md:text-[0.8rem] px-3 py-1.5 md:px-5 md:py-2.5 rounded-full flex items-center gap-1.5">
+                         <Play className="w-2 h-2 md:w-3 md:h-3" fill="currentColor" /> Mirá el video
+                       </button>
+                     </div>
+                     
                    </div>
-
-                   <h3 className="text-[0.5rem] md:text-sm font-bold text-slate-800 mb-2 md:mb-4">Tu progreso semanal</h3>
-                   
-                   <div className="flex justify-between items-start mb-6 md:mb-10 pr-4 md:pr-10">
-                     <div className="flex flex-col items-center">
-                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-full border-2 md:border-4 border-emerald-100 flex items-center justify-center text-[0.6rem] md:text-lg font-bold text-brand-primary mb-1 md:mb-2 shadow-sm">4</div>
-                       <span className="text-[0.35rem] md:text-[0.65rem] text-slate-500 font-medium text-center leading-tight">Rutinas<br/>completadas</span>
-                     </div>
-                     <div className="flex flex-col items-center">
-                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-full border-2 md:border-4 border-emerald-400 flex items-center justify-center text-[0.6rem] md:text-lg font-bold text-brand-primary mb-1 md:mb-2 shadow-sm">85%</div>
-                       <span className="text-[0.35rem] md:text-[0.65rem] text-slate-500 font-medium text-center leading-tight">Adherencia</span>
-                     </div>
-                     <div className="flex flex-col items-center">
-                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-full border-2 md:border-4 border-emerald-100 flex items-center justify-center text-[0.6rem] md:text-lg font-bold text-brand-primary mb-1 md:mb-2 shadow-sm">12</div>
-                       <span className="text-[0.35rem] md:text-[0.65rem] text-slate-500 font-medium text-center leading-tight">Minutos<br/>esta semana</span>
-                     </div>
-                     <div className="flex flex-col items-center">
-                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-full border-2 md:border-4 border-emerald-100 flex items-center justify-center text-[0.6rem] md:text-lg font-bold text-brand-primary mb-1 md:mb-2 shadow-sm">3</div>
-                       <span className="text-[0.35rem] md:text-[0.65rem] text-slate-500 font-medium text-center leading-tight">Días<br/>consecutivos</span>
-                     </div>
-                   </div>
-
-                   <h3 className="text-[0.5rem] md:text-sm font-bold text-slate-800 mb-2 md:mb-3">Próxima rutina</h3>
-                   <div className="flex items-center gap-3 bg-slate-50 rounded-lg p-2 md:p-3 border border-slate-100">
-                     <div className="flex-1">
-                       <h4 className="text-[0.45rem] md:text-xs font-bold text-slate-800 mb-0.5 md:mb-1">Movilidad de columna y espalda</h4>
-                       <span className="inline-block bg-emerald-100 text-brand-primary text-[0.35rem] md:text-[0.65rem] font-bold px-1.5 py-0.5 rounded-full">6 min</span>
-                     </div>
-                     <div className="w-12 h-8 md:w-24 md:h-16 bg-slate-200 rounded overflow-hidden">
-                       <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=200" alt="Routine" className="w-full h-full object-cover opacity-80" />
-                     </div>
-                   </div>
-
                 </div>
               </div>
             </div>
