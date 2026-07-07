@@ -88,23 +88,23 @@ export default function Ecosystem() {
               {/* Screen content - Recreated New Dashboard UI */}
               <div className="bg-[#F8FAFC] w-full h-full rounded-[10px] md:rounded-[18px] overflow-hidden flex text-left font-sans">
                 {/* Sidebar */}
-                <div className="w-[22%] bg-white h-full border-r border-slate-100 flex flex-col pt-4 md:pt-6">
-                   <div className="flex items-center gap-1.5 mb-6 md:mb-8 px-4 md:px-5">
+                <div className="w-[25%] bg-white h-full border-r border-slate-100 flex flex-col pt-4 md:pt-6">
+                   <div className="flex items-center gap-1.5 mb-6 md:mb-8 px-2.5 md:px-4">
                      <img src="/logo-reactiva-dark.png" alt="ReActiva" className="h-4 md:h-6 object-contain" />
                    </div>
                    
-                   <div className="flex flex-col gap-1.5 md:gap-3 px-3 md:px-4 text-[0.5rem] md:text-[0.75rem] text-slate-500 font-medium">
-                     <div className="flex items-center gap-2.5 text-brand-primary bg-emerald-50 border border-emerald-200 p-2 md:p-3 rounded-xl">
-                       <Play className="w-3 h-3 md:w-4 md:h-4" /> Mi Programa
+                   <div className="flex flex-col gap-1.5 md:gap-3 px-2 md:px-3 text-[0.45rem] md:text-[0.65rem] text-slate-500 font-medium">
+                     <div className="flex items-center gap-1.5 md:gap-2.5 text-brand-primary bg-emerald-50 border border-emerald-200 p-1.5 md:p-3 rounded-xl whitespace-nowrap">
+                       <Play className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" /> <span>Mi Programa</span>
                      </div>
-                     <div className="flex items-center gap-2.5 p-2 md:p-3 hover:bg-slate-50 rounded-xl">
-                       <TrendingUp className="w-3 h-3 md:w-4 md:h-4" /> Mi Progreso
+                     <div className="flex items-center gap-1.5 md:gap-2.5 p-1.5 md:p-3 hover:bg-slate-50 rounded-xl whitespace-nowrap">
+                       <TrendingUp className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" /> <span>Mi Progreso</span>
                      </div>
-                     <div className="flex items-center gap-2.5 p-2 md:p-3 hover:bg-slate-50 rounded-xl">
-                       <Lightbulb className="w-3 h-3 md:w-4 md:h-4" /> ReActiva Tips
+                     <div className="flex items-center gap-1.5 md:gap-2.5 p-1.5 md:p-3 hover:bg-slate-50 rounded-xl whitespace-nowrap">
+                       <Lightbulb className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" /> <span>ReActiva Tips</span>
                      </div>
-                     <div className="flex items-center gap-2.5 p-2 md:p-3 hover:bg-slate-50 rounded-xl">
-                       <Brain className="w-3 h-3 md:w-4 md:h-4" /> Academia ReActiva
+                     <div className="flex items-center gap-1.5 md:gap-2.5 p-1.5 md:p-3 hover:bg-slate-50 rounded-xl">
+                       <Brain className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" /> <span className="leading-tight">Academia ReActiva</span>
                      </div>
                    </div>
                 </div>
@@ -153,7 +153,7 @@ export default function Ecosystem() {
                          </div>
                          <h2 className="text-white text-[1.1rem] md:text-3xl font-extrabold mb-1.5 md:mb-3 drop-shadow-lg tracking-tight">Respiración consciente</h2>
                          <div className="flex items-center gap-1.5 md:gap-2.5 text-slate-200 text-[0.55rem] md:text-[0.95rem] font-medium">
-                           <span className="opacity-80">🕒</span> 9 min de bienestar para tu cuerpo
+                           <span className="opacity-80">🕒</span> 5 min de bienestar para tu cuerpo
                          </div>
                        </div>
                      </div>
