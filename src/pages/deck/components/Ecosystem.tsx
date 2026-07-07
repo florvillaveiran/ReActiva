@@ -107,16 +107,6 @@ export default function Ecosystem() {
                        <Brain className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" /> Academia ReActiva
                      </div>
                    </div>
-
-                   <div className="mt-auto border-t border-slate-100 p-2 md:p-4">
-                     <div className="mb-2 md:mb-4">
-                       <div className="text-[0.45rem] md:text-[0.7rem] font-bold text-slate-800">Usuario Demo</div>
-                       <div className="text-[0.4rem] md:text-[0.6rem] text-slate-400">usuario</div>
-                     </div>
-                     <div className="flex items-center gap-1.5 text-[0.45rem] md:text-[0.65rem] font-semibold text-red-500">
-                       Cerrar sesión
-                     </div>
-                   </div>
                 </div>
 
                 {/* Main Content */}
@@ -126,27 +116,20 @@ export default function Ecosystem() {
                    <div className="bg-white rounded-lg md:rounded-xl p-2 md:p-3 mb-2 md:mb-3 shadow-sm border border-slate-100 flex justify-between items-center">
                      <div className="flex items-center gap-2 md:gap-3">
                        <div className="text-[0.8rem] md:text-xl">👋</div>
-                       <div>
-                         <h1 className="text-[0.55rem] md:text-[0.95rem] font-bold text-slate-900 leading-tight">¡Hola, Francisco!</h1>
-                         <p className="text-[0.4rem] md:text-[0.65rem] text-slate-500">Demo activa en: <span className="text-brand-primary font-semibold">Lunes</span></p>
-                       </div>
+                       <h1 className="text-[0.55rem] md:text-[0.95rem] font-bold text-slate-900 leading-tight">¡Hola, Equipo!</h1>
                      </div>
                      
                      <div className="flex items-center gap-4 md:gap-8">
                        <div className="text-center">
                          <div className="text-[0.35rem] md:text-[0.55rem] font-bold text-slate-400 tracking-wider">PROGRESO</div>
-                         <div className="text-[0.65rem] md:text-xl font-bold text-brand-primary leading-none">0%</div>
+                         <div className="text-[0.65rem] md:text-xl font-bold text-brand-primary leading-none">85%</div>
                        </div>
                        
                        <div className="flex gap-1 md:gap-1.5">
                          <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-[0.35rem] md:text-[0.6rem] font-bold">L</div>
-                         <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[0.35rem] md:text-[0.6rem] font-bold">M</div>
+                         <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-[0.35rem] md:text-[0.6rem] font-bold">M</div>
                          <div className="w-4 h-4 md:w-6 md:h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[0.35rem] md:text-[0.6rem] font-bold">V</div>
                        </div>
-                       
-                       <button className="hidden md:block text-[0.55rem] text-slate-500 border border-slate-200 px-2 py-1 rounded-md font-medium">
-                         ↺ Reiniciar demo
-                       </button>
                      </div>
                    </div>
                    
@@ -175,13 +158,6 @@ export default function Ecosystem() {
                        </div>
                      </div>
                      
-                     {/* Video Footer */}
-                     <div className="bg-white p-2 md:p-4 flex justify-between items-center">
-                       <span className="text-[0.45rem] md:text-[0.85rem] font-medium text-slate-700">Mirá el video y después marcá la pausa como hecha.</span>
-                       <button className="bg-slate-200 text-slate-400 font-bold text-[0.45rem] md:text-[0.8rem] px-3 py-1.5 md:px-5 md:py-2.5 rounded-full flex items-center gap-1.5">
-                         <Play className="w-2 h-2 md:w-3 md:h-3" fill="currentColor" /> Mirá el video
-                       </button>
-                     </div>
                      
                    </div>
                 </div>
