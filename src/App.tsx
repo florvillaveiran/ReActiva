@@ -6,18 +6,28 @@ import { Home } from './pages/Home';
 import { Terminos } from './pages/Terminos';
 import { Privacidad } from './pages/Privacidad';
 import Presentacion from './pages/presentacion';
+import Deck from './pages/deck';
 import Plataforma from './pages/plataforma';
 
 function Layout() {
   const location = useLocation();
   const path = location.pathname.toLowerCase().replace(/\/$/, '');
   const isPresentacion = path === '/presentacion' || path === '/presentaci%c3%b3n' || path === '/presentación';
+  const isDeck = path === '/deck';
   const isPlataforma = path.startsWith('/plataforma');
 
   if (isPresentacion) {
     return (
       <Routes>
         <Route path="*" element={<Presentacion />} />
+      </Routes>
+    );
+  }
+
+  if (isDeck) {
+    return (
+      <Routes>
+        <Route path="*" element={<Deck />} />
       </Routes>
     );
   }
