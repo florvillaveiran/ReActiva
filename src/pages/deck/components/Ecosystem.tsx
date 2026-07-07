@@ -85,13 +85,73 @@ export default function Ecosystem() {
               {/* Webcam dot */}
               <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#333]"></div>
               
-              {/* Screen content */}
-              <div className="bg-white w-full h-full rounded-[10px] md:rounded-[18px] overflow-hidden">
-                <img 
-                  src="/plataforma-propia.png" 
-                  alt="Plataforma ReActiva" 
-                  className="w-full h-full object-cover object-top"
-                />
+              {/* Screen content - Recreated Dashboard UI */}
+              <div className="bg-white w-full h-full rounded-[10px] md:rounded-[18px] overflow-hidden flex text-left font-sans">
+                {/* Sidebar */}
+                <div className="w-[20%] h-full border-r border-slate-100 flex flex-col p-2 md:p-4">
+                   <div className="flex items-center gap-1.5 mb-6 md:mb-8 text-brand-primary">
+                     <div className="w-4 h-4 bg-brand-primary rounded-sm"></div>
+                     <span className="font-bold text-[0.5rem] md:text-xs">ReActiva</span>
+                   </div>
+                   <div className="flex flex-col gap-2 md:gap-3 text-[0.4rem] md:text-[0.65rem] text-slate-500 font-medium">
+                     <div className="flex items-center gap-2 text-brand-primary bg-emerald-50 p-1.5 rounded-md"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-brand-primary rounded-sm opacity-80"></div>Inicio</div>
+                     <div className="flex items-center gap-2 p-1.5"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-slate-300 rounded-sm"></div>Rutinas</div>
+                     <div className="flex items-center gap-2 p-1.5"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-slate-300 rounded-sm"></div>Tips</div>
+                     <div className="flex items-center gap-2 p-1.5"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-slate-300 rounded-sm"></div>Academia</div>
+                     <div className="flex items-center gap-2 p-1.5"><div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 bg-slate-300 rounded-sm"></div>Espacio laboral</div>
+                   </div>
+                </div>
+                {/* Main Content */}
+                <div className="flex-1 p-3 md:p-6 flex flex-col">
+                   <div className="flex justify-end mb-4 md:mb-8">
+                     <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-full">
+                       <div className="w-4 h-4 rounded-full bg-slate-300"></div>
+                       <span className="text-[0.4rem] md:text-xs font-semibold text-slate-700">Bee</span>
+                     </div>
+                   </div>
+                   
+                   <h1 className="text-[0.9rem] md:text-2xl font-bold text-slate-900 mb-0.5 md:mb-1">¡Hola, Equipo!</h1>
+                   <p className="text-[0.5rem] md:text-xs text-slate-500 mb-3 md:mb-5">Es momento de cuidar tu cuerpo<br/>y activar tu mejor versión.</p>
+                   
+                   <div>
+                     <button className="bg-brand-primary text-white text-[0.45rem] md:text-xs font-bold px-3 py-1.5 md:px-5 md:py-2.5 rounded-full mb-6 md:mb-10 shadow-md">
+                       Comenzar rutina de hoy ▶
+                     </button>
+                   </div>
+
+                   <h3 className="text-[0.5rem] md:text-sm font-bold text-slate-800 mb-2 md:mb-4">Tu progreso semanal</h3>
+                   
+                   <div className="flex justify-between items-start mb-6 md:mb-10 pr-4 md:pr-10">
+                     <div className="flex flex-col items-center">
+                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-full border-2 md:border-4 border-emerald-100 flex items-center justify-center text-[0.6rem] md:text-lg font-bold text-brand-primary mb-1 md:mb-2 shadow-sm">4</div>
+                       <span className="text-[0.35rem] md:text-[0.65rem] text-slate-500 font-medium text-center leading-tight">Rutinas<br/>completadas</span>
+                     </div>
+                     <div className="flex flex-col items-center">
+                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-full border-2 md:border-4 border-emerald-400 flex items-center justify-center text-[0.6rem] md:text-lg font-bold text-brand-primary mb-1 md:mb-2 shadow-sm">85%</div>
+                       <span className="text-[0.35rem] md:text-[0.65rem] text-slate-500 font-medium text-center leading-tight">Adherencia</span>
+                     </div>
+                     <div className="flex flex-col items-center">
+                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-full border-2 md:border-4 border-emerald-100 flex items-center justify-center text-[0.6rem] md:text-lg font-bold text-brand-primary mb-1 md:mb-2 shadow-sm">12</div>
+                       <span className="text-[0.35rem] md:text-[0.65rem] text-slate-500 font-medium text-center leading-tight">Minutos<br/>esta semana</span>
+                     </div>
+                     <div className="flex flex-col items-center">
+                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-full border-2 md:border-4 border-emerald-100 flex items-center justify-center text-[0.6rem] md:text-lg font-bold text-brand-primary mb-1 md:mb-2 shadow-sm">3</div>
+                       <span className="text-[0.35rem] md:text-[0.65rem] text-slate-500 font-medium text-center leading-tight">Días<br/>consecutivos</span>
+                     </div>
+                   </div>
+
+                   <h3 className="text-[0.5rem] md:text-sm font-bold text-slate-800 mb-2 md:mb-3">Próxima rutina</h3>
+                   <div className="flex items-center gap-3 bg-slate-50 rounded-lg p-2 md:p-3 border border-slate-100">
+                     <div className="flex-1">
+                       <h4 className="text-[0.45rem] md:text-xs font-bold text-slate-800 mb-0.5 md:mb-1">Movilidad de columna y espalda</h4>
+                       <span className="inline-block bg-emerald-100 text-brand-primary text-[0.35rem] md:text-[0.65rem] font-bold px-1.5 py-0.5 rounded-full">6 min</span>
+                     </div>
+                     <div className="w-12 h-8 md:w-24 md:h-16 bg-slate-200 rounded overflow-hidden">
+                       <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=200" alt="Routine" className="w-full h-full object-cover opacity-80" />
+                     </div>
+                   </div>
+
+                </div>
               </div>
             </div>
             
