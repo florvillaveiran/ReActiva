@@ -1,24 +1,34 @@
 import { motion } from 'motion/react';
-import { Play, Brain, Lightbulb, BarChart3, CheckCircle2, MonitorPlay, HeartHandshake, Leaf, TrendingUp } from 'lucide-react';
+import {
+  BarChart3,
+  Brain,
+  CheckCircle2,
+  HeartHandshake,
+  Leaf,
+  Lightbulb,
+  MonitorPlay,
+  Play,
+  TrendingUp,
+} from 'lucide-react';
 
 const leftFeatures = [
   {
     title: 'Microentrenamientos',
-    text: 'Videos de 3 a 8 minutos diseñados para integrarse en la jornada laboral.',
+    text: 'Videos de 3 a 8 minutos disenados para integrarse en la jornada laboral.',
     icon: MonitorPlay,
     color: 'text-brand-primary',
     bg: 'bg-emerald-50',
   },
   {
     title: 'ReActiva Academia',
-    text: 'Cursos y contenidos prácticos sobre salud, ergonomía, hábitos, descanso y más.',
+    text: 'Cursos y contenidos practicos sobre salud, ergonomia, habitos, descanso y mas.',
     icon: Brain,
     color: 'text-brand-primary',
     bg: 'bg-emerald-50',
   },
   {
     title: 'ReActiva Tips',
-    text: 'Consejos breves y accionables cada semana para crear hábitos saludables.',
+    text: 'Consejos breves y accionables cada semana para crear habitos saludables.',
     icon: Lightbulb,
     color: 'text-brand-primary',
     bg: 'bg-emerald-50',
@@ -28,13 +38,13 @@ const leftFeatures = [
 const rightFeatures = [
   {
     title: 'Reportes para RRHH',
-    text: 'Métricas de participación, adherencia e impacto para tomar mejores decisiones.',
+    text: 'Metricas de participacion, adherencia e impacto para tomar mejores decisiones.',
     icon: BarChart3,
     color: 'text-brand-primary',
     bg: 'bg-emerald-50',
   },
   {
-    title: 'Seguimiento automático',
+    title: 'Seguimiento automatico',
     text: 'Recordatorios, formularios y monitoreo continuo sin aumentar la carga de RRHH.',
     icon: CheckCircle2,
     color: 'text-brand-primary',
@@ -42,138 +52,140 @@ const rightFeatures = [
   },
   {
     title: 'Espacio laboral',
-    text: 'Evaluación del puesto de trabajo y recomendaciones para mejorar ergonomía y bienestar.',
+    text: 'Evaluacion del puesto de trabajo y recomendaciones para mejorar ergonomia y bienestar.',
     icon: HeartHandshake,
     color: 'text-brand-primary',
     bg: 'bg-emerald-50',
   },
 ];
 
+function DashboardScreen() {
+  return (
+    <div className="grid h-full w-full grid-cols-[25%_1fr] overflow-hidden rounded-[10px] bg-[#F7FAF8] text-left font-sans md:rounded-[18px]">
+      <aside className="flex min-w-0 flex-col border-r border-slate-100 bg-white px-[3.8%] py-[6%]">
+        <img
+          src="/logo-reactiva-dark.png"
+          alt="ReActiva"
+          className="mb-[18%] h-[8%] w-fit max-w-[92%] object-contain"
+        />
+
+        <nav className="flex flex-col gap-[5%] text-[0.42rem] font-bold text-slate-500 md:text-[0.56rem]">
+          <div className="flex items-center gap-[8%] rounded-[10px] border border-emerald-100 bg-emerald-50 px-[10%] py-[9%] text-brand-primary">
+            <Play className="h-[1em] w-[1em] shrink-0" />
+            <span className="truncate">Mi Programa</span>
+          </div>
+          <div className="flex items-center gap-[8%] px-[10%] py-[7%]">
+            <TrendingUp className="h-[1em] w-[1em] shrink-0" />
+            <span className="truncate">Mi Progreso</span>
+          </div>
+          <div className="flex items-center gap-[8%] px-[10%] py-[7%]">
+            <Lightbulb className="h-[1em] w-[1em] shrink-0" />
+            <span className="truncate">ReActiva Tips</span>
+          </div>
+          <div className="flex items-center gap-[8%] px-[10%] py-[7%]">
+            <Brain className="h-[1em] w-[1em] shrink-0" />
+            <span className="leading-tight">Academia ReActiva</span>
+          </div>
+        </nav>
+      </aside>
+
+      <main className="flex min-w-0 flex-col gap-[5%] p-[5%]">
+        <div className="flex h-[28%] items-center justify-between rounded-[18px] border border-slate-100 bg-white px-[5%] shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+          <div className="flex min-w-0 items-center gap-[7%]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFF7D8] text-[0.85rem] font-black text-[#F0A400] md:h-11 md:w-11 md:text-[1.15rem]">
+              H
+            </div>
+            <h1 className="min-w-0 text-[0.62rem] font-black leading-tight text-slate-950 md:text-[0.95rem]">
+              Hola,<br className="hidden md:block" /> Equipo!
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="text-center">
+              <p className="mb-0.5 text-[0.32rem] font-black tracking-[0.18em] text-slate-400 md:text-[0.46rem]">
+                PROGRESO
+              </p>
+              <p className="text-[0.9rem] font-black leading-none text-brand-primary md:text-[1.45rem]">85%</p>
+            </div>
+            <div className="flex gap-1 md:gap-1.5">
+              {['L', 'M', 'V'].map((day, index) => (
+                <span
+                  key={day}
+                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[0.45rem] font-black md:h-7 md:w-7 md:text-[0.65rem] ${
+                    index < 2 ? 'bg-brand-primary text-white' : 'bg-slate-100 text-slate-400'
+                  }`}
+                >
+                  {day}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative flex-1 overflow-hidden rounded-[20px] bg-[#071022] p-[7%] shadow-[0_10px_25px_rgba(15,23,42,0.12)]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_22%,rgba(18,108,64,0.34),transparent_38%),linear-gradient(135deg,#071022_0%,#050816_100%)]" />
+          <div className="relative flex h-full flex-col justify-between">
+            <span className="w-fit rounded-full bg-brand-primary px-3 py-1 text-[0.42rem] font-black uppercase tracking-[0.16em] text-white md:text-[0.62rem]">
+              Recomendado ahora
+            </span>
+            <div>
+              <h2 className="mb-2 max-w-[88%] text-[1.05rem] font-black leading-[0.96] tracking-tight text-white md:text-[1.85rem]">
+                Respiracion consciente
+              </h2>
+              <p className="flex items-center gap-2 text-[0.5rem] font-bold text-slate-200 md:text-[0.78rem]">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/15 md:h-5 md:w-5">
+                  5
+                </span>
+                min de bienestar para tu cuerpo
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function Ecosystem() {
   return (
-    <section className="h-full overflow-hidden bg-brand-cream px-5 py-6 md:px-10 md:py-7 flex flex-col justify-center items-center">
-      <div className="presentation-safe mx-auto flex h-full max-w-[1300px] flex-col items-center justify-between w-full relative">
-        
-        {/* Header */}
+    <section className="flex h-full flex-col items-center justify-center overflow-hidden bg-brand-cream px-5 py-6 md:px-10 md:py-7">
+      <div className="presentation-safe relative mx-auto flex h-full w-full max-w-[1300px] flex-col items-center justify-between">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center pt-4 md:pt-8 w-full z-10"
+          className="z-10 w-full pt-4 text-center md:pt-8"
         >
           <span className="mb-2 block text-[0.65rem] font-bold uppercase tracking-[0.32em] text-brand-primary">
             EL ECOSISTEMA REACTIVA
           </span>
-          <h2 className="font-display text-[2.2rem] md:text-[3.2rem] font-bold leading-tight text-[#0B1B3D]">
+          <h2 className="font-display text-[2.2rem] font-bold leading-tight text-[#0B1B3D] md:text-[3.2rem]">
             Una plataforma. <span className="text-brand-primary">Todo el bienestar</span> de tu equipo.
           </h2>
         </motion.header>
 
-        {/* Main Content Area */}
-        <div className="flex-1 w-full flex items-center justify-center relative mt-8 mb-12">
-          
-          {/* Laptop Mockup (Center) */}
+        <div className="relative mb-12 mt-8 flex w-full flex-1 items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative z-10 w-[80%] max-w-[500px] xl:max-w-[550px] mx-auto drop-shadow-2xl"
+            className="relative z-10 mx-auto w-[80%] max-w-[500px] drop-shadow-2xl xl:max-w-[550px]"
           >
-            {/* Screen border */}
-            <div className="bg-[#1A1A1A] p-2 md:p-3 rounded-t-[20px] md:rounded-t-[30px] w-full aspect-[16/10] relative shadow-[0_20px_50px_rgba(0,0,0,0.25)] border-[1px] border-[#333]">
-              {/* Webcam dot */}
-              <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#333]"></div>
-              
-              {/* Screen content - Recreated New Dashboard UI */}
-              <div className="bg-[#F8FAFC] w-full h-full rounded-[10px] md:rounded-[18px] overflow-hidden flex text-left font-sans">
-                {/* Sidebar */}
-                <div className="w-[25%] bg-white h-full border-r border-slate-100 flex flex-col pt-4 md:pt-6">
-                   <div className="flex items-center gap-1.5 mb-6 md:mb-8 px-2.5 md:px-4">
-                     <img src="/logo-reactiva-dark.png" alt="ReActiva" className="h-4 md:h-6 object-contain" />
-                   </div>
-                   
-                   <div className="flex flex-col gap-1.5 md:gap-3 px-2 md:px-3 text-[0.45rem] md:text-[0.65rem] text-slate-500 font-medium">
-                     <div className="flex items-center gap-1.5 md:gap-2.5 text-brand-primary bg-emerald-50 border border-emerald-200 p-1.5 md:p-3 rounded-xl whitespace-nowrap">
-                       <Play className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" /> <span>Mi Programa</span>
-                     </div>
-                     <div className="flex items-center gap-1.5 md:gap-2.5 p-1.5 md:p-3 hover:bg-slate-50 rounded-xl whitespace-nowrap">
-                       <TrendingUp className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" /> <span>Mi Progreso</span>
-                     </div>
-                     <div className="flex items-center gap-1.5 md:gap-2.5 p-1.5 md:p-3 hover:bg-slate-50 rounded-xl whitespace-nowrap">
-                       <Lightbulb className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" /> <span>ReActiva Tips</span>
-                     </div>
-                     <div className="flex items-center gap-1.5 md:gap-2.5 p-1.5 md:p-3 hover:bg-slate-50 rounded-xl">
-                       <Brain className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" /> <span className="leading-tight">Academia ReActiva</span>
-                     </div>
-                   </div>
-                </div>
-
-                {/* Main Content */}
-                <div className="flex-1 p-3 md:p-5 flex flex-col h-full overflow-hidden">
-                   
-                   {/* Top Header */}
-                   <div className="bg-white rounded-xl md:rounded-2xl p-3 md:p-4 mb-3 md:mb-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-slate-100 flex justify-between items-center">
-                     <div className="flex items-center gap-2 md:gap-4">
-                       <div className="text-xl md:text-3xl">👋</div>
-                       <h1 className="text-[0.7rem] md:text-[1.1rem] font-bold text-slate-900 leading-tight">¡Hola, Equipo!</h1>
-                     </div>
-                     
-                     <div className="flex items-center gap-5 md:gap-10">
-                       <div className="text-center">
-                         <div className="text-[0.4rem] md:text-[0.6rem] font-extrabold text-slate-400 tracking-[0.15em] mb-0.5">PROGRESO</div>
-                         <div className="text-[0.85rem] md:text-2xl font-bold text-brand-primary leading-none">85%</div>
-                       </div>
-                       
-                       <div className="flex gap-1.5 md:gap-2">
-                         <div className="w-5 h-5 md:w-8 md:h-8 rounded-full bg-brand-primary text-white flex items-center justify-center text-[0.45rem] md:text-[0.75rem] font-bold shadow-sm">L</div>
-                         <div className="w-5 h-5 md:w-8 md:h-8 rounded-full bg-brand-primary text-white flex items-center justify-center text-[0.45rem] md:text-[0.75rem] font-bold shadow-sm">M</div>
-                         <div className="w-5 h-5 md:w-8 md:h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[0.45rem] md:text-[0.75rem] font-bold">V</div>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   {/* Video Area */}
-                   <div className="flex-1 bg-white rounded-xl md:rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden flex flex-col relative">
-                     
-                     {/* Video Player Mockup */}
-                     <div className="flex-1 bg-slate-900 relative group overflow-hidden">
-                       {/* Abstract placeholder background instead of the photo */}
-                       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-700 via-slate-800 to-slate-900 flex items-center justify-center opacity-90">
-                         {/* Play Button */}
-                         <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.4)] transform transition-transform group-hover:scale-105 cursor-pointer">
-                           <Play className="text-white w-5 h-5 md:w-8 md:h-8 ml-1.5" fill="currentColor" />
-                         </div>
-                       </div>
-                       
-                       {/* Overlay info */}
-                       <div className="absolute bottom-0 left-0 w-full p-4 md:p-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-                         <div className="inline-block bg-brand-primary text-white text-[0.45rem] md:text-[0.75rem] font-bold px-2.5 py-1 md:px-4 md:py-1.5 rounded-full mb-2 md:mb-3 tracking-widest shadow-sm">
-                           RECOMENDADO AHORA
-                         </div>
-                         <h2 className="text-white text-[1.1rem] md:text-3xl font-extrabold mb-1.5 md:mb-3 drop-shadow-lg tracking-tight">Respiración consciente</h2>
-                         <div className="flex items-center gap-1.5 md:gap-2.5 text-slate-200 text-[0.55rem] md:text-[0.95rem] font-medium">
-                           <span className="opacity-80">🕒</span> 5 min de bienestar para tu cuerpo
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                </div>
-              </div>
+            <div className="relative aspect-[16/10] w-full rounded-t-[20px] border border-[#333] bg-[#1A1A1A] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.25)] md:rounded-t-[30px] md:p-3">
+              <div className="absolute left-1/2 top-1.5 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#333]" />
+              <DashboardScreen />
             </div>
-            
-            {/* Keyboard base */}
-            <div className="w-[115%] -ml-[7.5%] h-3 md:h-5 bg-[#333] rounded-b-[10px] md:rounded-b-[20px] relative shadow-2xl border-t-[1px] border-[#444]">
-              {/* Trackpad notch */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 md:w-24 h-1.5 md:h-2 bg-[#222] rounded-b-md"></div>
+
+            <div className="relative -ml-[7.5%] h-3 w-[115%] rounded-b-[10px] border-t border-[#444] bg-[#333] shadow-2xl md:h-5 md:rounded-b-[20px]">
+              <div className="absolute left-1/2 top-0 h-1.5 w-16 -translate-x-1/2 rounded-b-md bg-[#222] md:h-2 md:w-24" />
             </div>
           </motion.div>
 
-          {/* Left Features */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-8 md:gap-12 w-full max-w-[320px] z-20 hidden lg:flex">
+          <div className="absolute left-0 top-1/2 z-20 hidden w-full max-w-[320px] -translate-y-1/2 flex-col gap-8 md:gap-12 lg:flex">
             {leftFeatures.map((feature, idx) => (
               <motion.div
-                key={idx}
+                key={feature.title}
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -181,94 +193,87 @@ export default function Ecosystem() {
                 className="flex items-start gap-4 text-right"
               >
                 <div className="flex-1">
-                  <h3 className="font-display font-bold text-[#0B1B3D] text-[1.1rem] leading-tight mb-1">{feature.title}</h3>
-                  <p className="text-[#45516A] text-[0.85rem] leading-snug">{feature.text}</p>
+                  <h3 className="font-display mb-1 text-[1.1rem] font-bold leading-tight text-[#0B1B3D]">{feature.title}</h3>
+                  <p className="text-[0.85rem] leading-snug text-[#45516A]">{feature.text}</p>
                 </div>
-                <div className={`flex-shrink-0 w-14 h-14 rounded-full ${feature.bg} flex items-center justify-center border border-emerald-100 shadow-sm relative`}>
+                <div className={`relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-emerald-100 ${feature.bg} shadow-sm`}>
                   <feature.icon className={feature.color} size={24} strokeWidth={2} />
-                  {/* Connector Line */}
-                  <div className="absolute right-[-40px] top-1/2 h-[1px] w-[40px] bg-emerald-200" />
+                  <div className="absolute right-[-40px] top-1/2 h-px w-[40px] bg-emerald-200" />
                 </div>
               </motion.div>
             ))}
           </div>
 
-          {/* Right Features */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-8 md:gap-12 w-full max-w-[320px] z-20 hidden lg:flex">
+          <div className="absolute right-0 top-1/2 z-20 hidden w-full max-w-[320px] -translate-y-1/2 flex-col gap-8 md:gap-12 lg:flex">
             {rightFeatures.map((feature, idx) => (
               <motion.div
-                key={idx}
+                key={feature.title}
                 initial={{ opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.15 }}
                 className="flex items-start gap-4"
               >
-                <div className={`flex-shrink-0 w-14 h-14 rounded-full ${feature.bg} flex items-center justify-center border border-emerald-100 shadow-sm relative`}>
+                <div className={`relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-emerald-100 ${feature.bg} shadow-sm`}>
                   <feature.icon className={feature.color} size={24} strokeWidth={2} />
-                  {/* Connector Line */}
-                  <div className="absolute left-[-40px] top-1/2 h-[1px] w-[40px] bg-emerald-200" />
+                  <div className="absolute left-[-40px] top-1/2 h-px w-[40px] bg-emerald-200" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-display font-bold text-[#0B1B3D] text-[1.1rem] leading-tight mb-1">{feature.title}</h3>
-                  <p className="text-[#45516A] text-[0.85rem] leading-snug">{feature.text}</p>
+                  <h3 className="font-display mb-1 text-[1.1rem] font-bold leading-tight text-[#0B1B3D]">{feature.title}</h3>
+                  <p className="text-[0.85rem] leading-snug text-[#45516A]">{feature.text}</p>
                 </div>
               </motion.div>
             ))}
           </div>
-
         </div>
 
-        {/* Mobile Features List (visible only on small screens) */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 lg:hidden mb-10 overflow-y-auto pr-2">
-           {[...leftFeatures, ...rightFeatures].map((feature, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="flex items-start gap-4 bg-white p-4 rounded-[16px] shadow-sm border border-slate-100"
-              >
-                <div className={`flex-shrink-0 w-12 h-12 rounded-full ${feature.bg} flex items-center justify-center border border-emerald-100`}>
-                  <feature.icon className={feature.color} size={20} strokeWidth={2} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-display font-bold text-[#0B1B3D] text-[1rem] leading-tight mb-1">{feature.title}</h3>
-                  <p className="text-[#45516A] text-[0.8rem] leading-snug">{feature.text}</p>
-                </div>
-              </motion.div>
-            ))}
+        <div className="mb-10 grid w-full grid-cols-1 gap-6 overflow-y-auto pr-2 md:grid-cols-2 lg:hidden">
+          {[...leftFeatures, ...rightFeatures].map((feature) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex items-start gap-4 rounded-[16px] border border-slate-100 bg-white p-4 shadow-sm"
+            >
+              <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-emerald-100 ${feature.bg}`}>
+                <feature.icon className={feature.color} size={20} strokeWidth={2} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display mb-1 text-[1rem] font-bold leading-tight text-[#0B1B3D]">{feature.title}</h3>
+                <p className="text-[0.8rem] leading-snug text-[#45516A]">{feature.text}</p>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Footer Pill */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
-          className="pb-4 md:pb-8 w-full flex justify-center z-10"
+          className="z-10 flex w-full justify-center pb-4 md:pb-8"
         >
-          <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 bg-white px-8 py-4 rounded-full shadow-[0_12px_30px_rgba(11,27,61,0.08)] border border-slate-100">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-full border border-slate-100 bg-white px-8 py-4 shadow-[0_12px_30px_rgba(11,27,61,0.08)] md:flex-row md:gap-6">
             <div className="flex items-center gap-3">
-               <div className="bg-emerald-100 p-1.5 rounded-full text-brand-primary">
-                 <Leaf size={18} />
-               </div>
-               <span className="font-display font-bold text-[#0B1B3D] text-[1.05rem]">
-                  Bienestar para tu <span className="text-brand-primary">equipo.</span>
-               </span>
+              <div className="rounded-full bg-emerald-100 p-1.5 text-brand-primary">
+                <Leaf size={18} />
+              </div>
+              <span className="font-display text-[1.05rem] font-bold text-[#0B1B3D]">
+                Bienestar para tu <span className="text-brand-primary">equipo.</span>
+              </span>
             </div>
-            <div className="hidden md:block w-[1px] h-8 bg-slate-200"></div>
+            <div className="hidden h-8 w-px bg-slate-200 md:block" />
             <div className="flex items-center gap-3">
-               <div className="bg-emerald-100 p-1.5 rounded-full text-brand-primary">
-                 <TrendingUp size={18} />
-               </div>
-               <span className="font-display font-bold text-[#0B1B3D] text-[1.05rem]">
-                  Resultados para tu <span className="text-brand-primary">empresa.</span>
-               </span>
+              <div className="rounded-full bg-emerald-100 p-1.5 text-brand-primary">
+                <TrendingUp size={18} />
+              </div>
+              <span className="font-display text-[1.05rem] font-bold text-[#0B1B3D]">
+                Resultados para tu <span className="text-brand-primary">empresa.</span>
+              </span>
             </div>
           </div>
         </motion.div>
-
       </div>
     </section>
   );
