@@ -529,11 +529,13 @@ const buildCompanyNarrative = (data: ReportData) => {
   if (recommendations.length < 4) recommendations.push('Mantener la frecuencia de pausas que mejor resultado produjo.');
 
   // Tension insight
-  const topTension = data.tension?.[0];
-  const tensionInsight = topTension
+  const topTension = data.tension && data.tension.length > 0 
+    ? [...data.tension].sort((a, b) => b.valor - a.valor)[0]
+    : null;
+  const tensionInsight = topTension && topTension.valor > 0
     ? `El momento de mayor tension reportada fue "${topTension.name}" (${topTension.valor}% de los colaboradores).`
     : null;
-  const tensionRecomendacion = topTension?.name === 'Al final de la jornada'
+  const tensionRecomendacion = topTension && topTension.valor > 0 && topTension.name === 'Al final de la jornada'
     ? 'Considerá adelantar la pausa de tarde para liberar tension acumulada antes del cierre de jornada.'
     : topTension?.name === 'A la mañana'
     ? 'Una pausa de activacion temprana puede ayudar a modular la tension desde el inicio de la jornada.'
@@ -638,8 +640,8 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
             <div className="rg-stack">
               <Highlight 
                 title="Momento predominante" 
-                label={data.tension[0].name} 
-                value={`${data.tension[0].valor}% de los colaboradores`} 
+                label={data.tension && data.tension.length > 0 ? [...data.tension].sort((a, b) => b.valor - a.valor)[0].name : ''} 
+                value={`${data.tension && data.tension.length > 0 ? [...data.tension].sort((a, b) => b.valor - a.valor)[0].valor : 0}% de los colaboradores`} 
                 color={COLORS.purple} 
                 icon={<Zap size={44} />} 
               />

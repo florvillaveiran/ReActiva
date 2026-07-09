@@ -62,8 +62,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Hombros', valor: 18 }, { name: 'Muñecas', valor: 12 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Lun', energia: 3.4, satisfaccion: 78, participacion: 82 },
@@ -77,8 +80,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Hombros', valor: 15 }, { name: 'Muñecas', valor: 10 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Sem 1', energia: 3.2, satisfaccion: 75, participacion: 80 },
@@ -93,8 +99,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Hombros', valor: 15 }, { name: 'Muñecas', valor: 7 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'T1', energia: 2.9, satisfaccion: 68, participacion: 72 },
@@ -108,8 +117,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Espalda Baja', valor: 45 }, { name: 'Cuello', valor: 30 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Inicio', energia: 3.2, satisfaccion: 75, participacion: 80 },
@@ -125,8 +137,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Hombros', valor: 15 }, { name: 'Rodillas', valor: 3 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Lun', energia: 3.5, satisfaccion: 80, participacion: 85 },
@@ -140,8 +155,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Hombros', valor: 15 }, { name: 'Rodillas', valor: 0 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Sem 1', energia: 3.4, satisfaccion: 78, participacion: 85 },
@@ -156,8 +174,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Hombros', valor: 13 }, { name: 'Rodillas', valor: 5 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'T1', energia: 3.0, satisfaccion: 70, participacion: 78 },
@@ -171,8 +192,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Cuello', valor: 50 }, { name: 'Espalda Baja', valor: 35 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Inicio', energia: 3.4, satisfaccion: 78, participacion: 85 },
@@ -188,8 +212,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Cuello', valor: 18 }, { name: 'Piernas', valor: 6 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Lun', energia: 3.0, satisfaccion: 70, participacion: 75 },
@@ -203,8 +230,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Cuello', valor: 20 }, { name: 'Piernas', valor: 5 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Sem 1', energia: 2.9, satisfaccion: 68, participacion: 72 },
@@ -219,8 +249,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Cuello', valor: 18 }, { name: 'Piernas', valor: 6 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'T1', energia: 2.6, satisfaccion: 60, participacion: 66 },
@@ -234,8 +267,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Espalda Baja', valor: 50 }, { name: 'Hombros', valor: 25 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Inicio', energia: 2.9, satisfaccion: 68, participacion: 72 },
@@ -251,8 +287,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Muñecas', valor: 22 }, { name: 'Hombros', valor: 8 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Lun', energia: 2.7, satisfaccion: 62, participacion: 68 },
@@ -266,8 +305,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Muñecas', valor: 20 }, { name: 'Hombros', valor: 10 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Sem 1', energia: 2.6, satisfaccion: 60, participacion: 65 },
@@ -282,8 +324,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Muñecas', valor: 18 }, { name: 'Hombros', valor: 10 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'T1', energia: 2.3, satisfaccion: 55, participacion: 60 },
@@ -297,8 +342,11 @@ const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
         { name: 'Espalda Alta', valor: 40 }, { name: 'Cuello', valor: 30 },
       ],
       tension: [
-        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
-        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+        { name: 'A la mañana', valor: 15 },
+        { name: 'Al mediodía', valor: 10 },
+        { name: 'A la tarde', valor: 45 },
+        { name: 'Al final de la jornada', valor: 30 },
+        { name: 'No sentí tensión', valor: 0 },
       ],
       evolucion: [
         { name: 'Inicio', energia: 2.6, satisfaccion: 60, participacion: 65 },
@@ -566,7 +614,7 @@ export const Analiticas: React.FC = () => {
             </div>
             
             {(() => {
-              const top = data.tension?.[0];
+              const top = data.tension && data.tension.length > 0 ? [...data.tension].sort((a, b) => b.valor - a.valor)[0] : null;
               if (!top || top.valor < 30) return <div />;
               const isEndOfDay = top.name === 'Al final de la jornada';
               const isMorning = top.name === 'A la mañana';
@@ -875,7 +923,7 @@ export const Analiticas: React.FC = () => {
 
         {/* ─── Centro de Inteligencia: alerta de tensión ──────────────────────── */}
         {(() => {
-          const top = data.tension?.[0];
+          const top = data.tension && data.tension.length > 0 ? [...data.tension].sort((a, b) => b.valor - a.valor)[0] : null;
           if (!top || top.valor < 30) return null;
           const isEndOfDay = top.name === 'Al final de la jornada';
           const isMorning = top.name === 'A la mañana';

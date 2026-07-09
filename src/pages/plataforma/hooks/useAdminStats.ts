@@ -153,7 +153,7 @@ const computeStats = (pausas: PausaGuardada[]): AdminStats => {
     ? opcionesTension.map(opt => ({
         name: opt,
         valor: Math.round(((tensionCount.get(opt) ?? 0) / tensionTotal) * 100)
-      })).filter(t => t.valor > 0).sort((a, b) => b.valor - a.valor)
+      }))
     : [];
 
   // Evolución (4 "semanas"). En demo solo hay una semana real, así que llenamos las 4

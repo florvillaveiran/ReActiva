@@ -27,10 +27,11 @@ const generateMockDataForEmpresa = (empleadosCount: number) => {
     ],
     foco: { enfocado: 65, normal: 25, disperso: 10 },
     tension: [
-      { name: 'A la tarde', valor: 45 },
-      { name: 'Al final de la jornada', valor: 30 },
       { name: 'A la mañana', valor: 15 },
       { name: 'Al mediodía', valor: 10 },
+      { name: 'A la tarde', valor: 45 },
+      { name: 'Al final de la jornada', valor: 30 },
+      { name: 'No sentí tensión', valor: 0 },
     ]
   };
 };
