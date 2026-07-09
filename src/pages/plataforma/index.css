@@ -407,6 +407,7 @@
 #plataforma-root .rg-preview-pages[data-page="3"] .reactiva-report-page:nth-child(4),
 #plataforma-root .rg-preview-pages[data-page="4"] .reactiva-report-page:nth-child(5),
 #plataforma-root .rg-preview-pages[data-page="5"] .reactiva-report-page:nth-child(6),
+#plataforma-root .rg-preview-pages[data-page="6"] .reactiva-report-page:nth-child(7),
 #plataforma-root .rg-preview-pages.is-capturing .reactiva-report-page {
   display: block;
 }
@@ -498,6 +499,40 @@
 
 #plataforma-root .rg-company-page-6 .rg-kpi-grid {
   margin-top: 16px;
+}
+
+/* Tension page: full-width single column */
+#plataforma-root .rg-tension-page main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: flex-start;
+}
+
+#plataforma-root .rg-tension-page .rg-tension-full {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: start;
+}
+
+#plataforma-root .rg-tension-page .rg-tension-bars {
+  gap: 26px;
+  margin-bottom: 0;
+}
+
+#plataforma-root .rg-tension-page .rg-tension-row {
+  grid-template-columns: 30px 160px 1fr 44px;
+}
+
+#plataforma-root .rg-tension-page .rg-tension-track {
+  min-width: 0;
+}
+
+#plataforma-root .rg-tension-page .rg-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 #plataforma-root .rg-header,

@@ -628,36 +628,39 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           </div>
         </div>
       </Page>
-      {data.tension && data.tension.length > 0 && (
-        <Page page="Pag. 6" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-5">
-          <h1>Momento de mayor tension</h1>
-          <p className="rg-lead">Distribucion de los momentos del dia en que los colaboradores reportaron sentir mas tension durante la jornada laboral.</p>
-          <div className="rg-grid side">
-            <div className="rg-chart-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <h3>Distribucion de respuestas</h3>
-              <TensionBars tension={data.tension} />
-            </div>
-            <div className="rg-stack">
-              <Highlight 
-                title="Momento predominante" 
-                label={data.tension && data.tension.length > 0 ? [...data.tension].sort((a, b) => b.valor - a.valor)[0].name : ''} 
-                value={`${data.tension && data.tension.length > 0 ? [...data.tension].sort((a, b) => b.valor - a.valor)[0].valor : 0}% de los colaboradores`} 
-                color={COLORS.purple} 
-                icon={<Zap size={44} />} 
-              />
-              {(narrative.tensionInsight || narrative.tensionRecomendacion) && (
-                <InsightList
-                  title="Analisis e interpretacion"
-                  items={[
-                    narrative.tensionInsight ?? '',
-                    narrative.tensionRecomendacion ?? 'Revisá la distribución de pausas activas según el horario de mayor tensión.',
-                  ].filter(Boolean)}
+      {data.tension && data.tension.length > 0 && (() => {
+        const topT = [...data.tension].sort((a, b) => b.valor - a.valor)[0];
+        return (
+          <Page page="Pag. 6" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-tension-page">
+            <h1>Momento de mayor tension</h1>
+            <p className="rg-lead">Distribucion de los momentos del dia en que los colaboradores reportaron sentir mas tension durante la jornada laboral.</p>
+            <div className="rg-tension-full">
+              <div className="rg-chart-card">
+                <h3>Distribucion de respuestas</h3>
+                <TensionBars tension={data.tension} />
+              </div>
+              <div className="rg-stack">
+                <Highlight
+                  title="Momento predominante"
+                  label={topT.name}
+                  value={`${topT.valor}% de los colaboradores`}
+                  color={COLORS.purple}
+                  icon={<Zap size={44} />}
                 />
-              )}
+                {(narrative.tensionInsight || narrative.tensionRecomendacion) && (
+                  <InsightList
+                    title="Analisis e interpretacion"
+                    items={[
+                      narrative.tensionInsight ?? '',
+                      narrative.tensionRecomendacion ?? 'Revisá la distribución de pausas activas según el horario de mayor tensión.',
+                    ].filter(Boolean)}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        </Page>
-      )}
+          </Page>
+        );
+      })()}
       <Page page={data.tension && data.tension.length > 0 ? 'Pag. 7' : 'Pag. 6'} eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-6">
         <h1>Conclusiones y<br />recomendaciones</h1>
         <p className="rg-lead">Con base en los indicadores del periodo, presentamos las principales conclusiones y recomendaciones para seguir fortaleciendo el bienestar corporativo.</p>
