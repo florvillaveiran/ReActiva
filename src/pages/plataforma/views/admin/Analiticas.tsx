@@ -4,18 +4,20 @@ import { Filter, Calendar, Bell, CheckCircle2, ListChecks, Users, Briefcase, Set
 import { useAdminStats } from '../../hooks/useAdminStats';
 import { ReportGenerator } from '../../components/ReportGenerator';
 import { useAuth } from '../../context/AuthContext';
+import { useEmpresas } from '../../context/EmpresasContext';
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
-type EmpresaKey = 'all' | 'empresa1' | 'empresa2' | 'empresa3';
 type PeriodoKey = 'semanal' | 'mensual' | 'anual' | 'personalizado';
 
 interface AnaliticaSetBase {
   zonas: { name: string; valor: number }[];
+  tension: { name: string; valor: number }[];
   evolucion: { name: string; energia: number; satisfaccion: number; participacion: number }[];
 }
 
 interface AnaliticaSet {
   zonas: { name: string; valor: number }[];
+  tension: { name: string; valor: number }[];
   evolucion: { name: string; energia: number; satisfaccion: number; participacion: number; foco: number; dolor: number; impacto: number; energiaPct: number }[];
   kpis: {
     participacion: number;
@@ -38,6 +40,7 @@ const enrichSet = (base: AnaliticaSetBase): AnaliticaSet => {
   const last = evolucion[evolucion.length - 1];
   return {
     zonas: base.zonas,
+    tension: base.tension,
     evolucion,
     kpis: {
       participacion: last?.participacion ?? 0,
@@ -50,13 +53,17 @@ const enrichSet = (base: AnaliticaSetBase): AnaliticaSet => {
 };
 
 // ─── Mocks por empresa y período ───────────────────────
-const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> = {
+const ANALITICAS_MOCK: Record<string, Record<PeriodoKey, AnaliticaSetBase>> = {
   // ── Vista General (Todas las empresas) ──────────────────────────────────
   all: {
     semanal: {
       zonas: [
         { name: 'Espalda Baja', valor: 42 }, { name: 'Cuello', valor: 28 },
         { name: 'Hombros', valor: 18 }, { name: 'Muñecas', valor: 12 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Lun', energia: 3.4, satisfaccion: 78, participacion: 82 },
@@ -68,6 +75,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
       zonas: [
         { name: 'Espalda Baja', valor: 45 }, { name: 'Cuello', valor: 30 },
         { name: 'Hombros', valor: 15 }, { name: 'Muñecas', valor: 10 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Sem 1', energia: 3.2, satisfaccion: 75, participacion: 80 },
@@ -81,6 +92,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Espalda Baja', valor: 50 }, { name: 'Cuello', valor: 28 },
         { name: 'Hombros', valor: 15 }, { name: 'Muñecas', valor: 7 },
       ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+      ],
       evolucion: [
         { name: 'T1', energia: 2.9, satisfaccion: 68, participacion: 72 },
         { name: 'T2', energia: 3.4, satisfaccion: 78, participacion: 82 },
@@ -91,6 +106,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
     personalizado: {
       zonas: [
         { name: 'Espalda Baja', valor: 45 }, { name: 'Cuello', valor: 30 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Inicio', energia: 3.2, satisfaccion: 75, participacion: 80 },
@@ -105,6 +124,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Cuello', valor: 52 }, { name: 'Espalda Baja', valor: 30 },
         { name: 'Hombros', valor: 15 }, { name: 'Rodillas', valor: 3 },
       ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+      ],
       evolucion: [
         { name: 'Lun', energia: 3.5, satisfaccion: 80, participacion: 85 },
         { name: 'Mié', energia: 3.8, satisfaccion: 86, participacion: 90 },
@@ -115,6 +138,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
       zonas: [
         { name: 'Cuello', valor: 50 }, { name: 'Espalda Baja', valor: 35 },
         { name: 'Hombros', valor: 15 }, { name: 'Rodillas', valor: 0 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Sem 1', energia: 3.4, satisfaccion: 78, participacion: 85 },
@@ -128,6 +155,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Cuello', valor: 46 }, { name: 'Espalda Baja', valor: 36 },
         { name: 'Hombros', valor: 13 }, { name: 'Rodillas', valor: 5 },
       ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+      ],
       evolucion: [
         { name: 'T1', energia: 3.0, satisfaccion: 70, participacion: 78 },
         { name: 'T2', energia: 3.5, satisfaccion: 80, participacion: 86 },
@@ -138,6 +169,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
     personalizado: {
       zonas: [
         { name: 'Cuello', valor: 50 }, { name: 'Espalda Baja', valor: 35 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Inicio', energia: 3.4, satisfaccion: 78, participacion: 85 },
@@ -152,6 +187,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Espalda Baja', valor: 48 }, { name: 'Hombros', valor: 28 },
         { name: 'Cuello', valor: 18 }, { name: 'Piernas', valor: 6 },
       ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+      ],
       evolucion: [
         { name: 'Lun', energia: 3.0, satisfaccion: 70, participacion: 75 },
         { name: 'Mié', energia: 3.4, satisfaccion: 76, participacion: 80 },
@@ -162,6 +201,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
       zonas: [
         { name: 'Espalda Baja', valor: 50 }, { name: 'Hombros', valor: 25 },
         { name: 'Cuello', valor: 20 }, { name: 'Piernas', valor: 5 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Sem 1', energia: 2.9, satisfaccion: 68, participacion: 72 },
@@ -175,6 +218,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Espalda Baja', valor: 54 }, { name: 'Hombros', valor: 22 },
         { name: 'Cuello', valor: 18 }, { name: 'Piernas', valor: 6 },
       ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+      ],
       evolucion: [
         { name: 'T1', energia: 2.6, satisfaccion: 60, participacion: 66 },
         { name: 'T2', energia: 3.0, satisfaccion: 70, participacion: 75 },
@@ -185,6 +232,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
     personalizado: {
       zonas: [
         { name: 'Espalda Baja', valor: 50 }, { name: 'Hombros', valor: 25 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Inicio', energia: 2.9, satisfaccion: 68, participacion: 72 },
@@ -199,6 +250,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Espalda Alta', valor: 38 }, { name: 'Cuello', valor: 32 },
         { name: 'Muñecas', valor: 22 }, { name: 'Hombros', valor: 8 },
       ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+      ],
       evolucion: [
         { name: 'Lun', energia: 2.7, satisfaccion: 62, participacion: 68 },
         { name: 'Mié', energia: 3.1, satisfaccion: 70, participacion: 74 },
@@ -209,6 +264,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
       zonas: [
         { name: 'Espalda Alta', valor: 40 }, { name: 'Cuello', valor: 30 },
         { name: 'Muñecas', valor: 20 }, { name: 'Hombros', valor: 10 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Sem 1', energia: 2.6, satisfaccion: 60, participacion: 65 },
@@ -222,6 +281,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
         { name: 'Espalda Alta', valor: 44 }, { name: 'Cuello', valor: 28 },
         { name: 'Muñecas', valor: 18 }, { name: 'Hombros', valor: 10 },
       ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
+      ],
       evolucion: [
         { name: 'T1', energia: 2.3, satisfaccion: 55, participacion: 60 },
         { name: 'T2', energia: 2.7, satisfaccion: 64, participacion: 68 },
@@ -232,6 +295,10 @@ const ANALITICAS_MOCK: Record<EmpresaKey, Record<PeriodoKey, AnaliticaSetBase>> 
     personalizado: {
       zonas: [
         { name: 'Espalda Alta', valor: 40 }, { name: 'Cuello', valor: 30 },
+      ],
+      tension: [
+        { name: 'A la tarde', valor: 45 }, { name: 'Al final de la jornada', valor: 30 },
+        { name: 'A la mañana', valor: 15 }, { name: 'Al mediodía', valor: 10 },
       ],
       evolucion: [
         { name: 'Inicio', energia: 2.6, satisfaccion: 60, participacion: 65 },
@@ -247,16 +314,16 @@ const PERIODO_LABELS: Record<PeriodoKey, string> = {
   anual: 'Anual',
   personalizado: 'Personalizado',
 };
-const EMPRESA_LABELS: Record<EmpresaKey, string> = {
-  all: 'Todas',
-  empresa1: 'Empresa Alpha',
-  empresa2: 'Empresa Beta',
-  empresa3: 'Empresa Gamma',
+
+const getDynamicMock = (periodo: PeriodoKey): AnaliticaSetBase => {
+  // Use a sensible default base for unknown companies
+  return ANALITICAS_MOCK['empresa1'][periodo];
 };
 
 export const Analiticas: React.FC = () => {
   const { user } = useAuth();
-  const [filtro, setFiltro] = useState<EmpresaKey>('all');
+  const { empresas } = useEmpresas();
+  const [filtro, setFiltro] = useState<string>('all');
   const [periodo, setPeriodo] = useState<PeriodoKey>('mensual');
   
   // Selectores secundarios condicionales
@@ -272,13 +339,14 @@ export const Analiticas: React.FC = () => {
   // Stats reales del usuario demo (en vivo desde localStorage).
   // TODO(backend): reemplazar por fetch a /api/admin/analiticas?empresa=...&periodo=... y borrar mocks.
   const stats = useAdminStats();
-  const rrhhEmpresaKey = user?.role === 'rrhh' && user.empresa_id ? (`empresa${user.empresa_id}` as EmpresaKey) : null;
+  const rrhhEmpresaKey = user?.role === 'rrhh' && user.empresa_id ? (user.empresa_id.toString()) : null;
   const effectiveFiltro = rrhhEmpresaKey ?? filtro;
 
   // Resolución de data: si "all" + periodo "mes" + hay datos reales del usuario → usar reales.
   // Cualquier otro caso → mock correspondiente a (empresa, periodo). enrichSet agrega foco, dolor, impacto y kpis.
   const data = useMemo<AnaliticaSet>(() => {
-    const mock = enrichSet(ANALITICAS_MOCK[effectiveFiltro][periodo]);
+    const baseMock = ANALITICAS_MOCK[effectiveFiltro] ? ANALITICAS_MOCK[effectiveFiltro][periodo] : getDynamicMock(periodo);
+    const mock = enrichSet(baseMock);
     if (effectiveFiltro === 'all' && periodo === 'mensual' && stats.hayDatos) {
       const evolucionReal = stats.evolucion.map((p, i) => ({
         ...p,
@@ -366,7 +434,10 @@ export const Analiticas: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.35rem' }}>
           <h2 className="header-title" style={{ marginBottom: 0 }}>Analiticas RRHH</h2>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="input-field" style={{ width: 160, display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'white' }}><Filter size={15} /> {EMPRESA_LABELS[effectiveFiltro]}</div>
+            <div className="input-field" style={{ width: 160, display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'white' }}>
+              <Filter size={15} /> 
+              {effectiveFiltro === 'all' ? 'Todas' : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa'}
+            </div>
             <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={periodo} onChange={(event) => setPeriodo(event.target.value as PeriodoKey)}>
               <option value="semanal">Semanal</option>
               <option value="mensual">Mensual</option>
@@ -471,6 +542,63 @@ export const Analiticas: React.FC = () => {
           </div>
         </div>
 
+        {data.tension && data.tension.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', marginTop: '1rem' }}>
+            <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 1rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                🕐 Momento de mayor tensión
+              </h3>
+              <div style={{ height: '150px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart layout="vertical" data={data.tension} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
+                    <XAxis type="number" domain={[0, 100]} hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} width={110} />
+                    <Tooltip
+                      formatter={(val: number) => [`${val}%`, 'Respuestas']}
+                      contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }}
+                    />
+                    <Bar dataKey="valor" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={14} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            {(() => {
+              const top = data.tension?.[0];
+              if (!top || top.valor < 30) return <div />;
+              const isEndOfDay = top.name === 'Al final de la jornada';
+              const isMorning = top.name === 'A la mañana';
+              const isAfternoon = top.name === 'A la tarde';
+              let insight = `El ${top.valor}% de los colaboradores reportó tensión predominante "${top.name}".`;
+              let recomendacion = 'Se recomienda revisar la distribución de pausas activas en ese horario.';
+              if (isEndOfDay) recomendacion = 'Considerá adelantar la pausa de tarde para liberar tensión acumulada antes del cierre de jornada.';
+              else if (isMorning) recomendacion = 'Una pausa de activación temprana puede ayudar a modular la tensión desde el inicio de la jornada.';
+              else if (isAfternoon) recomendacion = 'La pausa de tarde está bien posicionada. Evaluá si aumentar su frecuencia en días de mayor carga.';
+              return (
+                <div style={{
+                  padding: '1.25rem',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)',
+                  border: '1px solid #c7d2fe',
+                  display: 'flex', gap: '1rem', alignItems: 'flex-start',
+                  margin: 0
+                }}>
+                  <span style={{ fontSize: '1.8rem', flexShrink: 0 }}>💡</span>
+                  <div>
+                    <p style={{ fontWeight: 800, color: '#3730a3', fontSize: '1rem', marginBottom: '0.4rem' }}>
+                      Inteligencia: Patrón de tensión detectado
+                    </p>
+                    <p style={{ color: '#4338ca', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                      {insight} {recomendacion}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.25rem', color: '#64748b', fontSize: '0.78rem' }}>
           <span>Ultima actualizacion: 1 jul 2026, 09:30</span>
           <span>Los datos se actualizan diariamente</span>
@@ -492,11 +620,12 @@ export const Analiticas: React.FC = () => {
               className="input-field"
               style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
               value={effectiveFiltro}
-              onChange={(e) => setFiltro(e.target.value as EmpresaKey)}
+              onChange={(e) => setFiltro(e.target.value)}
               disabled={!!rrhhEmpresaKey}
             >
-              {(rrhhEmpresaKey ? [rrhhEmpresaKey] : Object.keys(EMPRESA_LABELS) as EmpresaKey[]).map(k => (
-                <option key={k} value={k}>{EMPRESA_LABELS[k]}</option>
+              <option value="all">Todas</option>
+              {empresas.map(emp => (
+                <option key={emp.id} value={emp.id.toString()}>{emp.nombre}</option>
               ))}
             </select>
           </div>
@@ -584,7 +713,7 @@ export const Analiticas: React.FC = () => {
 
           <ReportGenerator
             currentData={data}
-            currentEmpresaLabel={EMPRESA_LABELS[effectiveFiltro]}
+            currentEmpresaLabel={effectiveFiltro === 'all' ? 'Todas' : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa'}
             periodoLabel={reportPeriodoLabel}
             periodFrom={reportRange.from}
             periodTo={reportRange.to}
@@ -676,7 +805,7 @@ export const Analiticas: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
           {/* Impacto Pausa */}
           <div className="card" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Impacto Pausa</h3>
@@ -720,7 +849,62 @@ export const Analiticas: React.FC = () => {
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Momento de mayor tensión */}
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              🕐 Momento de mayor tensión
+            </h3>
+            <div style={{ height: '180px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart layout="vertical" data={data.tension} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
+                  <XAxis type="number" domain={[0, 100]} hide />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} width={110} />
+                  <Tooltip
+                    formatter={(val: number) => [`${val}%`, 'Respuestas']}
+                    contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }}
+                  />
+                  <Bar dataKey="valor" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={14} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
+
+        {/* ─── Centro de Inteligencia: alerta de tensión ──────────────────────── */}
+        {(() => {
+          const top = data.tension?.[0];
+          if (!top || top.valor < 30) return null;
+          const isEndOfDay = top.name === 'Al final de la jornada';
+          const isMorning = top.name === 'A la mañana';
+          const isAfternoon = top.name === 'A la tarde';
+          let insight = `El ${top.valor}% de los colaboradores reportó tensión predominante "${top.name}".`;
+          let recomendacion = 'Se recomienda revisar la distribución de pausas activas en ese horario.';
+          if (isEndOfDay) recomendacion = 'Considerá adelantar la pausa de tarde para liberar tensión acumulada antes del cierre de jornada.';
+          else if (isMorning) recomendacion = 'Una pausa de activación temprana puede ayudar a modular la tensión desde el inicio de la jornada.';
+          else if (isAfternoon) recomendacion = 'La pausa de tarde está bien posicionada. Evaluá si aumentar su frecuencia en días de mayor carga.';
+          return (
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem 1.25rem',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)',
+              border: '1px solid #c7d2fe',
+              display: 'flex', gap: '1rem', alignItems: 'flex-start',
+            }}>
+              <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>💡</span>
+              <div>
+                <p style={{ fontWeight: 700, color: '#3730a3', fontSize: '0.9rem', marginBottom: '0.3rem' }}>
+                  Inteligencia: Patrón de tensión detectado
+                </p>
+                <p style={{ color: '#4338ca', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                  {insight} {recomendacion}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

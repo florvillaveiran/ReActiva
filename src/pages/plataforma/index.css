@@ -1031,6 +1031,55 @@
   background-color: #f72f4e;
 }
 
+/* ---- Tension Bars (PDF Report) ---- */
+#plataforma-root .rg-tension-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+#plataforma-root .rg-tension-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+#plataforma-root .rg-tension-emoji {
+  font-size: 18px;
+  text-align: center;
+}
+
+#plataforma-root .rg-tension-label {
+  color: #233e70;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#plataforma-root .rg-tension-track {
+  height: 10px;
+  background-color: #e8f0f8;
+  border-radius: 999px;
+  overflow: hidden;
+  min-width: 160px;
+}
+
+#plataforma-root .rg-tension-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+#plataforma-root .rg-tension-pct {
+  color: #4f46e5;
+  font-size: 13px;
+  font-weight: 800;
+  width: 36px;
+  text-align: right;
+}
+
 @media (max-width: 760px) {
   #plataforma-root .rg-kind-grid {
     grid-template-columns: 1fr;

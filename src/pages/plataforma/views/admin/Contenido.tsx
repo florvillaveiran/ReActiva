@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, ChevronRight, X, Link, Upload, Save, Filter, Eye, Pencil, Trash2, CalendarCheck, Droplets, Leaf, Lightbulb, Moon, Monitor, Search, Sparkles, Star, Zap, FileImage, FileVideo, Info } from 'lucide-react';
 import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, getContentLibrary, updateAcademyItem, updateCoachItem } from '../../data/contentLibrary';
+import { useEmpresas } from '../../context/EmpresasContext';
 
 type AdminSection = 'micro' | 'coach' | 'academy' | 'media';
 
@@ -426,7 +427,6 @@ const AdminMediaPanel: React.FC = () => {
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS_LABELS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
-const EMPRESAS = ['Todas las empresas','Global','Empresa Alpha','Empresa Beta'];
 
 // Mock contenido base (Lun/Mié/Vie)
 const BASE_BLOQUES = [
@@ -487,6 +487,10 @@ const colorEmpresa: Record<string,{bg:string;text:string}> = {
 };
 
 export const Contenido: React.FC = () => {
+  const { empresas } = useEmpresas();
+  const opcionesEmpresas = ['Todas las empresas', 'Global', ...empresas.map(e => e.nombre)];
+  const opcionesEmpresasModal = ['Global (todas)', ...empresas.map(e => e.nombre)];
+
   const [adminSection, setAdminSection] = useState<AdminSection>('micro');
   const hoy = new Date();
   const [vista, setVista]          = useState<'semana'|'mes'>('semana');
@@ -576,7 +580,7 @@ export const Contenido: React.FC = () => {
               onChange={e=>setEmpresa(e.target.value)}
               style={{border:'none',background:'transparent',fontSize:'0.82rem',fontWeight:600,color:'#1e293b',cursor:'pointer',outline:'none'}}
             >
-              {EMPRESAS.map(e=><option key={e}>{e}</option>)}
+              {opcionesEmpresas.map(e=><option key={e}>{e}</option>)}
             </select>
           </div>
 
@@ -778,7 +782,7 @@ export const Contenido: React.FC = () => {
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Empresa</label>
                 <select className="input-field" style={{fontSize:'0.875rem'}}>
-                  {['Global (todas)','Empresa Alpha','Empresa Beta'].map(e=><option key={e}>{e}</option>)}
+                  {opcionesEmpresasModal.map(e=><option key={e}>{e}</option>)}
                 </select>
               </div>
             </div>

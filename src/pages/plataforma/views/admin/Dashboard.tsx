@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Activity, HeartPulse, Sparkles, Smile } from 'lucide-react';
+import { Users, Activity, HeartPulse, Sparkles, Smile, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAdminStats } from '../../hooks/useAdminStats';
+import { useEmpresas } from '../../context/EmpresasContext';
 
 // Mock data base (fallback cuando no hay datos reales o se filtra por empresa demo)
 const dataGlobal = [
@@ -10,21 +11,35 @@ const dataGlobal = [
   { name: 'Vie', participacion: 95 },
 ];
 
-const dataEmpresa1 = [
-  { name: 'Lun', participacion: 95 },
-  { name: 'Mié', participacion: 95 },
-  { name: 'Vie', participacion: 98 },
-];
-
-const dataEmpresa2 = [
-  { name: 'Lun', participacion: 65 },
-  { name: 'Mié', participacion: 75 },
-  { name: 'Vie', participacion: 80 },
-];
+const generateMockDataForEmpresa = (empleadosCount: number) => {
+  const adherencia = Math.floor(Math.random() * 20) + 70; // 70-90
+  return {
+    totales: empleadosCount || Math.floor(Math.random() * 100) + 10,
+    pausas: (empleadosCount || 50) * 8,
+    participacion: `${adherencia}%`,
+    dolor: `${Math.floor(Math.random() * 15) + 5}%`,
+    emocion: `${(Math.random() * 1 + 3.5).toFixed(1)}/5`,
+    zonas: ['Cuello', 'Hombros'],
+    data: [
+      { name: 'Lun', participacion: adherencia },
+      { name: 'Mié', participacion: adherencia - 5 },
+      { name: 'Vie', participacion: adherencia + 5 > 100 ? 100 : adherencia + 5 },
+    ],
+    foco: { enfocado: 65, normal: 25, disperso: 10 },
+    tension: [
+      { name: 'A la tarde', valor: 45 },
+      { name: 'Al final de la jornada', valor: 30 },
+      { name: 'A la mañana', valor: 15 },
+      { name: 'Al mediodía', valor: 10 },
+    ]
+  };
+};
 
 export const AdminDashboard: React.FC = () => {
   const [empresaId, setEmpresaId] = useState('all');
   const [mensaje, setMensaje] = useState('¡Excelente semana equipo! Recuerden tomar pausas activas.');
+
+  const { empresas } = useEmpresas();
 
   // Stats reales del usuario demo (lee de localStorage en vivo)
   // TODO(backend): cuando exista la API, pasar empresaId al hook para filtrar.
@@ -52,14 +67,18 @@ export const AdminDashboard: React.FC = () => {
         zonas: stats.zonasDolorTop.length > 0 ? stats.zonasDolorTop : ['Cuello', 'Hombros'],
         data: stats.hayDatos ? stats.participacionPorDia : dataGlobal,
         foco: stats.hayDatos ? stats.foco : { enfocado: 65, normal: 25, disperso: 10 },
+        tension: stats.hayDatos && stats.tensionDistribucion.length > 0 ? stats.tensionDistribucion : [
+          { name: 'A la tarde', valor: 45 },
+          { name: 'Al final de la jornada', valor: 30 },
+          { name: 'A la mañana', valor: 15 },
+          { name: 'Al mediodía', valor: 10 },
+        ],
       };
     }
-    // Empresas individuales → datos demo (placeholder hasta que haya backend con datos por empresa).
-    if (empresaId === 'empresa1') {
-      return { totales: 450, pausas: 3450, participacion: '93%', dolor: '8%', emocion: '4.2/5', zonas: ['Cuello', 'Hombros'], data: dataEmpresa1, foco: { enfocado: 65, normal: 25, disperso: 10 } };
-    }
-    return { totales: 320, pausas: 3450, participacion: '70%', dolor: '18%', emocion: '3.4/5', zonas: ['Cuello', 'Hombros'], data: dataEmpresa2, foco: { enfocado: 65, normal: 25, disperso: 10 } };
-  }, [empresaId, stats]);
+    // Empresas individuales → datos generados/reales
+    const empresaSeleccionada = empresas.find(e => e.id.toString() === empresaId);
+    return generateMockDataForEmpresa(empresaSeleccionada?.empleados.length || 0);
+  }, [empresaId, stats, empresas]);
 
   return (
     <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
@@ -72,8 +91,9 @@ export const AdminDashboard: React.FC = () => {
           onChange={(e) => setEmpresaId(e.target.value)}
         >
           <option value="all">Todas las empresas</option>
-          <option value="empresa1">Empresa Alpha</option>
-          <option value="empresa2">Empresa Beta</option>
+          {empresas.map(emp => (
+            <option key={emp.id} value={emp.id.toString()}>{emp.nombre}</option>
+          ))}
         </select>
       </div>
 
@@ -142,7 +162,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
         {/* Gráfico de Participación */}
         <div className="card" style={{ padding: '1.5rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
@@ -212,6 +232,30 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Momento de mayor tensión */}
+        <div className="card" style={{ padding: '1.5rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <div style={{ backgroundColor: '#e0e7ff', padding: '0.5rem', borderRadius: '8px' }}>
+              <Clock size={20} color="#4f46e5" />
+            </div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>Momento de mayor tensión</h3>
+          </div>
+          
+          <div style={{ flex: 1, minHeight: 180 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart layout="vertical" data={metrics.tension} margin={{ top: 0, right: 30, left: 30, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} width={120} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                <Bar dataKey="valor" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={16}>
+                  {/* labels could be added here */}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
         {/* Mensaje */}
         <div className="card" style={{ padding: '1.5rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
@@ -226,7 +270,7 @@ export const AdminDashboard: React.FC = () => {
             rows={4} 
             value={mensaje}
             onChange={(e) => setMensaje(e.target.value)}
-            style={{ marginBottom: '1rem', resize: 'none', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.85rem', color: '#475569' }}
+            style={{ marginBottom: '1rem', resize: 'none', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.85rem', color: '#475569', flex: 1 }}
           />
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

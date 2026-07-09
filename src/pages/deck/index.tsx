@@ -88,24 +88,6 @@ function Deck() {
 
   return (
     <div id="presentacion-root" className="fixed inset-0 bg-brand-cream overflow-hidden font-sans selection:bg-brand-primary/20">
-      {/* Slide Controls */}
-      <div className="absolute bottom-5 right-3 md:bottom-8 md:right-8 z-50 flex flex-col gap-1.5 md:gap-3">
-        <button 
-          onClick={prevSlide}
-          disabled={currentSlide === 0}
-          className="p-2.5 md:p-4 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-slate-100 disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
-        >
-          <ChevronUp size={18} className="text-brand-primary md:w-6 md:h-6" />
-        </button>
-        <button 
-          onClick={nextSlide}
-          disabled={currentSlide === slides.length - 1}
-          className="p-2.5 md:p-4 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-slate-100 disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
-        >
-          <ChevronDown size={18} className="text-brand-primary md:w-6 md:h-6" />
-        </button>
-      </div>
-
       {/* Progress Bar (Bottom) */}
       <div className="absolute bottom-0 left-0 w-full h-1 md:h-1.5 z-50 bg-slate-100/50">
         <motion.div 

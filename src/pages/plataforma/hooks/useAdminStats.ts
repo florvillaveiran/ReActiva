@@ -55,6 +55,7 @@ export interface AdminStats {
   foco: { enfocado: number; normal: number; disperso: number };
   // Analíticas
   zonasDolorChart: { name: string; valor: number }[]; // valor en %
+  tensionDistribucion: { name: string; valor: number }[]; // valor en %
   evolucion: { name: string; energia: number; satisfaccion: number; participacion: number }[];
 }
 
@@ -136,6 +137,25 @@ const computeStats = (pausas: PausaGuardada[]): AdminStats => {
   else if (trabajo === 'Normal') foco = { enfocado: 0, normal: 100, disperso: 0 };
   else if (trabajo === 'Disperso') foco = { enfocado: 0, normal: 0, disperso: 100 };
 
+  // Distribución de Tensión
+  const tensionCount = new Map<string, number>();
+  let tensionTotal = 0;
+  pausas.forEach(p => {
+    const t = getCampo<string>(p, 'tension');
+    if (t) {
+      tensionCount.set(t, (tensionCount.get(t) ?? 0) + 1);
+      tensionTotal++;
+    }
+  });
+  
+  const opcionesTension = ['A la mañana', 'Al mediodía', 'A la tarde', 'Al final de la jornada', 'No sentí tensión'];
+  const tensionDistribucion = tensionTotal > 0 
+    ? opcionesTension.map(opt => ({
+        name: opt,
+        valor: Math.round(((tensionCount.get(opt) ?? 0) / tensionTotal) * 100)
+      })).filter(t => t.valor > 0).sort((a, b) => b.valor - a.valor)
+    : [];
+
   // Evolución (4 "semanas"). En demo solo hay una semana real, así que llenamos las 4
   // con el dato actual (línea plana). Cuando haya backend con histórico, traer real.
   const energiaPromedio = (() => {
@@ -168,6 +188,7 @@ const computeStats = (pausas: PausaGuardada[]): AdminStats => {
     participacionPorDia,
     foco,
     zonasDolorChart,
+    tensionDistribucion,
     evolucion,
   };
 };

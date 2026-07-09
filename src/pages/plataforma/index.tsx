@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { EmpresasProvider } from './context/EmpresasContext';
 import { Layout } from './components/Layout';
 import { Login } from './views/Login';
 import { AdminDashboard } from './views/admin/Dashboard';
@@ -19,45 +20,47 @@ import './index.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <div id="plataforma-root">
-        <Routes>
-        <Route path="login" element={<Login />} />
+    <EmpresasProvider>
+      <AuthProvider>
+        <div id="plataforma-root">
+          <Routes>
+          <Route path="login" element={<Login />} />
 
-          {/* Rutas de Admin */}
-          <Route path="admin" element={<Layout allowedRole="admin" />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="contenido" element={<Contenido />} />
-            <Route path="empresas" element={<Empresas />} />
-            <Route path="usuarios" element={<Usuarios />} />
-            <Route path="analiticas" element={<Analiticas />} />
-            <Route path="emails" element={<Emails />} />
-          </Route>
+            {/* Rutas de Admin */}
+            <Route path="admin" element={<Layout allowedRole="admin" />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="contenido" element={<Contenido />} />
+              <Route path="empresas" element={<Empresas />} />
+              <Route path="usuarios" element={<Usuarios />} />
+              <Route path="analiticas" element={<Analiticas />} />
+              <Route path="emails" element={<Emails />} />
+            </Route>
 
-          {/* Rutas de RRHH */}
-          <Route path="rrhh" element={<Layout allowedRole="rrhh" />}>
-            <Route index element={<Navigate to="/plataforma/rrhh/analiticas" replace />} />
-            <Route path="empresas" element={<Empresas />} />
-            <Route path="usuarios" element={<Usuarios />} />
-            <Route path="analiticas" element={<Analiticas />} />
-          </Route>
+            {/* Rutas de RRHH */}
+            <Route path="rrhh" element={<Layout allowedRole="rrhh" />}>
+              <Route index element={<Navigate to="/plataforma/rrhh/analiticas" replace />} />
+              <Route path="empresas" element={<Empresas />} />
+              <Route path="usuarios" element={<Usuarios />} />
+              <Route path="analiticas" element={<Analiticas />} />
+            </Route>
 
-          {/* Rutas de Usuario */}
-          <Route path="usuario" element={<Layout allowedRole="usuario" />}>
-            <Route index element={<UsuarioDashboard />} />
-            <Route path="progreso" element={<UsuarioProgreso />} />
-            <Route path="coach" element={<UsuarioTips />} />
-            <Route path="academia" element={<UsuarioAcademia />} />
-            <Route path="tips" element={<Navigate to="/plataforma/usuario/coach" replace />} />
-          </Route>
+            {/* Rutas de Usuario */}
+            <Route path="usuario" element={<Layout allowedRole="usuario" />}>
+              <Route index element={<UsuarioDashboard />} />
+              <Route path="progreso" element={<UsuarioProgreso />} />
+              <Route path="coach" element={<UsuarioTips />} />
+              <Route path="academia" element={<UsuarioAcademia />} />
+              <Route path="tips" element={<Navigate to="/plataforma/usuario/coach" replace />} />
+            </Route>
 
-          {/* Redirección por defecto */}
-          <Route path="onboarding/empresa/:token" element={<EmpresaOnboarding />} />
-          <Route path="onboarding/usuario/:token" element={<UsuarioOnboarding />} />
-          <Route path="*" element={<Navigate to="login" replace />} />
-        </Routes>
-      </div>
-    </AuthProvider>
+            {/* Redirección por defecto */}
+            <Route path="onboarding/empresa/:token" element={<EmpresaOnboarding />} />
+            <Route path="onboarding/usuario/:token" element={<UsuarioOnboarding />} />
+            <Route path="*" element={<Navigate to="login" replace />} />
+          </Routes>
+        </div>
+      </AuthProvider>
+    </EmpresasProvider>
   );
 }
 

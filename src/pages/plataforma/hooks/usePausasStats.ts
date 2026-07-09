@@ -34,6 +34,7 @@ export interface PausasStats {
   zonasDolor: string[];
   impactoPercibido: number | null;
   impactoTexto: string;
+  momentoTensionPredominante: string | null;
   tieneSemanal: boolean;
   mensajeParaTi: string;
   hayDatos: boolean;
@@ -111,17 +112,24 @@ const computeStats = (pausas: PausaGuardada[]): PausasStats => {
   const tieneSemanal = !!semanal;
   let impactoPercibido: number | null = null;
   let impactoTexto = 'Completá el formulario del viernes para ver tu impacto percibido.';
-  if (semanal?.respuestas?.ayuda) {
-    const ayuda = semanal.respuestas.ayuda;
-    if (ayuda === 'Sí, mucho') {
-      impactoPercibido = 90;
-      impactoTexto = 'Sentís que las pausas te están ayudando mucho a liberar tensión diaria.';
-    } else if (ayuda === 'Sí, un poco') {
-      impactoPercibido = 55;
-      impactoTexto = 'Sentís que las pausas te ayudaron un poco esta semana.';
-    } else if (ayuda === 'No') {
-      impactoPercibido = 15;
-      impactoTexto = 'Esta semana no notaste mucha ayuda. Probemos ajustar el programa.';
+  let momentoTensionPredominante: string | null = null;
+  
+  if (semanal?.respuestas) {
+    if (semanal.respuestas.ayuda) {
+      const ayuda = semanal.respuestas.ayuda;
+      if (ayuda === 'Sí, mucho') {
+        impactoPercibido = 90;
+        impactoTexto = 'Sentís que las pausas te están ayudando mucho a liberar tensión diaria.';
+      } else if (ayuda === 'Sí, un poco') {
+        impactoPercibido = 55;
+        impactoTexto = 'Sentís que las pausas te ayudaron un poco esta semana.';
+      } else if (ayuda === 'No') {
+        impactoPercibido = 15;
+        impactoTexto = 'Esta semana no notaste mucha ayuda. Probemos ajustar el programa.';
+      }
+    }
+    if (semanal.respuestas.tension) {
+      momentoTensionPredominante = semanal.respuestas.tension;
     }
   }
 
@@ -152,6 +160,7 @@ const computeStats = (pausas: PausaGuardada[]): PausasStats => {
     zonasDolor: Array.from(zonasSet),
     impactoPercibido,
     impactoTexto,
+    momentoTensionPredominante,
     tieneSemanal,
     mensajeParaTi,
     hayDatos: totalPausas > 0,

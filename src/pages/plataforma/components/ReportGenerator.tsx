@@ -39,6 +39,7 @@ interface ReportData {
   };
   evolucion: ReportPoint[];
   zonas: { name: string; valor: number }[];
+  tension?: { name: string; valor: number }[];
 }
 
 interface Props {
@@ -427,6 +428,31 @@ const BodyMap: React.FC<{ zonas: { name: string; valor: number }[] }> = ({ zonas
   </div>
 );
 
+const TensionBars: React.FC<{ tension: { name: string; valor: number }[] }> = ({ tension }) => {
+  const EMOJIS: Record<string, string> = {
+    'A la mañana': '🌅',
+    'Al mediodía': '☀️',
+    'A la tarde': '🌇',
+    'Al final de la jornada': '🌙',
+    'No sentí tensión': '😌',
+  };
+  const max = Math.max(1, ...tension.map(t => t.valor));
+  return (
+    <div className="rg-tension-bars">
+      {tension.map(t => (
+        <div key={t.name} className="rg-tension-row">
+          <span className="rg-tension-emoji">{EMOJIS[t.name] ?? '⏰'}</span>
+          <span className="rg-tension-label">{t.name}</span>
+          <div className="rg-tension-track">
+            <div className="rg-tension-fill" style={{ width: `${(t.valor / max) * 100}%` }} />
+          </div>
+          <span className="rg-tension-pct">{t.valor}%</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const metricLabel: Record<keyof ReportData['kpis'], string> = {
   participacion: 'Participacion',
   foco: 'Foco',
@@ -502,6 +528,19 @@ const buildCompanyNarrative = (data: ReportData) => {
   if (recommendations.length < 3) recommendations.push('Sostener el seguimiento semanal de los indicadores.');
   if (recommendations.length < 4) recommendations.push('Mantener la frecuencia de pausas que mejor resultado produjo.');
 
+  // Tension insight
+  const topTension = data.tension?.[0];
+  const tensionInsight = topTension
+    ? `El momento de mayor tension reportada fue "${topTension.name}" (${topTension.valor}% de los colaboradores).`
+    : null;
+  const tensionRecomendacion = topTension?.name === 'Al final de la jornada'
+    ? 'Considerá adelantar la pausa de tarde para liberar tension acumulada antes del cierre de jornada.'
+    : topTension?.name === 'A la mañana'
+    ? 'Una pausa de activacion temprana puede ayudar a modular la tension desde el inicio de la jornada.'
+    : topTension?.name === 'A la tarde'
+    ? 'La pausa de tarde esta bien posicionada. Evaluá aumentar su frecuencia en dias de mayor carga.'
+    : null;
+
   return {
     best,
     opportunity,
@@ -512,6 +551,8 @@ const buildCompanyNarrative = (data: ReportData) => {
     painFindings,
     conclusions,
     recommendations: recommendations.slice(0, 4),
+    tensionInsight,
+    tensionRecomendacion,
   };
 };
 
@@ -585,7 +626,37 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           </div>
         </div>
       </Page>
-      <Page page="Pag. 6" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-6">
+      {data.tension && data.tension.length > 0 && (
+        <Page page="Pag. 6" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-5">
+          <h1>Momento de mayor tension</h1>
+          <p className="rg-lead">Distribucion de los momentos del dia en que los colaboradores reportaron sentir mas tension durante la jornada laboral.</p>
+          <div className="rg-grid side">
+            <div className="rg-chart-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h3>Distribucion de respuestas</h3>
+              <TensionBars tension={data.tension} />
+            </div>
+            <div className="rg-stack">
+              <Highlight 
+                title="Momento predominante" 
+                label={data.tension[0].name} 
+                value={`${data.tension[0].valor}% de los colaboradores`} 
+                color={COLORS.purple} 
+                icon={<Zap size={44} />} 
+              />
+              {(narrative.tensionInsight || narrative.tensionRecomendacion) && (
+                <InsightList
+                  title="Analisis e interpretacion"
+                  items={[
+                    narrative.tensionInsight ?? '',
+                    narrative.tensionRecomendacion ?? 'Revisá la distribución de pausas activas según el horario de mayor tensión.',
+                  ].filter(Boolean)}
+                />
+              )}
+            </div>
+          </div>
+        </Page>
+      )}
+      <Page page={data.tension && data.tension.length > 0 ? 'Pag. 7' : 'Pag. 6'} eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-6">
         <h1>Conclusiones y<br />recomendaciones</h1>
         <p className="rg-lead">Con base en los indicadores del periodo, presentamos las principales conclusiones y recomendaciones para seguir fortaleciendo el bienestar corporativo.</p>
         <div className="rg-grid two">
@@ -726,7 +797,7 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
     }
   };
 
-  const pageCount = kind === 'empresa' ? 6 : 4;
+  const pageCount = kind === 'empresa' ? (reportData.tension && reportData.tension.length > 0 ? 7 : 6) : 4;
 
   return (
     <>

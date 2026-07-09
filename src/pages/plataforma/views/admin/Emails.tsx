@@ -45,6 +45,7 @@ import {
   Usuario,
   Video,
 } from '../../mock/data';
+import { useEmpresas } from '../../context/EmpresasContext';
 
 type EmailView = 'automatizaciones' | 'rendimiento';
 
@@ -263,7 +264,7 @@ export const Emails: React.FC = () => {
     } catch (e) {}
   }, []);
 
-  const companies = database?.empresas ?? [];
+  const { empresas: companies } = useEmpresas();
   const users = database?.usuarios ?? [];
   const videos = database?.videos ?? [];
   const events = database?.emailEvents ?? [];

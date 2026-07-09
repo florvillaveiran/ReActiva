@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Calendar, Award, Zap, Target, HeartPulse, PieChart, Sparkles, Inbox } from 'lucide-react';
+import { CheckCircle2, Calendar, Award, Zap, Target, HeartPulse, PieChart, Sparkles, Inbox, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
 import { usePausasStats } from '../../hooks/usePausasStats';
 
@@ -236,7 +236,7 @@ export const UsuarioProgreso: React.FC = () => {
       </div>
 
       {/* Cards inferiores */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', flex: 0.6, minHeight: 160 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', flex: 0.6, minHeight: 160 }}>
         {/* Molestias Físicas */}
         <div style={{
           backgroundColor: 'white', borderRadius: '16px', padding: '1.25rem 1.5rem',
@@ -323,6 +323,38 @@ export const UsuarioProgreso: React.FC = () => {
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
             {stats.impactoTexto}
           </p>
+        </div>
+
+        {/* Patrón de Tensión */}
+        <div style={{
+          backgroundColor: 'white', borderRadius: '16px', padding: '1.25rem 1.5rem',
+          border: '1px solid #eef0f3', boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+          height: '100%', display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '8px',
+              backgroundColor: '#e0e7ff', color: '#4f46e5',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Clock size={18} />
+            </div>
+            <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)' }}>Patrón de Tensión</p>
+          </div>
+          {stats.momentoTensionPredominante ? (
+            <>
+              <p style={{ fontSize: '0.95rem', marginBottom: '0.9rem' }}>
+                <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-color)' }}>{stats.momentoTensionPredominante} </span>
+              </p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                Concentras tu mayor nivel de estrés en este momento. Te sugerimos realizar la pausa principal antes de este horario.
+              </p>
+            </>
+          ) : (
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.5rem' }}>
+              Pendiente de feedback semanal
+            </p>
+          )}
         </div>
 
         {/* Para ti */}

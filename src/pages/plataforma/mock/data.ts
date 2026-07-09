@@ -258,6 +258,7 @@ export const getDB = (): MockDB => {
 
 export const setDB = (db: MockDB) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  window.dispatchEvent(new Event('reactiva_db_update'));
 };
 
 /** Convenience functions */
