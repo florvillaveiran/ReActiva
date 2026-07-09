@@ -357,6 +357,7 @@ export const Analiticas: React.FC = () => {
       }));
       return {
         zonas: stats.zonasDolorChart.length > 0 ? stats.zonasDolorChart : mock.zonas,
+        tension: stats.tensionDistribucion.length > 0 ? stats.tensionDistribucion : mock.tension,
         evolucion: evolucionReal,
         kpis: {
           participacion: stats.adherencia,
@@ -552,7 +553,7 @@ export const Analiticas: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart layout="vertical" data={data.tension} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
-                    <XAxis type="number" domain={[0, 100]} hide />
+                    <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} width={110} />
                     <Tooltip
                       formatter={(val: number) => [`${val}%`, 'Respuestas']}
@@ -859,7 +860,7 @@ export const Analiticas: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart layout="vertical" data={data.tension} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
-                  <XAxis type="number" domain={[0, 100]} hide />
+                  <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} width={110} />
                   <Tooltip
                     formatter={(val: number) => [`${val}%`, 'Respuestas']}
