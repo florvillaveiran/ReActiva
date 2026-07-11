@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CheckCircle2, Lock, Play, Send, Clock, X, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Lock, Play, Send, Clock, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useAuth } from '../../context/AuthContext';
+import { fetchVideoUnlockSchedule, getCurrentProgramDay, getVideoUnlockStatus, loadVideoUnlockSchedule, VIDEO_UNLOCK_SCHEDULE_EVENT } from '../../lib/videoUnlockSchedule';
+import { supabase } from '../../lib/supabase';
 
 // ─── Configuración ──────────────────────────────────────────────────────────
-// Demo mode: al completar una pausa se habilita la siguiente sin esperar al horario real.
-const DEMO_UNLOCK_NEXT = true;
-
 const fireConfetti = () => {
   const colors = ['#00c2a8', '#10b981', '#34d399', '#a7f3d0', '#fbbf24'];
   confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 }, colors, scalar: 0.9 });
@@ -433,9 +433,11 @@ const WeekPauseRow: React.FC<{
 };
 
 // Lee pausas del localStorage, deduplicadas por (dia, bloque), última gana.
-const loadPausasFromStorage = (): PauseRecord[] => {
+const userStorageKey = (base: string, email?: string) => `${base}:${(email || 'anon').trim().toLowerCase()}`;
+
+const loadPausasFromStorage = (email?: string): PauseRecord[] => {
   try {
-    const all: any[] = JSON.parse(localStorage.getItem('reactiva_pausas') || '[]');
+    const all: any[] = JSON.parse(localStorage.getItem(userStorageKey('reactiva_pausas', email)) || '[]');
     const map = new Map<string, PauseRecord>();
     for (const p of all) {
       if (p?.dia && p?.bloque) map.set(`${p.dia}__${p.bloque}`, p as PauseRecord);
@@ -447,9 +449,9 @@ const loadPausasFromStorage = (): PauseRecord[] => {
 };
 
 // Set de claves "dia__bloque" de videos ya vistos.
-const loadVideosVistos = (): Set<string> => {
+const loadVideosVistos = (email?: string): Set<string> => {
   try {
-    const arr: string[] = JSON.parse(localStorage.getItem('reactiva_videos_vistos') || '[]');
+    const arr: string[] = JSON.parse(localStorage.getItem(userStorageKey('reactiva_videos_vistos', email)) || '[]');
     return new Set(arr);
   } catch {
     return new Set();
@@ -457,13 +459,69 @@ const loadVideosVistos = (): Set<string> => {
 };
 
 // ─── Dashboard Principal ──────────────────────────────────────────────────────
+const savePauseSessionToSupabase = async (record: PauseRecord) => {
+  if (!supabase) return;
+  const answers = (record as any).respuestas ?? {};
+  const energy = record.energia ?? answers.energia ?? null;
+  const feeling = record.feeling ?? answers.feeling ?? null;
+  const hasPain = record.dolor ?? answers.dolor ?? null;
+  const painZone = record.zona ?? answers.zona ?? null;
+  const comment = answers.comentario ?? record.mejora ?? null;
+
+  const { error } = await supabase.rpc('record_pause_session', {
+    day_label: record.dia,
+    block: record.bloque,
+    energy: energy,
+    feeling: feeling,
+    has_pain: hasPain,
+    pain_zone: painZone,
+    answers: {
+      tipo: record.tipo ?? null,
+      ...answers,
+      estres: record.estres ?? answers.tension ?? null,
+      ayuda: record.ayuda ?? answers.ayuda ?? null,
+      mejora: record.mejora ?? comment,
+      focus_state: feeling,
+    },
+  });
+
+  if (error) {
+    console.error('No se pudo guardar la pausa en Supabase', error);
+  }
+
+  if (record.tipo === 'semanal-completo') {
+    const { error: weeklyError } = await supabase.rpc('record_weekly_form', {
+      energy: energy,
+      feeling: feeling,
+      has_pain: hasPain,
+      pain_zone: painZone,
+      tension_moment: answers.tension ?? null,
+      focus_state: answers.trabajo ?? null,
+      helped: answers.ayuda ?? null,
+      comment: comment,
+      answers: answers,
+    });
+
+    if (weeklyError) {
+      console.error('No se pudo guardar el formulario semanal en Supabase', weeklyError);
+    }
+  }
+};
+
 export const UsuarioDashboard: React.FC = () => {
-  const [completed, setCompleted] = useState<PauseRecord[]>(() => loadPausasFromStorage());
+  const { user } = useAuth();
+  const [completed, setCompleted] = useState<PauseRecord[]>([]);
   const [openForm, setOpenForm] = useState<'morning' | 'afternoon' | null>(null);
   const [openVideo, setOpenVideo] = useState<{ dia: string; bloque: 'morning' | 'afternoon' } | null>(null);
-  const [videosVistos, setVideosVistos] = useState<Set<string>>(() => loadVideosVistos());
-  const [nowHour, setNowHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
-  const [today, setToday] = useState('Lunes');
+  const [videosVistos, setVideosVistos] = useState<Set<string>>(new Set());
+  const [today, setToday] = useState(() => getCurrentProgramDay());
+  const [unlockSchedule, setUnlockSchedule] = useState(() => loadVideoUnlockSchedule());
+  const displayName = user?.name?.trim()?.split(' ')[0] || 'Usuario';
+
+  useEffect(() => {
+    setCompleted(loadPausasFromStorage(user?.email));
+    setVideosVistos(loadVideosVistos(user?.email));
+  }, [user?.email]);
 
   // Marca un video como visto y persiste en localStorage
   const markVideoVisto = (dia: string, bloque: 'morning' | 'afternoon') => {
@@ -472,14 +530,20 @@ export const UsuarioDashboard: React.FC = () => {
       if (prev.has(key)) return prev;
       const next = new Set(prev);
       next.add(key);
-      localStorage.setItem('reactiva_videos_vistos', JSON.stringify(Array.from(next)));
+      localStorage.setItem(userStorageKey('reactiva_videos_vistos', user?.email), JSON.stringify(Array.from(next)));
       return next;
     });
   };
 
   useEffect(() => {
-    const t = setInterval(() => setNowHour(new Date().getHours() + new Date().getMinutes() / 60), 60000);
-    return () => clearInterval(t);
+    const syncSchedule = () => setUnlockSchedule(loadVideoUnlockSchedule());
+    fetchVideoUnlockSchedule().then(setUnlockSchedule);
+    window.addEventListener(VIDEO_UNLOCK_SCHEDULE_EVENT, syncSchedule);
+    window.addEventListener('storage', syncSchedule);
+    return () => {
+      window.removeEventListener(VIDEO_UNLOCK_SCHEDULE_EVENT, syncSchedule);
+      window.removeEventListener('storage', syncSchedule);
+    };
   }, []);
 
   const isDone = (dia: string, bloque: 'morning' | 'afternoon') => completed.some(r => r.dia === dia && r.bloque === bloque);
@@ -502,11 +566,13 @@ export const UsuarioDashboard: React.FC = () => {
     });
     setOpenForm(null);
     // Dedup también en localStorage
-    const all: any[] = JSON.parse(localStorage.getItem('reactiva_pausas') || '[]');
+    const pauseKey = userStorageKey('reactiva_pausas', user?.email);
+    const all: any[] = JSON.parse(localStorage.getItem(pauseKey) || '[]');
     const filteredStorage = all.filter(p => !(p?.dia === full.dia && p?.bloque === full.bloque));
     filteredStorage.push({ ...full, fecha: new Date().toISOString() });
-    localStorage.setItem('reactiva_pausas', JSON.stringify(filteredStorage));
+    localStorage.setItem(pauseKey, JSON.stringify(filteredStorage));
     window.dispatchEvent(new Event('reactiva-pausas-updated'));
+    void savePauseSessionToSupabase(full);
     fireConfetti();
   };
 
@@ -516,31 +582,32 @@ export const UsuarioDashboard: React.FC = () => {
     setCompleted([]);
     setVideosVistos(new Set());
     setToday('Lunes');
-    localStorage.removeItem('reactiva_pausas');
-    localStorage.removeItem('reactiva_videos_vistos');
+    localStorage.removeItem(userStorageKey('reactiva_pausas', user?.email));
+    localStorage.removeItem(userStorageKey('reactiva_videos_vistos', user?.email));
     window.dispatchEvent(new Event('reactiva-pausas-updated'));
   };
 
   const getStatus = (dia: string, bloque: 'morning' | 'afternoon'): { status: 'done' | 'available' | 'locked'; reason?: string } => {
     if (isDone(dia, bloque)) return { status: 'done' };
+    const unlock = getVideoUnlockStatus(unlockSchedule, dia, bloque);
+    if (!unlock.unlocked) return { status: 'locked', reason: unlock.reason };
     if (dia !== today) {
       return { status: 'locked', reason: 'Próximamente' };
     }
     if (bloque === 'morning') {
-      if (!DEMO_UNLOCK_NEXT && nowHour < 8) return { status: 'locked', reason: 'Disponible desde las 08:00 AM' };
       return { status: 'available' };
     }
-    if (!isDone(today, 'morning')) return { status: 'locked', reason: 'Disponible al completar la pausa de mañana' };
-    if (!DEMO_UNLOCK_NEXT && nowHour < 15) return { status: 'locked', reason: 'Disponible desde las 03:00 PM' };
     return { status: 'available' };
   };
 
   // Pausa activa del día (la que muestra el video grande)
   const activeBloque: 'morning' | 'afternoon' | null = useMemo(() => {
+    const availableBlock = (['morning', 'afternoon'] as const).find((bloque) => getStatus(today, bloque).status === 'available');
+    if (availableBlock) return availableBlock;
     if (!isDone(today, 'morning')) return 'morning';
     if (!isDone(today, 'afternoon')) return 'afternoon';
     return null;
-  }, [completed, today]);
+  }, [completed, today, unlockSchedule]);
 
   const totalPausas = completed.length;
   const totalObjetivo = DAYS.length * 2;
@@ -549,6 +616,7 @@ export const UsuarioDashboard: React.FC = () => {
   const activeInfo = activeBloque ? PAUSAS[activeBloque] : null;
   const activeStatusObj = activeBloque ? getStatus(today, activeBloque) : null;
   const activeVideoId = activeBloque ? getVideoId(today, activeBloque) : null;
+  const contentLocked = activeStatusObj?.status === 'locked';
   const allDoneToday = activeBloque === null;
 
   const handleActiveAction = () => {
@@ -584,9 +652,9 @@ export const UsuarioDashboard: React.FC = () => {
                 <span style={{ fontSize: '1.4rem' }}>👋</span>
               </div>
               <div style={{ minWidth: 0 }}>
-                <p style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-color)' }}>¡Hola, Francisco!</p>
+                <p style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-color)' }}>¡Hola, {displayName}!</p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                  Demo activa en: <span style={{ color: 'var(--primary-color)', fontWeight: 700 }}>{today}</span>
+                  Programa activo en: <span style={{ color: 'var(--primary-color)', fontWeight: 700 }}>{today}</span>
                 </p>
               </div>
             </div>
@@ -625,22 +693,6 @@ export const UsuarioDashboard: React.FC = () => {
               })}
             </div>
 
-            {/* Reiniciar demo */}
-            <button
-              onClick={handleResetDemo}
-              title="Reiniciar la demo (borra todas las pausas)"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.35rem',
-                padding: '0.4rem 0.8rem', borderRadius: '20px',
-                border: '1px solid #e2e8f0', backgroundColor: 'white',
-                color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600,
-                cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
-              }}
-              onMouseOver={e => { e.currentTarget.style.borderColor = '#f43f5e'; e.currentTarget.style.color = '#e11d48'; }}
-              onMouseOut={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = 'var(--text-muted)'; }}
-            >
-              <RotateCcw size={13} /> Reiniciar demo
-            </button>
           </div>
 
           {/* Tarjeta principal de pausa activa */}
@@ -650,16 +702,36 @@ export const UsuarioDashboard: React.FC = () => {
               position: 'relative',
               flex: 1,
               minHeight: 420,
-              backgroundImage: activeVideoId
+              backgroundImage: !contentLocked && activeVideoId
                 ? `url(${getYouTubeThumb(activeVideoId)})`
-                : activeInfo ? `url(${activeInfo.img})` : 'none',
-              backgroundColor: '#1e293b',
+                : !contentLocked && activeInfo ? `url(${activeInfo.img})` : 'none',
+              backgroundColor: contentLocked ? '#f8fafc' : '#1e293b',
               backgroundSize: 'cover', backgroundPosition: 'center',
             }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.45) 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, background: contentLocked ? 'linear-gradient(135deg, #f8fafc 0%, #eefdf8 100%)' : 'linear-gradient(to bottom, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.45) 100%)' }} />
+              {contentLocked && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 86,
+                  height: 86,
+                  borderRadius: '50%',
+                  backgroundColor: 'white',
+                  border: '1px solid #d1fae5',
+                  color: 'var(--primary-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 12px 32px rgba(15, 23, 42, 0.08)',
+                }}>
+                  <Lock size={30} />
+                </div>
+              )}
 
               {/* Play central — abre el modal con el video de YouTube */}
-              {activeBloque && activeVideoId && (
+              {activeBloque && activeVideoId && activeStatusObj?.status === 'available' && (
                 <button
                   onClick={() => { setOpenVideo({ dia: today, bloque: activeBloque }); markVideoVisto(today, activeBloque); }}
                   title="Reproducir video de la pausa"
@@ -693,7 +765,14 @@ export const UsuarioDashboard: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    {activeStatusObj?.status === 'available' && (
+                    {contentLocked ? (
+                      <span style={{
+                        display: 'inline-block', fontSize: '0.7rem', fontWeight: 700,
+                        padding: '5px 12px', borderRadius: '20px',
+                        backgroundColor: '#e0f2fe', color: '#0369a1',
+                        letterSpacing: '0.05em', marginBottom: '0.9rem',
+                      }}>PENDIENTE DE HABILITACIÓN</span>
+                    ) : activeStatusObj?.status === 'available' && (
                       <span style={{
                         display: 'inline-block', fontSize: '0.7rem', fontWeight: 700,
                         padding: '5px 12px', borderRadius: '20px',
@@ -701,9 +780,11 @@ export const UsuarioDashboard: React.FC = () => {
                         letterSpacing: '0.05em', marginBottom: '0.9rem',
                       }}>RECOMENDADO AHORA</span>
                     )}
-                    <h2 style={{ fontSize: '1.95rem', fontWeight: 800, color: 'white', marginBottom: '0.4rem' }}>{activeInfo?.titulo}</h2>
-                    <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Clock size={15} /> {activeInfo?.subtitulo}
+                    <h2 style={{ fontSize: '1.95rem', fontWeight: 800, color: contentLocked ? '#0f172a' : 'white', marginBottom: '0.4rem' }}>
+                      {contentLocked ? 'Tu programa está siendo preparado' : activeInfo?.titulo}
+                    </h2>
+                    <p style={{ fontSize: '0.95rem', color: contentLocked ? '#64748b' : 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Clock size={15} /> {contentLocked ? 'Vas a poder ver tus pausas cuando ReActiva habilite el contenido.' : activeInfo?.subtitulo}
                     </p>
                   </>
                 )}

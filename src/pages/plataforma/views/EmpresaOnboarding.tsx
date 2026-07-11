@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEmpresaByToken, updateEmpresa, Empresa } from '../mock/data';
 import { Building, CheckCircle2, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const radioOption = (label: string, selected: boolean, onChange: () => void) => (
   <label
@@ -51,7 +52,38 @@ export const EmpresaOnboarding: React.FC = () => {
   });
 
   useEffect(() => {
-    if (token) {
+    const loadInvitation = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      if (supabase) {
+        const { data } = await supabase
+          .rpc('get_invitation_context', { invitation_token: token })
+          .maybeSingle();
+
+        const context = data as any;
+        if (context?.type === 'company_onboarding') {
+          if (!context.is_valid) {
+            setError('El enlace de onboarding es inválido o ha caducado.');
+          } else {
+            setEmpresa({
+              id: Date.now(),
+              supabaseId: context.company_id,
+              nombre: context.company_name ?? 'Empresa',
+              ubicacion: '',
+              empleados: [],
+              estado: context.status === 'completed' ? 'Activa' : 'Pendiente onboarding',
+              rrhhEmail: context.email ?? '',
+              token,
+            });
+          }
+          setLoading(false);
+          return;
+        }
+      }
+
       const found = getEmpresaByToken(token);
       if (found) {
         if (found.estado === 'Activa') {
@@ -62,10 +94,11 @@ export const EmpresaOnboarding: React.FC = () => {
       } else {
         setError('El enlace de onboarding es inválido o ha caducado.');
       }
-    }
-    setLoading(false);
-  }, [token]);
+      setLoading(false);
+    };
 
+    void loadInvitation();
+  }, [token]);
   if (loading) return (
     <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
       <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
@@ -109,7 +142,19 @@ export const EmpresaOnboarding: React.FC = () => {
     return true;
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    if (supabase && token) {
+      const { error } = await supabase.rpc('complete_company_onboarding', {
+        invitation_token: token,
+        onboarding_data: respuestas,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+    }
+
     updateEmpresa({
       ...empresa,
       estado: 'Activa',
@@ -119,7 +164,7 @@ export const EmpresaOnboarding: React.FC = () => {
     setStep(8);
   };
 
-  // ── Success screen ──────────────────────────────────────────────
+  // Success screen
   if (step === 8) return (
     <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '2rem' }}>
       <div style={{ backgroundColor: 'white', padding: '3rem', borderRadius: '24px', textAlign: 'center', maxWidth: '450px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', animation: 'fadeIn 0.5s ease-out' }}>
@@ -128,16 +173,16 @@ export const EmpresaOnboarding: React.FC = () => {
         </div>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: '1rem' }}>¡Onboarding completado!</h2>
         <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>
-          Gracias por configurar el perfil de <strong>{empresa.nombre}</strong>. Ahora personalizaremos la experiencia de su equipo para lograr el mayor bienestar y rendimiento.
+          Gracias por completar la configuración inicial de tu empresa. Ahora podés crear tu acceso o iniciar sesión en ReActiva.
         </p>
-        <button onClick={() => navigate('/plataforma/login')} className="btn-primary" style={{ width: '100%', padding: '1rem' }}>
-          Ir a la plataforma
+        <button onClick={() => navigate(`/plataforma/login?token=${token ?? ''}&tipo=empresa`)} className="btn-primary" style={{ width: '100%', padding: '1rem' }}>
+          Continuar a ReActiva
         </button>
       </div>
     </div>
   );
 
-  // ── Wizard layout ───────────────────────────────────────────────
+  // Wizard layout
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1rem' }}>
       {/* Header */}
@@ -162,28 +207,27 @@ export const EmpresaOnboarding: React.FC = () => {
       {/* Card */}
       <div style={{ width: '100%', maxWidth: '600px', backgroundColor: 'white', borderRadius: '24px', padding: '2.5rem', boxShadow: '0 10px 40px rgba(0,0,0,0.06)' }}>
 
-        {/* STEP 1 – Bienvenida */}
+        {/* STEP 1 - Bienvenida */}
         {step === 1 && (
           <div style={{ textAlign: 'center', animation: 'fadeIn 0.3s ease-out' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👋</div>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>Hola</div>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>Bienvenidos a ReActiva</h2>
             <p style={{ color: '#475569', fontSize: '1rem', lineHeight: 1.7, marginBottom: '1rem' }}>
-              Hola <strong>{empresa.contactoNombre}</strong>. Queremos adaptar los micro entrenamientos y el contenido de bienestar a la dinámica real del equipo de <strong>{empresa.nombre}</strong>.
+              Queremos adaptar los microentrenamientos y el contenido de bienestar a la dinámica real del equipo de <strong>{empresa.nombre}</strong>.
             </p>
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '2.5rem' }}>
               Este formulario nos ayudará a personalizar la experiencia.<br />⏱️ Duración aproximada: 2 minutos.
             </p>
             <button onClick={handleNext} className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1.05rem', borderRadius: '14px' }}>
-              Comenzar →
-            </button>
+              Comenzar →</button>
           </div>
         )}
 
-        {/* STEP 2 – Modalidad */}
+        {/* STEP 2 - Modalidad */}
         {step === 2 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Modalidad de trabajo</p>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🏢 ¿Cuál es la modalidad predominante?</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>¿Cuál es la modalidad predominante?</h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>Seleccioná la que mejor describe la dinámica actual del equipo.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {['Presencial', 'Remoto', 'Híbrido'].map(opt =>
@@ -193,7 +237,7 @@ export const EmpresaOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 3 – Horas sentado */}
+        {/* STEP 3 - Horas sentado */}
         {step === 3 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Sedentarismo</p>
@@ -207,11 +251,11 @@ export const EmpresaOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 4 – Tipo de tareas */}
+        {/* STEP 4 - Tipo de tareas */}
         {step === 4 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Tipo de trabajo</p>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🧠 ¿Qué tipo de tareas predominan?</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>¿Qué tipo de tareas predominan?</h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>Esto define el tipo de pausas y contenido más adecuado para el equipo.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {['Operativas / Manuales', 'Administrativas / De oficina', 'Mixtas'].map(opt =>
@@ -221,11 +265,11 @@ export const EmpresaOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 5 – Desafíos */}
+        {/* STEP 5 - Desafíos */}
         {step === 5 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Diagnóstico</p>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🧩 ¿Cuáles son los principales desafíos del equipo?</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>¿Cuáles son los principales desafíos del equipo?</h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>Podés seleccionar varios. Esto construirá el diagnóstico inicial.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {['Estrés', 'Dolores posturales', 'Fatiga / Baja energía', 'Falta de pausas activas', 'Sedentarismo'].map(opt =>
@@ -235,11 +279,11 @@ export const EmpresaOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 6 – Objetivos */}
+        {/* STEP 6 - Objetivos */}
         {step === 6 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Objetivos</p>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🎯 ¿Qué quieren lograr con ReActiva?</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>¿Qué quieren lograr con ReActiva?</h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>Seleccioná los objetivos que más resuenen con la empresa.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {['Reducir dolor y molestias físicas', 'Aumentar la energía diaria', 'Mejorar el foco y la concentración', 'Mejorar el clima laboral', 'Reducir ausentismo'].map(opt =>
@@ -249,11 +293,11 @@ export const EmpresaOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 7 – Estilo */}
+        {/* STEP 7 - Estilo */}
         {step === 7 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Preferencias</p>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>⚡ ¿Qué estilo prefieren para los micro entrenamientos?</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>¿Qué estilo prefieren para los micro entrenamientos?</h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>Con esto configuramos el tipo de contenido que recibirá el equipo.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {['Dinámicos y activos', 'Relajantes y pausas suaves', 'Un mix de ambos'].map(opt =>
@@ -264,7 +308,7 @@ export const EmpresaOnboarding: React.FC = () => {
         )}
 
         {/* Navigation */}
-        <div style={{ display: 'flex', justifyContent: step === 1 ? 'flex-end' : 'space-between', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
+        {step > 1 && <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
           {step > 1 && (
             <button onClick={handlePrev} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <ChevronLeft size={18} /> Atrás
@@ -289,7 +333,7 @@ export const EmpresaOnboarding: React.FC = () => {
               Finalizar Onboarding <CheckCircle2 size={18} />
             </button>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

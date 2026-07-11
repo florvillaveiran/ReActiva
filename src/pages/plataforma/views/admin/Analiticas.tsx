@@ -363,9 +363,72 @@ const PERIODO_LABELS: Record<PeriodoKey, string> = {
   personalizado: 'Personalizado',
 };
 
-const getDynamicMock = (periodo: PeriodoKey): AnaliticaSetBase => {
-  // Use a sensible default base for unknown companies
-  return ANALITICAS_MOCK['empresa1'][periodo];
+const EMPTY_ANALYTICS = enrichSet({ zonas: [], tension: [], evolucion: [] });
+
+const normalizeZone = (name: string) => name.toLowerCase().replace('baja', 'baja').replace('alta', 'alta');
+
+const prettyZone = (name: string) => {
+  const normalized = normalizeZone(name);
+  if (normalized === 'espalda baja') return 'Espalda baja';
+  if (normalized === 'espalda alta') return 'Espalda alta';
+  if (normalized === 'munecas' || normalized === 'muñecas') return 'Muñecas';
+  return name;
+};
+
+const PainZonesCard: React.FC<{ zonas: { name: string; valor: number }[]; totalPersonas: number }> = ({ zonas, totalPersonas }) => {
+  const ordered = [...zonas]
+    .filter(zone => ['cuello', 'hombros', 'espalda alta', 'espalda baja', 'munecas', 'muñecas', 'caderas', 'rodillas'].includes(normalizeZone(zone.name)))
+    .sort((a, b) => b.valor - a.valor);
+  const topZone = ordered[0];
+  if (!topZone) {
+    return (
+      <div className="card" style={{ padding: '1.25rem', minHeight: 220 }}>
+        <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Zonas más afectadas</h3>
+        <div style={{ minHeight: 155, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.88rem' }}>
+          Todavía no hay reportes de dolor para este período.
+        </div>
+      </div>
+    );
+  }
+  const baseTotal = Math.max(totalPersonas, 1);
+  const chartData = ordered.slice(0, 7).map(zone => ({
+    name: prettyZone(zone.name),
+    valor: Math.max(1, Math.round((zone.valor / 100) * baseTotal)),
+    porcentaje: zone.valor,
+  }));
+  const topCount = chartData[0]?.valor ?? Math.max(1, Math.round((topZone.valor / 100) * baseTotal));
+
+  return (
+    <div className="card" style={{ padding: '1.25rem' }}>
+      <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Zonas más afectadas</h3>
+      <div style={{ height: '180px', display: 'grid', gridTemplateRows: 'auto 1fr', gap: '0.65rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '0.75rem' }}>
+          <div>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Zona más reportada</p>
+            <p style={{ margin: '0.15rem 0 0', color: '#e11d48', fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.1 }}>{prettyZone(topZone.name)}</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ margin: 0, color: '#e11d48', fontSize: '1.35rem', fontWeight: 800, lineHeight: 1 }}>{topCount}</p>
+            <p style={{ margin: '0.15rem 0 0', color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700 }}>personas</p>
+          </div>
+        </div>
+        <div style={{ minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart layout="vertical" data={chartData} margin={{ top: 0, right: 20, left: 8, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} width={92} />
+              <Tooltip
+                formatter={(val: number, _name, item: any) => [`${val} personas (${item.payload.porcentaje}%)`, 'Reportes']}
+                contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }}
+              />
+              <Bar dataKey="valor" fill="#f43f5e" radius={[0, 4, 4, 0]} barSize={14} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export const Analiticas: React.FC = () => {
@@ -384,40 +447,54 @@ export const Analiticas: React.FC = () => {
   // Comparativas
   const [comparar, setComparar] = useState(false);
 
-  // Stats reales del usuario demo (en vivo desde localStorage).
-  // TODO(backend): reemplazar por fetch a /api/admin/analiticas?empresa=...&periodo=... y borrar mocks.
-  const stats = useAdminStats();
-  const rrhhEmpresaKey = user?.role === 'rrhh' && user.empresa_id ? (user.empresa_id.toString()) : null;
-  const effectiveFiltro = rrhhEmpresaKey ?? filtro;
+  const rrhhEmpresa = useMemo(() => {
+    if (user?.role !== 'rrhh') return undefined;
+    const companyId = user.empresa_id?.toString();
+    return empresas.find(e => e.supabaseId === companyId)
+      ?? empresas.find(e => e.id.toString() === companyId)
+      ?? empresas.find(e => e.rrhhEmail?.toLowerCase() === user.email.toLowerCase());
+  }, [empresas, user]);
 
-  // Resolución de data: si "all" + periodo "mes" + hay datos reales del usuario → usar reales.
-  // Cualquier otro caso → mock correspondiente a (empresa, periodo). enrichSet agrega foco, dolor, impacto y kpis.
+  const rrhhEmpresaKey = user?.role === 'rrhh'
+    ? (rrhhEmpresa?.id.toString() ?? user.empresa_id?.toString() ?? null)
+    : null;
+  const effectiveFiltro = rrhhEmpresaKey ?? filtro;
+  const selectedEmpresa = effectiveFiltro === 'all'
+    ? undefined
+    : empresas.find(e => e.id.toString() === effectiveFiltro || e.supabaseId === effectiveFiltro);
+  const isUuidFilter = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(effectiveFiltro);
+  const statsCompanyId = effectiveFiltro === 'all'
+    ? undefined
+    : selectedEmpresa?.supabaseId ?? (isUuidFilter ? effectiveFiltro : undefined);
+  const stats = useAdminStats(statsCompanyId);
+
   const data = useMemo<AnaliticaSet>(() => {
-    const baseMock = ANALITICAS_MOCK[effectiveFiltro] ? ANALITICAS_MOCK[effectiveFiltro][periodo] : getDynamicMock(periodo);
-    const mock = enrichSet(baseMock);
-    if (effectiveFiltro === 'all' && periodo === 'mensual' && stats.hayDatos) {
+    if (stats.hayDatos) {
       const evolucionReal = stats.evolucion.map((p, i) => ({
         ...p,
-        foco: mock.evolucion[i]?.foco ?? 0,
-        dolor: mock.evolucion[i]?.dolor ?? 0,
-        impacto: mock.evolucion[i]?.impacto ?? 0,
+        foco: stats.foco.enfocado,
+        dolor: stats.reportanMolestias,
+        impacto: p.satisfaccion,
         energiaPct: Math.round((p.energia / 5) * 100),
       }));
+      const focoReal = stats.foco.enfocado || (stats.estadoEmocional ? Math.round((stats.estadoEmocional / 5) * 100) : 0);
       return {
-        zonas: stats.zonasDolorChart.length > 0 ? stats.zonasDolorChart : mock.zonas,
-        tension: stats.tensionDistribucion.length > 0 ? stats.tensionDistribucion : mock.tension,
+        zonas: stats.zonasDolorChart,
+        tension: stats.tensionDistribucion,
         evolucion: evolucionReal,
         kpis: {
           participacion: stats.adherencia,
-          dolor: mock.kpis.dolor,
-          foco: mock.kpis.foco,
-          impacto: mock.kpis.impacto,
-          energia: stats.energiaPromedio != null ? Math.round((stats.energiaPromedio / 5) * 100) : mock.kpis.energia,
+          dolor: stats.reportanMolestias,
+          foco: focoReal,
+          impacto: stats.evolucion.at(-1)?.satisfaccion ?? 0,
+          energia: Math.round((stats.energiaPromedio / 5) * 100),
         },
       };
     }
-    return mock;
-  }, [effectiveFiltro, periodo, stats]);
+    return EMPTY_ANALYTICS;
+  }, [stats]);
+
+  const painTotalPersonas = stats.hayDatos ? stats.usuariosCount : 0;
 
   const reportPeriodoLabel = periodo === 'semanal'
     ? semanaSel
@@ -809,27 +886,8 @@ export const Analiticas: React.FC = () => {
             </div>
           </div>
 
-          {/* Dolor */}
-          <div className="card" style={{ padding: '1.25rem' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Dolor</h3>
-            <div style={{ height: '180px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorDolor" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
-                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }} />
-                  <Area type="monotone" dataKey="dolor" name="Dolor (%)" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorDolor)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          {/* Zonas mas afectadas */}
+          <PainZonesCard zonas={data.zonas} totalPersonas={painTotalPersonas} />
 
           {/* Foco */}
           <div className="card" style={{ padding: '1.25rem' }}>

@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Users, Activity, HeartPulse, Sparkles, Smile, Clock } from 'lucide-react';
+﻿import React, { useState, useMemo } from 'react';
+import { Users, Activity, HeartPulse, Sparkles, Smile, Clock, MessageSquareText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAdminStats } from '../../hooks/useAdminStats';
 import { useEmpresas } from '../../context/EmpresasContext';
+import { useFeedbackIntelligence } from '../../hooks/useFeedbackIntelligence';
 
 // Mock data base (fallback cuando no hay datos reales o se filtra por empresa demo)
 const dataGlobal = [
@@ -37,14 +39,20 @@ const generateMockDataForEmpresa = (empleadosCount: number) => {
 };
 
 export const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [empresaId, setEmpresaId] = useState('all');
   const [mensaje, setMensaje] = useState('¡Excelente semana equipo! Recuerden tomar pausas activas.');
 
   const { empresas } = useEmpresas();
+  const selectedEmpresa = empresaId === 'all'
+    ? undefined
+    : empresas.find(e => e.id.toString() === empresaId || e.supabaseId === empresaId);
+  const statsCompanyId = empresaId === 'all' ? undefined : selectedEmpresa?.supabaseId;
 
   // Stats reales del usuario demo (lee de localStorage en vivo)
   // TODO(backend): cuando exista la API, pasar empresaId al hook para filtrar.
-  const stats = useAdminStats();
+  const stats = useAdminStats(statsCompanyId);
+  const feedback = useFeedbackIntelligence();
 
   const sugerirMensaje = () => {
     const opciones = [
@@ -55,20 +63,34 @@ export const AdminDashboard: React.FC = () => {
     setMensaje(opciones[Math.floor(Math.random() * opciones.length)]);
   };
 
-  // Dinámicamente calcular métricas en base al filtro y a los datos del usuario demo
   const metrics = useMemo(() => {
-    // Vista "Todas las empresas" → datos reales del usuario demo (con fallback a mock si no hay).
+    if (stats.hayDatos) {
+      return {
+        totales: String(stats.usuariosCount),
+        pausas: String(stats.totalPausas),
+        participacion: `${stats.adherencia}%`,
+        dolor: `${stats.reportanMolestias}%`,
+        emocion: stats.estadoEmocional != null ? `${stats.estadoEmocional}/5` : 'Sin datos',
+        zonas: stats.zonasDolorTop.length > 0 ? stats.zonasDolorTop : ['Sin dolor reportado'],
+        data: stats.participacionPorDia,
+        foco: stats.foco,
+        tension: stats.tensionDistribucion.length > 0 ? stats.tensionDistribucion : [
+          { name: 'Sin tensión reportada', valor: 100 },
+        ],
+      };
+    }
+
     if (empresaId === 'all') {
       return {
-        totales: stats.hayDatos ? String(stats.usuariosCount) : '1,240',
-        pausas: stats.hayDatos ? String(stats.totalPausas) : '3,450',
-        participacion: stats.hayDatos ? `${stats.adherencia}%` : '87%',
-        dolor: stats.hayDatos ? `${stats.reportanMolestias}%` : '12%',
-        emocion: stats.estadoEmocional != null ? `${stats.estadoEmocional}/5` : '3.9/5',
-        zonas: stats.zonasDolorTop.length > 0 ? stats.zonasDolorTop : ['Cuello', 'Hombros'],
-        data: stats.hayDatos ? stats.participacionPorDia : dataGlobal,
-        foco: stats.hayDatos ? stats.foco : { enfocado: 65, normal: 25, disperso: 10 },
-        tension: stats.hayDatos && stats.tensionDistribucion.length > 0 ? stats.tensionDistribucion : [
+        totales: '1,240',
+        pausas: '3,450',
+        participacion: '87%',
+        dolor: '12%',
+        emocion: '3.9/5',
+        zonas: ['Cuello', 'Hombros'],
+        data: dataGlobal,
+        foco: { enfocado: 65, normal: 25, disperso: 10 },
+        tension: [
           { name: 'A la tarde', valor: 45 },
           { name: 'Al final de la jornada', valor: 30 },
           { name: 'A la mañana', valor: 15 },
@@ -76,10 +98,12 @@ export const AdminDashboard: React.FC = () => {
         ],
       };
     }
-    // Empresas individuales → datos generados/reales
-    const empresaSeleccionada = empresas.find(e => e.id.toString() === empresaId);
-    return generateMockDataForEmpresa(empresaSeleccionada?.empleados.length || 0);
-  }, [empresaId, stats, empresas]);
+
+    return generateMockDataForEmpresa(selectedEmpresa?.empleados.length || 0);
+  }, [empresaId, stats, selectedEmpresa]);
+  const lastFeedbackDate = feedback.stats.lastDate
+    ? new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(new Date(feedback.stats.lastDate))
+    : 'Sin registros';
 
   return (
     <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
@@ -98,7 +122,7 @@ export const AdminDashboard: React.FC = () => {
         </select>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
         
         {/* Adherencia Semanal */}
         <div className="card" style={{ padding: '1.5rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
@@ -161,6 +185,37 @@ export const AdminDashboard: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Feedback de Usuarios */}
+        <button
+          type="button"
+          onClick={() => navigate('/plataforma/admin/feedback')}
+          className="card"
+          style={{ padding: '1.5rem', margin: 0, borderRadius: '12px', border: '1px solid #d1fae5', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', textAlign: 'left', cursor: 'pointer', background: 'linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%)' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <div style={{ backgroundColor: '#ccfbf1', padding: '0.5rem', borderRadius: '8px' }}>
+              <MessageSquareText size={20} color="#0d9488" />
+            </div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>Feedback de Usuarios</h3>
+          </div>
+          <div style={{ marginBottom: '1rem' }}>
+            <span style={{ fontSize: '2.35rem', fontWeight: 700, color: '#0d9488', lineHeight: 1 }}>{feedback.stats.thisMonth}</span>
+            <span style={{ display: 'block', fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem', fontWeight: 500 }}>comentarios recibidos este mes</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid #ccfbf1' }}>
+            <div>
+              <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: feedback.stats.delta >= 0 ? '#059669' : '#e11d48' }}>
+                {feedback.stats.delta >= 0 ? '+' : ''}{feedback.stats.delta}
+              </p>
+              <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>vs mes anterior</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{lastFeedbackDate}</p>
+              <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>Última recepción</p>
+            </div>
+          </div>
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>

@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, AlertCircle, Building, Mail, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, Activity, Zap, Heart, BatteryCharging, TrendingUp, TrendingDown, Minus, AlertTriangle, Calendar, Download, Trash2 } from 'lucide-react';
 import { getDB, setDB, addInvitacionUsuario, Empresa, Usuario } from '../../mock/data';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 
-// ── Components ───────────────────────────────────────────────────
+// Section
 const Badge: React.FC<{ label: string; bg: string; color: string }> = ({ label, bg, color }) => (
   <span style={{ display: 'inline-block', padding: '0.3rem 0.85rem', borderRadius: '999px', backgroundColor: bg, color, fontSize: '0.8rem', fontWeight: 600 }}>
     {label}
@@ -34,7 +35,7 @@ const MetricCard: React.FC<{ icon: React.ReactNode; label: string; inicial: stri
   </div>
 );
 
-// ── Logic ────────────────────────────────────────────────────────
+// Section
 const getRiesgoPersonal = (data: any) => {
   if (!data) return { nivel: 'Sin datos', color: '#94a3b8', bg: '#f8fafc', desc: 'No hay datos del onboarding.' };
   let score = 0;
@@ -47,6 +48,34 @@ const getRiesgoPersonal = (data: any) => {
   if (score >= 6) return { nivel: 'Alto', color: '#dc2626', bg: '#fef2f2', desc: 'Alto riesgo de burnout o lesiones. Requiere atención inmediata y seguimiento de pausas.' };
   if (score >= 3) return { nivel: 'Medio', color: '#d97706', bg: '#fffbeb', desc: 'Riesgo moderado. Las pausas diarias le ayudarán a estabilizar energía y reducir molestias.' };
   return { nivel: 'Bajo', color: '#059669', bg: '#ecfdf5', desc: 'Perfil saludable. ReActiva potenciará su foco y bienestar general.' };
+};
+
+const makeInvitationToken = () => {
+  const random = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `usr-${random.replace(/[^a-zA-Z0-9]/g, '').slice(0, 28)}`;
+};
+
+const statusToSupabase = (estado?: Empresa['estado']) => {
+  if (estado === 'Pendiente onboarding') return 'pending_onboarding';
+  if (estado === 'Inactiva') return 'inactive';
+  return 'active';
+};
+
+const hashToNumericId = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) + 10000;
+};
+
+const companyStatusFromSupabase = (status?: string): Empresa['estado'] => {
+  if (status === 'pending_onboarding') return 'Pendiente onboarding';
+  if (status === 'inactive') return 'Inactiva';
+  return 'Activa';
 };
 
 // Generador de mock data evolutiva para el usuario
@@ -94,7 +123,7 @@ const getLabelEnergia = (pct: number) => pct < 40 ? 'Baja' : pct < 70 ? 'Media' 
 const getLabelFatiga = (pct: number) => pct > 70 ? 'Alta' : pct > 40 ? 'Media' : 'Baja';
 const getLabelBienestar = (pct: number) => pct < 40 ? 'Bajo' : pct < 70 ? 'Medio' : 'Alto';
 
-// ── Ficha de Usuario ─────────────────────────────────────────────
+// Section
 const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined; onBack: () => void }> = ({ usuario, empresa, onBack }) => {
   const [activeTab, setActiveTab] = useState<'resumen' | 'analiticas'>('resumen');
   const [periodo, setPeriodo] = useState('mensual');
@@ -173,7 +202,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
         </button>
       </div>
 
-      {/* ─── CONTENIDO TABS ─── */}
+      {/* Section */}
       {!data ? (
         <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
           <AlertCircle size={32} color="#94a3b8" style={{ margin: '0 auto 1rem' }} />
@@ -268,7 +297,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
                   </div>
                 )}
 
-                {/* ── ALERTS ── */}
+                {/* Section */}
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
                   {analiticasData.kpis.dolor > 50 && (
                     <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecdd3', color: '#be123c', padding: '0.75rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -287,7 +316,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
                   )}
                 </div>
 
-                {/* ── KPIs ── */}
+                {/* Section */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
                   {[
                     { label: 'Participación', value: analiticasData.kpis.participacion, color: 'var(--primary-color)', bg: '#f0fdfa' },
@@ -306,7 +335,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
                   ))}
                 </div>
 
-                {/* ── EVOLUCIÓN VS INICIAL ── */}
+                {/* Section */}
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>Evolución desde el ingreso</h3>
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
                   <MetricCard icon={<Activity size={18} />} label="Actividad Física" inicial={data.actividadFisica} actual={analiticasData.kpis.participacion > 60 ? 'Alta' : 'Media'} />
@@ -315,7 +344,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
                   <MetricCard icon={<Heart size={18} />} label="Bienestar" inicial={data.bienestar} actual={getLabelBienestar(analiticasData.kpis.impacto)} />
                 </div>
 
-                {/* ── ZONAS DE DOLOR ── */}
+                {/* Section */}
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>Zonas de dolor reportadas</h3>
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
                   {analiticasData.zonasDolor.map((z, idx) => (
@@ -329,7 +358,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
                   ))}
                 </div>
 
-                {/* ── GRÁFICOS ── */}
+                {/* Section */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
                   <div className="card" style={{ padding: '1.25rem' }}>
                     <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.85rem', color: '#0f172a' }}>Participación / Adherencia</h3>
@@ -429,10 +458,9 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
   );
 };
 
-// ── Main View ────────────────────────────────────────────────────
+// Section
 export const Usuarios: React.FC = () => {
   const { user } = useAuth();
-  const rrhhEmpresaId = user?.role === 'rrhh' ? user.empresa_id : undefined;
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [empresaFiltro, setEmpresaFiltro] = useState('all');
@@ -444,18 +472,128 @@ export const Usuarios: React.FC = () => {
   const [newResponsable, setNewResponsable] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
+  const [inviteError, setInviteError] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const loadData = () => {
-    const db = getDB();
-    setEmpresas(db.empresas);
-    setUsuarios(db.usuarios);
+  const loadData = async () => {
+    if (!supabase) {
+      const db = getDB();
+      setEmpresas(db.empresas);
+      setUsuarios(db.usuarios);
+      return;
+    }
+
+    setEmpresas([]);
+    setUsuarios([]);
+
+    const [
+      { data: companies, error: companiesError },
+      { data: profiles, error: profilesError },
+      { data: onboardingResponses, error: onboardingError },
+    ] = await Promise.all([
+      supabase
+        .from('companies')
+        .select('id, name, location, status, contact_name, rrhh_email, onboarding_completed_at, created_at'),
+      supabase
+        .from('profiles')
+        .select('id, company_id, email, full_name, role, status, created_at, updated_at, onboarding_data')
+        .eq('role', 'usuario'),
+      supabase
+        .from('onboarding_responses')
+        .select('id, company_id, profile_id, responses, completed_at')
+        .eq('type', 'user_activation')
+        .order('completed_at', { ascending: false }),
+    ]);
+
+    if (companiesError || profilesError || onboardingError || !companies || !profiles) {
+      console.error('No se pudieron cargar usuarios desde Supabase', companiesError ?? profilesError ?? onboardingError);
+      return;
+    }
+
+    const supabaseCompanies: Empresa[] = companies.map((company: any) => ({
+      id: hashToNumericId(company.id),
+      supabaseId: company.id,
+      nombre: company.name,
+      ubicacion: company.location ?? '',
+      empleados: [],
+      estado: companyStatusFromSupabase(company.status),
+      contactoNombre: company.contact_name ?? '',
+      rrhhEmail: company.rrhh_email ?? '',
+      fechaOnboarding: company.onboarding_completed_at ?? company.created_at,
+    }));
+
+    const companyBySupabaseId = new Map(supabaseCompanies.map(company => [company.supabaseId, company]));
+    const supabaseUsers: Usuario[] = profiles.map((profile: any) => {
+      const company = companyBySupabaseId.get(profile.company_id);
+      return {
+        id: hashToNumericId(profile.id),
+        supabaseId: profile.id,
+        nombre: profile.full_name || profile.email?.split('@')[0] || 'Usuario',
+        email: profile.email,
+        empresa_id: company?.id ?? 0,
+        participacion: 0,
+        dolor: Boolean(profile.onboarding_data?.has_pain),
+        ultima_interaccion: profile.updated_at ?? profile.created_at,
+        estado: profile.status === 'inactive' ? 'Inactivo' : 'Activo',
+        fechaIngreso: profile.created_at,
+        onboardingData: profile.onboarding_data ?? {},
+      };
+    });
+
+    const profileEmails = new Set(supabaseUsers.map(profile => profile.email.toLowerCase()));
+    const pendingByEmail = new Map<string, Usuario>();
+    (onboardingResponses ?? []).forEach((response: any) => {
+      if (response.profile_id) return;
+      const email = String(response.responses?.email ?? '').trim().toLowerCase();
+      if (!email || profileEmails.has(email) || pendingByEmail.has(email)) return;
+      const company = companyBySupabaseId.get(response.company_id);
+      pendingByEmail.set(email, {
+        id: hashToNumericId(response.id),
+        supabaseId: response.id,
+        nombre: response.responses?.nombre || email.split('@')[0],
+        email,
+        empresa_id: company?.id ?? 0,
+        participacion: 0,
+        dolor: Array.isArray(response.responses?.dolores)
+          && !response.responses.dolores.includes('No tengo dolores'),
+        ultima_interaccion: response.completed_at,
+        estado: 'Pendiente de acceso',
+        fechaIngreso: response.completed_at,
+        onboardingData: response.responses ?? {},
+      });
+    });
+
+    const allUsers = [...supabaseUsers, ...pendingByEmail.values()];
+
+    const employeesByCompany = new Map<number, number[]>();
+    allUsers.forEach((profile) => {
+      if (!employeesByCompany.has(profile.empresa_id)) employeesByCompany.set(profile.empresa_id, []);
+      employeesByCompany.get(profile.empresa_id)?.push(profile.id);
+    });
+
+    setEmpresas(supabaseCompanies.map(company => ({
+      ...company,
+      empleados: employeesByCompany.get(company.id) ?? [],
+    })));
+    setUsuarios(allUsers);
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { void loadData(); }, []);
+
+  const rrhhEmpresa = useMemo(() => {
+    if (user?.role !== 'rrhh') return undefined;
+    const userCompanyId = user.empresa_id?.toString();
+    return empresas.find(e => e.supabaseId === userCompanyId)
+      ?? empresas.find(e => e.id.toString() === userCompanyId)
+      ?? empresas.find(e => e.rrhhEmail?.toLowerCase() === user.email.toLowerCase());
+  }, [empresas, user]);
+
+  const rrhhEmpresaId = user?.role === 'rrhh' ? rrhhEmpresa?.id : undefined;
+  const isRrhh = user?.role === 'rrhh';
 
   if (selectedUser) {
-    if (rrhhEmpresaId && selectedUser.empresa_id !== rrhhEmpresaId) {
+    if (isRrhh && (!rrhhEmpresaId || selectedUser.empresa_id !== rrhhEmpresaId)) {
       setSelectedUser(null);
       return null;
     }
@@ -464,7 +602,7 @@ export const Usuarios: React.FC = () => {
   }
 
   const usuariosFiltrados = usuarios.filter(u => {
-    if (rrhhEmpresaId && u.empresa_id !== rrhhEmpresaId) return false;
+    if (isRrhh && (!rrhhEmpresaId || u.empresa_id !== rrhhEmpresaId)) return false;
     const coincideEmpresa = empresaFiltro === 'all' || u.empresa_id.toString() === empresaFiltro;
     const coincideBusqueda = u.nombre.toLowerCase().includes(search.toLowerCase());
     return coincideEmpresa && coincideBusqueda;
@@ -472,22 +610,61 @@ export const Usuarios: React.FC = () => {
 
   const getEmpresaName = (id: number) => empresas.find(e => e.id === id)?.nombre || 'Desconocida';
 
-  const handleGenerateLink = () => {
-    if (!selectedEmpresaId) return alert('Debes seleccionar una empresa.');
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const link = `${window.location.origin}/plataforma/onboarding/usuario/${token}`;
-    
-    addInvitacionUsuario({
-      token,
-      empresa_id: parseInt(selectedEmpresaId),
-      responsable: newResponsable,
-      emailEnviado: newEmail,
-      fechaCreacion: new Date().toISOString()
-    });
-    
-    setGeneratedLink(link);
-  };
+  const handleGenerateLink = async () => {
+    setInviteError('');
+    const empresa = isRrhh ? rrhhEmpresa : empresas.find(e => e.id === parseInt(selectedEmpresaId));
 
+    if (!empresa) {
+      setInviteError('Seleccioná una empresa para asociar la invitación.');
+      return;
+    }
+    if (!isRrhh && !newEmail.trim()) {
+      setInviteError('Ingresá el email del usuario para crear una invitación real.');
+      return;
+    }
+
+    setInviteLoading(true);
+    const token = makeInvitationToken();
+    const link = `${window.location.origin}/plataforma/onboarding/usuario/${token}`;
+
+    try {
+      if (supabase) {
+        if (isRrhh) {
+          const { error } = await supabase.rpc('create_open_employee_invitation', {
+            invitation_token: token,
+          });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.rpc('create_user_invitation', {
+            company_name: empresa.nombre,
+            company_location: empresa.ubicacion,
+            company_status: statusToSupabase(empresa.estado),
+            contact_name: empresa.contactoNombre ?? '',
+            rrhh_email: empresa.rrhhEmail ?? '',
+            invitation_email: newEmail.trim().toLowerCase(),
+            invitation_token: token,
+            responsable: newResponsable,
+            local_empresa_id: empresa.id,
+          });
+          if (error) throw error;
+        }
+      }
+
+      addInvitacionUsuario({
+        token,
+        empresa_id: empresa.id,
+        responsable: isRrhh ? user?.name : newResponsable,
+        emailEnviado: isRrhh ? undefined : newEmail.trim().toLowerCase(),
+        fechaCreacion: new Date().toISOString()
+      });
+
+      setGeneratedLink(link);
+    } catch (err: any) {
+      setInviteError(err?.message ?? 'No pudimos crear la invitación en Supabase.');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedLink);
     setCopied(true);
@@ -519,15 +696,17 @@ export const Usuarios: React.FC = () => {
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>Usuarios</h2>
-        {!rrhhEmpresaId && (
-          <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          {!isRrhh && (
             <select className="input-field" style={{ width: '220px', backgroundColor: 'var(--bg-color)' }} value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
               <option value="all">Todas las empresas</option>
               {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
-            <button className="btn-primary" onClick={() => setIsModalOpen(true)}>Invitar Usuarios</button>
-          </div>
-        )}
+          )}
+          <button className="btn-primary" onClick={() => { setIsModalOpen(true); setGeneratedLink(''); setInviteError(''); }}>
+            {isRrhh ? 'Invitar empleados' : 'Invitar Usuarios'}
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: '2rem', padding: '1rem', display: 'flex', gap: '1rem' }}>
@@ -579,8 +758,12 @@ export const Usuarios: React.FC = () => {
                 <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.fechaIngreso || usuario.ultima_interaccion)}</td>
                 <td style={{ padding: '1.25rem 1.5rem' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
-                    <Badge label={usuario.estado || 'Activo'} bg="#ecfdf5" color="#059669" />
-                    {!rrhhEmpresaId && <button
+                    <Badge
+                      label={usuario.estado || 'Activo'}
+                      bg={usuario.estado === 'Pendiente de acceso' ? '#fff7ed' : '#ecfdf5'}
+                      color={usuario.estado === 'Pendiente de acceso' ? '#c2410c' : '#059669'}
+                    />
+                    {!isRrhh && <button
                       type="button"
                       onClick={(event) => handleEliminarUsuario(event, usuario.id, usuario.nombre)}
                       aria-label={`Eliminar a ${usuario.nombre}`}
@@ -611,40 +794,61 @@ export const Usuarios: React.FC = () => {
 
       {/* Modal Invitar Usuarios */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(3px)' }} onClick={() => { setIsModalOpen(false); setGeneratedLink(''); }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(3px)' }} onClick={() => { setIsModalOpen(false); setGeneratedLink(''); setInviteError(''); }}>
           <div style={{ backgroundColor: 'white', borderRadius: '24px', padding: '2.5rem', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', animation: 'fadeIn 0.2s ease-out' }} onClick={e => e.stopPropagation()}>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <div style={{ width: '56px', height: '56px', backgroundColor: '#e0e7ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#4f46e5' }}>
                 <Mail size={28} />
               </div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>Invitar Usuarios</h2>
-              <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.5 }}>Genera un enlace único de onboarding. Los usuarios que ingresen quedarán vinculados a la empresa seleccionada.</p>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>{isRrhh ? 'Invitar empleados' : 'Invitar Usuarios'}</h2>
+              <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                {isRrhh
+                  ? 'Genera un enlace único para compartir con los empleados de tu empresa.'
+                  : 'Genera un enlace único de onboarding. Los usuarios que ingresen quedarán vinculados a la empresa seleccionada.'}
+              </p>
             </div>
 
             {!generatedLink ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Empresa asociada <span style={{color: 'red'}}>*</span></label>
-                  <select className="input-field" value={selectedEmpresaId} onChange={e => setSelectedEmpresaId(e.target.value)} style={{ width: '100%' }}>
-                    <option value="" disabled>Seleccioná una empresa...</option>
-                    {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nombre del RRHH (Opcional)</label>
-                  <input type="text" className="input-field" placeholder="Ej: Laura Martínez" value={newResponsable} onChange={e => setNewResponsable(e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email para envío (Opcional)</label>
-                  <input type="email" className="input-field" placeholder="correo@empresa.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
-                  <button type="button" onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
-                    <LinkIcon size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Generar enlace</span>
+                {isRrhh ? (
+                  <div style={{ padding: '1rem', borderRadius: '14px', border: '1px solid #ccfbf1', backgroundColor: '#f0fdfa' }}>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#0f766e', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Empresa asociada</p>
+                    <p style={{ margin: '0.25rem 0 0', fontSize: '1rem', color: '#0f172a', fontWeight: 800 }}>{rrhhEmpresa?.nombre ?? 'Tu empresa'}</p>
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.84rem', color: '#64748b', lineHeight: 1.45 }}>Compartí este enlace con tus empleados para que creen su acceso individual a ReActiva.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Empresa asociada <span style={{color: 'red'}}>*</span></label>
+                      <select className="input-field" value={selectedEmpresaId} onChange={e => setSelectedEmpresaId(e.target.value)} style={{ width: '100%' }}>
+                        <option value="" disabled>Seleccioná una empresa...</option>
+                        {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nombre del RRHH (Opcional)</label>
+                      <input type="text" className="input-field" placeholder="Ej: Laura Martínez" value={newResponsable} onChange={e => setNewResponsable(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email para envío</label>
+                      <input type="email" className="input-field" placeholder="correo@empresa.com" value={newEmail} onChange={e => { setNewEmail(e.target.value); setInviteError(''); }} />
+                    </div>
+                  </>
+                )}
+                {inviteError && (
+                  <div style={{ padding: '0.85rem 1rem', borderRadius: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '0.85rem', fontWeight: 600 }}>
+                    {inviteError}
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: isRrhh ? '1fr' : '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                  <button type="button" disabled={inviteLoading} onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
+                    <LinkIcon size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{inviteLoading ? 'Creando...' : isRrhh ? 'Generar link para empleados' : 'Generar enlace'}</span>
                   </button>
-                  <button type="button" onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
-                    <Mail size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Enviar por email</span>
-                  </button>
+                  {!isRrhh && (
+                    <button type="button" disabled={inviteLoading} onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
+                      <Mail size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{inviteLoading ? 'Creando...' : 'Generar para email'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -657,7 +861,7 @@ export const Usuarios: React.FC = () => {
                     {copied ? '¡Copiado!' : 'Copiar enlace'}
                   </button>
                 </div>
-                <button type="button" onClick={() => { setIsModalOpen(false); setGeneratedLink(''); }} style={{ color: '#64748b', fontWeight: 600, fontSize: '0.9rem', border: 'none', background: 'none', cursor: 'pointer' }}>Cerrar</button>
+                <button type="button" onClick={() => { setIsModalOpen(false); setGeneratedLink(''); setInviteError(''); }} style={{ color: '#64748b', fontWeight: 600, fontSize: '0.9rem', border: 'none', background: 'none', cursor: 'pointer' }}>Cerrar</button>
               </div>
             )}
           </div>

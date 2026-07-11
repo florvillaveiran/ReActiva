@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, ChevronRight, X, Link, Upload, Save, Filter, Eye, Pencil, Trash2, CalendarCheck, Droplets, Leaf, Lightbulb, Moon, Monitor, Search, Sparkles, Star, Zap, FileImage, FileVideo, Info } from 'lucide-react';
-import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, getContentLibrary, updateAcademyItem, updateCoachItem } from '../../data/contentLibrary';
+import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, fetchContentLibrary, getContentLibrary, removeContentItemFromSupabase, saveAcademyItem, saveCoachItem } from '../../data/contentLibrary';
 import { useEmpresas } from '../../context/EmpresasContext';
+import { fetchVideoUnlockSchedule, loadVideoUnlockSchedule, persistVideoUnlockSchedule, UNLOCK_LEAD_MINUTES, UnlockBlock, UnlockDay, VideoUnlockItem } from '../../lib/videoUnlockSchedule';
+import { supabase } from '../../lib/supabase';
 
 type AdminSection = 'micro' | 'coach' | 'academy' | 'media';
 
@@ -56,12 +58,19 @@ const AdminCoachPanel: React.FC = () => {
   const [items, setItems] = useState(() => getContentLibrary().coach);
   const [editing, setEditing] = useState<CoachItem | null>(null);
   const reload = () => setItems(getContentLibrary().coach);
+  useEffect(() => {
+    fetchContentLibrary().then(library => setItems(library.coach));
+  }, []);
 
-  const save = () => {
+  const save = async () => {
     if (!editing) return;
-    updateCoachItem(editing);
+    const result = await saveCoachItem(editing);
+    if (!result.ok) {
+      window.alert(result.error?.message ?? 'No pudimos guardar el consejo.');
+      return;
+    }
     setEditing(null);
-    reload();
+    fetchContentLibrary().then(library => setItems(library.coach));
   };
 
   return (
@@ -107,7 +116,7 @@ const AdminCoachPanel: React.FC = () => {
               <button className="btn-primary" onClick={() => window.alert(`${item.title}\n\n${item.recommendation}`)} style={{ padding: '0.55rem 0.9rem', fontSize: '0.82rem' }}>Ver consejo</button>
               <div style={{ display: 'flex', gap: '0.6rem' }}>
                 <button title="Editar" onClick={() => setEditing(item)} style={{ color: 'var(--primary-color)' }}><Pencil size={17} /></button>
-                <button title="Eliminar" onClick={() => { if (window.confirm('Deseas eliminar este consejo?')) { deleteCoachItem(item.id); reload(); } }} style={{ color: '#020617' }}><Trash2 size={17} /></button>
+                <button title="Eliminar" onClick={async () => { if (window.confirm('Deseas eliminar este consejo?')) { const result = await removeContentItemFromSupabase(item.id); if (!result.ok) { window.alert(result.error?.message ?? 'No pudimos eliminar el consejo.'); return; } deleteCoachItem(item.id); reload(); } }} style={{ color: '#020617' }}><Trash2 size={17} /></button>
               </div>
             </div>
           </article>
@@ -169,12 +178,21 @@ const AdminCoachPanel: React.FC = () => {
 const AdminAcademyPanel: React.FC = () => {
   const [items, setItems] = useState(() => getContentLibrary().academy);
   const [editing, setEditing] = useState<AcademyItem | null>(null);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>(() => readMediaItems());
   const reload = () => setItems(getContentLibrary().academy);
-  const save = () => {
+  useEffect(() => {
+    fetchContentLibrary().then(library => setItems(library.academy));
+    fetchMediaItems().then(setMediaItems);
+  }, []);
+  const save = async () => {
     if (!editing) return;
-    updateAcademyItem(editing);
+    const result = await saveAcademyItem(editing);
+    if (!result.ok) {
+      window.alert(result.error?.message ?? 'No pudimos guardar el taller.');
+      return;
+    }
     setEditing(null);
-    reload();
+    fetchContentLibrary().then(library => setItems(library.academy));
   };
 
   return (
@@ -216,7 +234,7 @@ const AdminAcademyPanel: React.FC = () => {
               <button className={item.recommended ? 'btn-primary' : 'btn-secondary'} onClick={() => window.alert(`${item.title}\n\n${item.description}`)} style={{ padding: '0.55rem 0.9rem', fontSize: '0.82rem' }}>{item.recommended ? 'Continuar' : 'Ver taller'}</button>
               <div style={{ display: 'flex', gap: '0.6rem' }}>
                 <button title="Editar" onClick={() => setEditing(item)} style={{ color: 'var(--primary-color)' }}><Pencil size={17} /></button>
-                <button title="Eliminar" onClick={() => { if (window.confirm('Deseas eliminar este taller?')) { deleteAcademyItem(item.id); reload(); } }} style={{ color: '#020617' }}><Trash2 size={17} /></button>
+                <button title="Eliminar" onClick={async () => { if (window.confirm('Deseas eliminar este taller?')) { const result = await removeContentItemFromSupabase(item.id); if (!result.ok) { window.alert(result.error?.message ?? 'No pudimos eliminar el taller.'); return; } deleteAcademyItem(item.id); reload(); } }} style={{ color: '#020617' }}><Trash2 size={17} /></button>
               </div>
             </div>
           </article>
@@ -236,6 +254,26 @@ const AdminAcademyPanel: React.FC = () => {
             <input className="input-field" value={editing.image} onChange={e => setEditing({ ...editing, image: e.target.value })} placeholder="URL de portada" style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Subir video / URL del video</label>
             <input className="input-field" value={editing.videoUrl ?? ''} onChange={e => setEditing({ ...editing, videoUrl: e.target.value })} placeholder="https://... o ruta del video subido" style={{ marginBottom: '0.7rem' }} />
+            <label style={fieldLabelStyle}>Elegir video desde Biblioteca Multimedia</label>
+            <select
+              className="input-field"
+              value=""
+              onChange={event => {
+                const selected = mediaItems.find(item => item.id === event.target.value);
+                if (selected) setEditing({
+                  ...editing,
+                  videoUrl: selected.url,
+                  image: selected.thumbnailUrl || (selected.kind === 'Image' ? selected.url : editing.image),
+                  duration: selected.duration || editing.duration,
+                });
+              }}
+              style={{ marginBottom: '0.7rem' }}
+            >
+              <option value="">Seleccionar archivo...</option>
+              {mediaItems.filter(item => item.kind === 'Video').map(item => (
+                <option key={item.id} value={item.id}>{item.name}</option>
+              ))}
+            </select>
             <input type="file" accept="video/*" className="input-field" onChange={e => {
               const file = e.target.files?.[0];
               if (file) setEditing({ ...editing, videoUrl: file.name });
@@ -259,16 +297,22 @@ interface MediaItem {
   name: string;
   kind: MediaKind;
   url: string;
+  thumbnailUrl?: string;
   duration: string;
   size: string;
   description: string;
 }
 
+interface MediaEditorState extends MediaItem {
+  file?: File;
+  thumbnailFile?: File;
+}
+
 const MEDIA_STORAGE_KEY = 'reactiva-admin-media-library';
 
 const defaultMediaItems: MediaItem[] = [
-  { id: 'media-respiracion', name: 'Respiracion Diafragmatica.mp4', kind: 'Video', url: 'https://www.youtube.com/embed/4tP5slYAwcY', duration: '9 min', size: '14.7 MB', description: 'Video demo de respiracion para pausas activas.' },
-  { id: 'media-portada-ergo', name: 'Portada Taller Ergo.jpg', kind: 'Image', url: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1200', duration: '-', size: '439.5 KB', description: 'Imagen de portada para taller de ergonomia.' },
+  { id: 'media-respiracion', name: 'Respiracion Diafragmatica.mp4', kind: 'Video', url: 'https://www.youtube.com/embed/4tP5slYAwcY', thumbnailUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1200', duration: '9 min', size: '14.7 MB', description: 'Video demo de respiracion para pausas activas.' },
+  { id: 'media-portada-ergo', name: 'Portada Taller Ergo.jpg', kind: 'Image', url: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1200', thumbnailUrl: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1200', duration: '-', size: '439.5 KB', description: 'Imagen de portada para taller de ergonomia.' },
 ];
 
 const emptyMediaItem = (): MediaItem => ({
@@ -276,6 +320,7 @@ const emptyMediaItem = (): MediaItem => ({
   name: '',
   kind: 'Video',
   url: '',
+  thumbnailUrl: '',
   duration: '',
   size: '',
   description: '',
@@ -298,10 +343,47 @@ const mediaSizeInMb = (size: string) => {
   return size.toLowerCase().includes('kb') ? value / 1024 : value;
 };
 
+const fileSafe = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase();
+
+const rowToMediaItem = (row: any): MediaItem => ({
+  id: row.id,
+  name: row.title,
+  kind: row.kind === 'video' ? 'Video' : 'Image',
+  url: row.url ?? '',
+  thumbnailUrl: row.thumbnail_url ?? row.metadata?.thumbnailUrl ?? '',
+  duration: row.metadata?.duration ?? '',
+  size: row.metadata?.size ?? '',
+  description: row.description ?? '',
+});
+
+const fetchMediaItems = async (): Promise<MediaItem[]> => {
+  if (!supabase) return readMediaItems();
+  const { data, error } = await supabase
+    .from('content_items')
+    .select('id, kind, title, description, url, thumbnail_url, metadata, created_at')
+    .in('kind', ['video', 'resource'])
+    .eq('metadata->>library', 'media')
+    .order('created_at', { ascending: false });
+
+  if (error || !data) {
+    console.error('No se pudo cargar la biblioteca multimedia', error);
+    return readMediaItems();
+  }
+
+  const media = data.map(rowToMediaItem);
+  saveMediaItems(media.length > 0 ? media : readMediaItems());
+  return media.length > 0 ? media : readMediaItems();
+};
+
 const AdminMediaPanel: React.FC = () => {
   const [items, setItems] = useState<MediaItem[]>(() => readMediaItems());
   const [query, setQuery] = useState('');
-  const [editing, setEditing] = useState<MediaItem | null>(null);
+  const [editing, setEditing] = useState<MediaEditorState | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    fetchMediaItems().then(setItems);
+  }, []);
 
   const persist = (next: MediaItem[]) => {
     setItems(next);
@@ -317,16 +399,99 @@ const AdminMediaPanel: React.FC = () => {
   const images = items.filter(item => item.kind === 'Image').length;
   const usedMb = items.reduce((sum, item) => sum + mediaSizeInMb(item.size), 0);
 
-  const save = () => {
+  const save = async () => {
     if (!editing || !editing.name.trim()) return;
-    const exists = items.some(item => item.id === editing.id);
-    const next = exists ? items.map(item => item.id === editing.id ? editing : item) : [editing, ...items];
-    persist(next);
-    setEditing(null);
+    setUploading(true);
+    try {
+      let url = editing.url;
+      let thumbnailUrl = editing.thumbnailUrl ?? '';
+      let finalName = editing.name;
+      let finalKind = editing.kind;
+      let finalSize = editing.size;
+
+      if (editing.file) {
+        const file = editing.file;
+        finalName = editing.name || file.name;
+        finalKind = file.type.startsWith('image') ? 'Image' : 'Video';
+        finalSize = `${(file.size / 1024 / 1024).toFixed(1)} MB`;
+
+        if (!supabase) throw new Error('Supabase no está configurado.');
+        const extension = file.name.includes('.') ? file.name.split('.').pop() : 'bin';
+        const path = `${finalKind.toLowerCase()}s/${Date.now()}-${fileSafe(finalName)}.${extension}`;
+        const { error: uploadError } = await supabase.storage
+          .from('reactiva-media')
+          .upload(path, file, { upsert: true, contentType: file.type });
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('reactiva-media').getPublicUrl(path);
+        url = data.publicUrl;
+
+        if (finalKind === 'Image' && !thumbnailUrl) {
+          thumbnailUrl = data.publicUrl;
+        }
+      }
+
+      if (editing.thumbnailFile) {
+        if (!supabase) throw new Error('Supabase no está configurado.');
+        const file = editing.thumbnailFile;
+        const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
+        const path = `thumbnails/${Date.now()}-${fileSafe(file.name)}.${extension}`;
+        const { error: thumbnailUploadError } = await supabase.storage
+          .from('reactiva-media')
+          .upload(path, file, { upsert: true, contentType: file.type });
+        if (thumbnailUploadError) throw thumbnailUploadError;
+
+        const { data } = supabase.storage.from('reactiva-media').getPublicUrl(path);
+        thumbnailUrl = data.publicUrl;
+      }
+
+      const savedItem: MediaItem = { ...editing, name: finalName, kind: finalKind, size: finalSize, url, thumbnailUrl };
+
+      if (supabase) {
+        const { error } = await supabase.rpc('save_content_item', {
+          item_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(editing.id) ? editing.id : null,
+          item_kind: finalKind === 'Video' ? 'video' : 'resource',
+          item_title: finalName,
+          item_description: editing.description,
+          item_category: 'Biblioteca Multimedia',
+          item_tags: [finalKind],
+          item_url: url,
+          item_thumbnail_url: thumbnailUrl || (finalKind === 'Image' ? url : null),
+          item_active: true,
+          item_featured: false,
+          item_sort_order: 0,
+          item_metadata: {
+            library: 'media',
+            mediaKind: finalKind,
+            duration: editing.duration,
+            size: finalSize,
+            thumbnailUrl,
+          },
+        });
+        if (error) throw error;
+      }
+
+      const exists = items.some(item => item.id === savedItem.id);
+      const next = exists ? items.map(item => item.id === savedItem.id ? savedItem : item) : [savedItem, ...items];
+      persist(next);
+      fetchMediaItems().then(setItems);
+      setEditing(null);
+    } catch (err: any) {
+      window.alert(err?.message ?? 'No pudimos subir el archivo.');
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (window.confirm('Deseas eliminar este archivo?')) {
+      if (supabase && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+        const { error } = await supabase.rpc('delete_content_item', { item_id: id });
+        if (error) {
+          window.alert(error.message);
+          return;
+        }
+      }
       persist(items.filter(item => item.id !== id));
     }
   };
@@ -358,11 +523,23 @@ const AdminMediaPanel: React.FC = () => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
-        {filtered.map(item => (
+        {filtered.map(item => {
+          const previewUrl = item.thumbnailUrl || (item.kind === 'Image' ? item.url : '');
+          return (
           <article key={item.id} className="card" style={{ margin: 0, padding: '0.9rem', borderRadius: 16 }}>
-            <div style={{ height: 120, borderRadius: 10, background: '#f8fafc', color: item.kind === 'Video' ? '#3b82f6' : 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>
-              {item.kind === 'Video' ? <FileVideo size={34} /> : <FileImage size={34} />}
-            </div>
+            {previewUrl ? (
+              <div style={{ height: 120, borderRadius: 10, background: `linear-gradient(rgba(15,23,42,0.05), rgba(15,23,42,0.2)), url(${previewUrl}) center/cover`, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem', overflow: 'hidden' }}>
+                {item.kind === 'Video' && (
+                  <div style={{ width: 42, height: 42, borderRadius: 999, background: 'rgba(255,255,255,0.92)', color: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 26px rgba(15,23,42,0.18)' }}>
+                    <Video size={20} fill="currentColor" />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ height: 120, borderRadius: 10, background: '#f8fafc', color: item.kind === 'Video' ? '#3b82f6' : 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>
+                {item.kind === 'Video' ? <FileVideo size={34} /> : <FileImage size={34} />}
+              </div>
+            )}
             <h3 style={{ margin: '0 0 0.45rem', color: '#020617', fontSize: '0.95rem', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</h3>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.82rem', marginBottom: '0.75rem' }}>
               <span>{item.size || 'Sin peso'}</span>
@@ -375,7 +552,8 @@ const AdminMediaPanel: React.FC = () => {
               <button title="Eliminar" onClick={() => remove(item.id)} style={{ color: '#020617' }}><Trash2 size={16} /></button>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
 
       {editing && (
@@ -409,14 +587,45 @@ const AdminMediaPanel: React.FC = () => {
               if (!file) return;
               setEditing({
                 ...editing,
+                file,
                 name: editing.name || file.name,
                 kind: file.type.startsWith('image') ? 'Image' : 'Video',
                 size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
               });
             }} style={{ marginBottom: '1rem', paddingTop: '0.75rem' }} />
+            {editing.kind === 'Video' && (
+              <>
+                <label style={fieldLabelStyle}>Imagen de portada del video</label>
+                <input
+                  className="input-field"
+                  value={editing.thumbnailUrl ?? ''}
+                  onChange={event => setEditing({ ...editing, thumbnailUrl: event.target.value })}
+                  placeholder="URL de portada o subir imagen debajo"
+                  style={{ marginBottom: '0.7rem' }}
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="input-field"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    setEditing({ ...editing, thumbnailFile: file });
+                  }}
+                  style={{ marginBottom: editing.thumbnailFile ? '0.45rem' : '1rem', paddingTop: '0.75rem' }}
+                />
+                {editing.thumbnailFile && (
+                  <p style={{ margin: '0 0 1rem', color: '#64748b', fontSize: '0.82rem' }}>
+                    Portada seleccionada: <strong>{editing.thumbnailFile.name}</strong>
+                  </p>
+                )}
+              </>
+            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.7rem' }}>
               <button className="btn-secondary" onClick={() => setEditing(null)}>Cancelar</button>
-              <button className="btn-primary" onClick={save}>Guardar</button>
+              <button className="btn-primary" onClick={save} disabled={uploading} style={{ opacity: uploading ? 0.7 : 1 }}>
+                {uploading ? 'Subiendo...' : 'Guardar'}
+              </button>
             </div>
           </div>
         </div>
@@ -502,6 +711,21 @@ export const Contenido: React.FC = () => {
   const [offsetSem, setOffset]     = useState(0);
   const [empresa, setEmpresa]      = useState('Todas las empresas');
   const [recordatorio, setRecordatorio] = useState('15 minutos antes');
+  const [unlockSchedule, setUnlockSchedule] = useState<VideoUnlockItem[]>(() => loadVideoUnlockSchedule());
+
+  useEffect(() => {
+    fetchVideoUnlockSchedule().then(setUnlockSchedule);
+  }, []);
+
+  const updateUnlockSchedule = (day: UnlockDay, block: UnlockBlock, changes: Partial<VideoUnlockItem>) => {
+    const next = unlockSchedule.map((item) => (
+      item.day === day && item.block === block ? { ...item, ...changes } : item
+    ));
+    setUnlockSchedule(next);
+    persistVideoUnlockSchedule(next).then((result) => {
+      if (!result.ok) console.error('No se pudo guardar la programación de videos', result.error);
+    });
+  };
 
   const lunes = getLunesOfWeek(hoy, offsetSem);
   const rangoLabel = (() => {
@@ -605,6 +829,51 @@ export const Contenido: React.FC = () => {
       </div>
 
       {/* ══ VISTA SEMANAL ══ */}
+      <section className="card" style={{ padding: '1rem', margin: '0 0 1.25rem', borderRadius: '14px', border: '1px solid #ccfbf1', background: 'linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)', boxShadow: '0 4px 16px rgba(15, 118, 110, 0.06)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
+          <div>
+            <h3 style={{ margin: 0, color: '#0f172a', fontSize: '0.98rem', fontWeight: 800 }}>Habilitación automática de videos</h3>
+            <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.8rem', lineHeight: 1.45 }}>
+              Activá los bloques que querés liberar. Los usuarios podrán verlos {UNLOCK_LEAD_MINUTES} minuto antes del horario configurado.
+            </p>
+          </div>
+          <span style={{ background: '#ccfbf1', color: '#0f766e', borderRadius: 999, padding: '0.28rem 0.65rem', fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+            Lunes · Miércoles · Viernes
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
+          {(['Lunes', 'Miércoles', 'Viernes'] as UnlockDay[]).map(day => (
+            <div key={day} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.8rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.65rem' }}>{day}</div>
+              {([
+                ['morning', 'Mañana'],
+                ['afternoon', 'Tarde'],
+              ] as [UnlockBlock, string][]).map(([block, label]) => {
+                const item = unlockSchedule.find(entry => entry.day === day && entry.block === block);
+                return (
+                  <label key={`${day}-${block}`} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 92px', alignItems: 'center', gap: '0.55rem', padding: '0.5rem 0', borderTop: block === 'afternoon' ? '1px solid #f1f5f9' : 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(item?.enabled)}
+                      onChange={(event) => updateUnlockSchedule(day, block, { enabled: event.target.checked })}
+                      style={{ width: 16, height: 16, accentColor: 'var(--primary-color)' }}
+                    />
+                    <span style={{ color: '#334155', fontSize: '0.8rem', fontWeight: 700 }}>{label}</span>
+                    <input
+                      type="time"
+                      value={item?.time ?? '08:00'}
+                      onChange={(event) => updateUnlockSchedule(day, block, { time: event.target.value })}
+                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.35rem', fontSize: '0.78rem', color: '#0f172a' }}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </section>
+
       {vista==='semana' && (
         <>
           {/* Navegación semana */}

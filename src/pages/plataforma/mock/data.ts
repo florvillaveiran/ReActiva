@@ -1,6 +1,7 @@
 // src/mock/data.ts
 export interface Empresa {
   id: number;
+  supabaseId?: string;
   nombre: string;
   ubicacion: string;
   empleados: number[]; // array de user ids
@@ -14,6 +15,7 @@ export interface Empresa {
 
 export interface Usuario {
   id: number;
+  supabaseId?: string;
   nombre: string;
   edad?: number;
   email: string;
@@ -21,7 +23,7 @@ export interface Usuario {
   participacion: number; // %
   dolor: boolean;
   ultima_interaccion: string; // ISO date
-  estado: 'Activo' | 'Inactivo';
+  estado: 'Activo' | 'Inactivo' | 'Pendiente de acceso';
   fechaIngreso: string;
   passwordTemporal?: string;
   requiereCambioPassword?: boolean;

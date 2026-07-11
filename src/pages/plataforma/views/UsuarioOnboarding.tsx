@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getInvitacionUsuarioByToken, getDB, addUsuario, Usuario } from '../mock/data';
 import { User, CheckCircle2, ChevronRight, ChevronLeft, AlertTriangle, Zap, Activity, Heart, Target, BatteryCharging, ShieldAlert } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const radioOption = (label: string, icon: React.ReactNode, selected: boolean, onChange: () => void) => (
   <label
@@ -44,7 +45,6 @@ export const UsuarioOnboarding: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
-  const [createdPassword, setCreatedPassword] = useState('');
 
   const [respuestas, setRespuestas] = useState({
     nombre: '',
@@ -58,17 +58,52 @@ export const UsuarioOnboarding: React.FC = () => {
   });
 
   useEffect(() => {
-    if (token) {
+    const loadInvitation = async () => {
+      if (!token) {
+        setError('El enlace de invitación es inválido o ha caducado.');
+        setLoading(false);
+        return;
+      }
+
       const inv = getInvitacionUsuarioByToken(token);
       if (inv) {
         setInvitacion(inv);
         const emp = getDB().empresas.find(e => e.id === inv.empresa_id);
         if (emp) setEmpresaNombre(emp.nombre);
-      } else {
-        setError('El enlace de invitación es inválido o ha caducado.');
+        setLoading(false);
+        return;
       }
-    }
-    setLoading(false);
+
+      if (supabase) {
+        const { data } = await supabase
+          .rpc('get_invitation_context', { invitation_token: token })
+          .maybeSingle();
+
+        const context = data as any;
+        if (context?.is_valid) {
+          const db = getDB();
+          let empresa = db.empresas.find(e => e.nombre.toLowerCase() === String(context.company_name ?? '').toLowerCase());
+          if (!empresa) empresa = db.empresas[0];
+
+          setInvitacion({
+            token,
+            empresa_id: empresa?.id ?? 1,
+            emailEnviado: context.email ?? '',
+            fechaCreacion: new Date().toISOString(),
+            supabaseCompanyId: context.company_id,
+          });
+          setEmpresaNombre(context.company_name ?? empresa?.nombre ?? 'tu empresa');
+          if (context.email) setRespuestas(prev => ({ ...prev, email: context.email }));
+          setLoading(false);
+          return;
+        }
+      }
+
+      setError('El enlace de invitación es inválido o ha caducado.');
+      setLoading(false);
+    };
+
+    void loadInvitation();
   }, [token]);
 
   if (loading) return (
@@ -121,7 +156,25 @@ export const UsuarioOnboarding: React.FC = () => {
     return true;
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    setLoading(true);
+    setError('');
+
+    if (supabase && token) {
+      const { error: onboardingError } = await supabase.rpc('complete_user_onboarding', {
+        invitation_token: token,
+        user_email: respuestas.email.trim().toLowerCase(),
+        user_full_name: respuestas.nombre.trim(),
+        onboarding_data: respuestas,
+      });
+
+      if (onboardingError) {
+        setLoading(false);
+        setError('No pudimos guardar el onboarding. Revisá el enlace y volvé a intentarlo.');
+        return;
+      }
+    }
+
     const pwd = Math.random().toString(36).substring(2, 8);
     const dolor = respuestas.dolores.length > 0 && !respuestas.dolores.includes('No tengo dolores');
 
@@ -141,7 +194,7 @@ export const UsuarioOnboarding: React.FC = () => {
     };
 
     addUsuario(newUser);
-    setCreatedPassword(pwd);
+    setLoading(false);
     setStep(8);
   };
 
@@ -152,18 +205,18 @@ export const UsuarioOnboarding: React.FC = () => {
         <div style={{ width: '70px', height: '70px', backgroundColor: '#ecfdf5', color: '#10b981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
           <CheckCircle2 size={36} strokeWidth={2.5} />
         </div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>¡Tu perfil está listo!</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>Activá tu cuenta en ReActiva</h2>
         <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>
-          Hemos configurado tu plan inicial basándonos en tus respuestas. Te enviamos un correo con tus datos de acceso, pero por si acaso, tu contraseña temporal es:
+          Tu perfil inicial ya quedó configurado. Usá este correo para crear tu acceso con contraseña.
         </p>
-        <div style={{ backgroundColor: '#f1f5f9', padding: '1rem', borderRadius: '12px', fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', letterSpacing: '0.1em', marginBottom: '2rem' }}>
-          {createdPassword}
+        <div style={{ backgroundColor: '#f1f5f9', padding: '1rem', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: '2rem' }}>
+          {respuestas.email}
         </div>
         <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '2rem' }}>
-          El sistema te pedirá cambiarla en tu primer inicio de sesión por seguridad.
+          En esta demo, si necesitás ingresar con contraseña, usá la contraseña temporal enviada por el equipo de ReActiva.
         </p>
-        <button onClick={() => navigate('/plataforma/login')} className="btn-primary" style={{ width: '100%', padding: '1rem' }}>
-          Ir a Iniciar Sesión
+        <button onClick={() => navigate(`/plataforma/login?token=${token ?? ''}&tipo=usuario&email=${encodeURIComponent(respuestas.email)}`)} className="btn-primary" style={{ width: '100%', padding: '1rem' }}>
+          Continuar a ReActiva
         </button>
       </div>
     </div>
@@ -321,9 +374,9 @@ export const UsuarioOnboarding: React.FC = () => {
               onClick={handleFinish}
               className="btn-primary"
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#059669', opacity: canNext() ? 1 : 0.5 }}
-              disabled={!canNext()}
+              disabled={!canNext() || loading}
             >
-              Terminar Onboarding <CheckCircle2 size={18} />
+              {loading ? 'Guardando...' : 'Terminar Onboarding'} <CheckCircle2 size={18} />
             </button>
           )}
         </div>

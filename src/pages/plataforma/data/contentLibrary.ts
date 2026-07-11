@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export type AdminContentKind = 'coach' | 'academy';
 
 export interface CoachItem {
@@ -128,4 +130,143 @@ export const deleteAcademyItem = (id: string) => {
   const library = readLibrary();
   library.academy = library.academy.filter(item => item.id !== id);
   saveContentLibrary(library);
+};
+
+const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
+const rowToCoachItem = (row: any): CoachItem => coachDetail({
+  id: row.id,
+  category: row.category ?? row.metadata?.category ?? 'General',
+  title: row.title,
+  description: row.description ?? '',
+  recommendation: row.metadata?.recommendation ?? row.description ?? '',
+  detailTitle: row.metadata?.detailTitle ?? row.title,
+  subtitle: row.metadata?.subtitle ?? row.description ?? '',
+  time: row.metadata?.time ?? '5 minutos',
+  difficulty: row.metadata?.difficulty ?? 'Moderado',
+  benefit: row.metadata?.benefit ?? '',
+  why: row.metadata?.why ?? '',
+  evidence: row.metadata?.evidence ?? '',
+  steps: Array.isArray(row.metadata?.steps) ? row.metadata.steps : [],
+  signals: Array.isArray(row.metadata?.signals) ? row.metadata.signals : [],
+  challenge: row.metadata?.challenge ?? '',
+  related: row.metadata?.related ?? '',
+  tags: row.tags ?? [],
+  active: row.active,
+  isNew: row.featured,
+});
+
+const rowToAcademyItem = (row: any): AcademyItem => ({
+  id: row.id,
+  category: row.category ?? row.metadata?.category ?? 'General',
+  title: row.title,
+  description: row.description ?? '',
+  duration: row.metadata?.duration ?? '10 min',
+  level: row.metadata?.level ?? 'Basico',
+  image: row.thumbnail_url ?? row.metadata?.image ?? 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1400',
+  videoUrl: row.url ?? row.metadata?.videoUrl,
+  recommended: row.featured,
+  active: row.active,
+});
+
+export const fetchContentLibrary = async (): Promise<ContentLibrary> => {
+  if (!supabase) return readLibrary();
+
+  const { data, error } = await supabase
+    .from('content_items')
+    .select('id, kind, title, description, category, tags, url, thumbnail_url, active, featured, sort_order, metadata')
+    .in('kind', ['coach_tip', 'workshop'])
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (error || !data) {
+    console.error('No se pudo cargar contenido desde Supabase', error);
+    return readLibrary();
+  }
+
+  const library = {
+    coach: data.filter((row: any) => row.kind === 'coach_tip').map(rowToCoachItem),
+    academy: data.filter((row: any) => row.kind === 'workshop').map(rowToAcademyItem),
+  };
+
+  const mergeByTitle = <T extends { title: string }>(base: T[], remote: T[]) => {
+    const merged = new Map(base.map(item => [item.title.trim().toLowerCase(), item]));
+    remote.forEach(item => merged.set(item.title.trim().toLowerCase(), item));
+    return Array.from(merged.values());
+  };
+
+  const merged = {
+    coach: mergeByTitle(defaultCoachItems, library.coach),
+    academy: mergeByTitle(defaultAcademyItems, library.academy),
+  };
+  saveContentLibrary(merged);
+  return merged;
+};
+
+export const saveCoachItem = async (item: CoachItem) => {
+  updateCoachItem(item);
+  if (!supabase) return { ok: true };
+
+  const { error } = await supabase.rpc('save_content_item', {
+    item_id: isUuid(item.id) ? item.id : null,
+    item_kind: 'coach_tip',
+    item_title: item.title,
+    item_description: item.description,
+    item_category: item.category,
+    item_tags: item.tags,
+    item_url: null,
+    item_thumbnail_url: null,
+    item_active: item.active,
+    item_featured: Boolean(item.isNew),
+    item_sort_order: 0,
+    item_metadata: {
+      recommendation: item.recommendation,
+      detailTitle: item.detailTitle,
+      subtitle: item.subtitle,
+      time: item.time,
+      difficulty: item.difficulty,
+      benefit: item.benefit,
+      why: item.why,
+      evidence: item.evidence,
+      steps: item.steps,
+      signals: item.signals,
+      challenge: item.challenge,
+      related: item.related,
+    },
+  });
+
+  return { ok: !error, error };
+};
+
+export const saveAcademyItem = async (item: AcademyItem) => {
+  updateAcademyItem(item);
+  if (!supabase) return { ok: true };
+
+  const { error } = await supabase.rpc('save_content_item', {
+    item_id: isUuid(item.id) ? item.id : null,
+    item_kind: 'workshop',
+    item_title: item.title,
+    item_description: item.description,
+    item_category: item.category,
+    item_tags: [],
+    item_url: item.videoUrl ?? null,
+    item_thumbnail_url: item.image,
+    item_active: item.active,
+    item_featured: Boolean(item.recommended),
+    item_sort_order: 0,
+    item_metadata: {
+      duration: item.duration,
+      level: item.level,
+      image: item.image,
+      videoUrl: item.videoUrl ?? null,
+    },
+  });
+
+  return { ok: !error, error };
+};
+
+export const removeContentItemFromSupabase = async (id: string) => {
+  if (!supabase || !isUuid(id)) return { ok: true };
+  const { error } = await supabase.rpc('delete_content_item', { item_id: id });
+  return { ok: !error, error };
 };

@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Clock, GraduationCap, Play, Search, Sparkles, Star } from 'lucide-react';
-import { getContentLibrary } from '../../data/contentLibrary';
+import { Clock, GraduationCap, Play, Search, Sparkles, Star, X } from 'lucide-react';
+import { AcademyItem, fetchContentLibrary, getContentLibrary } from '../../data/contentLibrary';
 
 export const UsuarioAcademia: React.FC = () => {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Todos');
   const [version, setVersion] = useState(0);
+  const [selected, setSelected] = useState<AcademyItem | null>(null);
 
   useEffect(() => {
     const refresh = () => setVersion(value => value + 1);
+    fetchContentLibrary().then(() => refresh());
     window.addEventListener('reactiva-content-library-updated', refresh);
     return () => window.removeEventListener('reactiva-content-library-updated', refresh);
   }, []);
@@ -69,13 +71,63 @@ export const UsuarioAcademia: React.FC = () => {
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Star size={14} /> {item.level}</span>
               </div>
               <div style={{ height: 1, background: '#eef2f7', marginBottom: '0.9rem' }} />
-              <button type="button" style={{ width: '100%', height: 42, borderRadius: 12, border: item.recommended ? 'none' : '1px solid #e2e8f0', background: item.recommended ? 'var(--primary-color)' : 'white', color: item.recommended ? 'white' : '#020617', fontWeight: 900, fontSize: '0.82rem', cursor: 'pointer', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+              <button type="button" onClick={() => setSelected(item)} style={{ width: '100%', height: 42, borderRadius: 12, border: item.recommended ? 'none' : '1px solid #e2e8f0', background: item.recommended ? 'var(--primary-color)' : 'white', color: item.recommended ? 'white' : '#020617', fontWeight: 900, fontSize: '0.82rem', cursor: 'pointer', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
                 {item.id === 'academy-ergonomia' ? <><Play size={14} fill="#d97706" color="#d97706" /> Continuar</> : 'Ver taller'}
               </button>
             </div>
           </article>
         ))}
       </section>
+
+      {selected && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ width: 860, maxWidth: '96vw', maxHeight: '90vh', overflowY: 'auto', background: 'white', borderRadius: 18, boxShadow: '0 24px 70px rgba(15,23,42,0.24)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', padding: '1rem 1.1rem', borderBottom: '1px solid #e5e7eb' }}>
+              <div>
+                <span style={{ display: 'inline-flex', marginBottom: '0.45rem', background: '#ecfdf5', color: 'var(--primary-color)', borderRadius: 999, padding: '0.28rem 0.6rem', fontSize: '0.72rem', fontWeight: 900 }}>{selected.category}</span>
+                <h2 style={{ margin: 0, color: '#020617', fontSize: '1.25rem', lineHeight: 1.2 }}>{selected.title}</h2>
+              </div>
+              <button type="button" title="Cerrar" onClick={() => setSelected(null)} style={{ width: 36, height: 36, borderRadius: 999, border: '1px solid #e2e8f0', background: 'white', color: '#64748b', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1rem' }}>
+              {selected.videoUrl ? (
+                selected.videoUrl.includes('youtube.com') || selected.videoUrl.includes('youtu.be') ? (
+                  <iframe
+                    title={selected.title}
+                    src={selected.videoUrl}
+                    style={{ width: '100%', aspectRatio: '16 / 9', border: 0, borderRadius: 14, background: '#0f172a' }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={selected.videoUrl}
+                    poster={selected.image}
+                    controls
+                    style={{ width: '100%', aspectRatio: '16 / 9', borderRadius: 14, background: '#0f172a', objectFit: 'cover' }}
+                  />
+                )
+              ) : (
+                <div style={{ minHeight: 320, borderRadius: 14, background: `linear-gradient(rgba(15,23,42,0.16), rgba(15,23,42,0.22)), url(${selected.image}) center/cover`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', textAlign: 'center', padding: '1rem' }}>
+                  <div>
+                    <Play size={34} />
+                    <p style={{ margin: '0.6rem 0 0', fontWeight: 900 }}>Este taller todavia no tiene video cargado.</p>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem', color: '#64748b', fontSize: '0.84rem', fontWeight: 800 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Clock size={14} /> {selected.duration}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Star size={14} /> {selected.level}</span>
+              </div>
+              <p style={{ margin: '0.85rem 0 0', color: '#475569', lineHeight: 1.55 }}>{selected.description}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

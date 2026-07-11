@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarCheck, Clock, Droplets, Eye, Leaf, Lightbulb, Moon, Monitor, Sparkles, Star, Target, Trophy, Zap } from 'lucide-react';
-import { CoachItem, getContentLibrary } from '../../data/contentLibrary';
+import { CoachItem, fetchContentLibrary, getContentLibrary } from '../../data/contentLibrary';
 
 const iconFor = (id: string) => {
   if (id.includes('visual')) return { icon: <Eye size={18} />, bg: '#f3e8ff', color: '#8b5cf6' };
@@ -19,6 +19,7 @@ export const UsuarioTips: React.FC = () => {
 
   useEffect(() => {
     const refresh = () => setVersion(value => value + 1);
+    fetchContentLibrary().then(() => refresh());
     window.addEventListener('reactiva-content-library-updated', refresh);
     return () => window.removeEventListener('reactiva-content-library-updated', refresh);
   }, []);

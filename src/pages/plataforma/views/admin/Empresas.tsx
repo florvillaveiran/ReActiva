@@ -2,6 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Users, Building, Plus, Mail, User, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, AlertCircle, Target, Clock, Briefcase, TrendingUp, Zap, Trash2 } from 'lucide-react';
 import { getDB, setDB, addEmpresa, Empresa } from '../../mock/data';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
+
+const hashToNumericId = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) + 10000;
+};
+
+const companyStatusFromSupabase = (status?: string): Empresa['estado'] => {
+  if (status === 'pending_onboarding') return 'Pendiente onboarding';
+  if (status === 'inactive') return 'Inactiva';
+  return 'Activa';
+};
+
+const makeCompanyToken = () => {
+  const random = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `cmp-${random.replace(/[^a-zA-Z0-9]/g, '').slice(0, 28)}`;
+};
 
 const ESTADO_STYLES: Record<string, { bg: string; color: string; dot: string }> = {
   'Activa':               { bg: '#ecfdf5', color: '#059669', dot: '#10b981' },
@@ -184,26 +207,86 @@ export const Empresas: React.FC = () => {
   const [generatedLink, setGeneratedLink] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const loadEmpresas = () => setEmpresas(getDB().empresas);
+  const loadEmpresas = async () => {
+    if (!supabase) {
+      setEmpresas(getDB().empresas);
+      return;
+    }
 
-  useEffect(() => { loadEmpresas(); }, []);
+    setEmpresas([]);
+
+    const [{ data: companies, error: companiesError }, { data: profiles, error: profilesError }] = await Promise.all([
+      supabase
+        .from('companies')
+        .select('id, name, location, status, contact_name, rrhh_email, onboarding_completed_at, onboarding_data, created_at')
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('profiles')
+        .select('id, company_id')
+        .eq('role', 'usuario'),
+    ]);
+
+    if (companiesError || profilesError || !companies) {
+      console.error('No se pudieron cargar empresas desde Supabase', companiesError ?? profilesError);
+      return;
+    }
+
+    const employeeCount = new Map<string, number>();
+    (profiles ?? []).forEach((profile: any) => {
+      if (!profile.company_id) return;
+      employeeCount.set(profile.company_id, (employeeCount.get(profile.company_id) ?? 0) + 1);
+    });
+
+    setEmpresas(companies.map((company: any) => ({
+      id: hashToNumericId(company.id),
+      supabaseId: company.id,
+      nombre: company.name,
+      ubicacion: company.location ?? '',
+      empleados: Array.from({ length: employeeCount.get(company.id) ?? 0 }, (_, index) => index + 1),
+      estado: companyStatusFromSupabase(company.status),
+      contactoNombre: company.contact_name ?? '',
+      rrhhEmail: company.rrhh_email ?? '',
+      fechaOnboarding: company.onboarding_completed_at ?? undefined,
+      onboardingData: company.onboarding_data ?? undefined,
+    })));
+  };
+
+  useEffect(() => { void loadEmpresas(); }, []);
 
   if (selected) {
-    return <EmpresaDetalle empresa={selected} onBack={() => { loadEmpresas(); setSelected(null); }} />;
+    return <EmpresaDetalle empresa={selected} onBack={() => { void loadEmpresas(); setSelected(null); }} />;
   }
 
   const filtered = empresas.filter(e =>
-    (!rrhhEmpresaId || e.id === rrhhEmpresaId) &&
+    (!rrhhEmpresaId || e.supabaseId === rrhhEmpresaId.toString() || e.id.toString() === rrhhEmpresaId.toString()) &&
     (e.nombre.toLowerCase().includes(search.toLowerCase()) ||
     (e.ubicacion || '').toLowerCase().includes(search.toLowerCase()))
   );
 
-  const handleGenerateLink = () => {
+  const handleGenerateLink = async () => {
     if (!newNombre || !newUbicacion || !newResponsable || !newEmail) return alert('Completa todos los campos obligatorios');
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const token = makeCompanyToken();
     const link = `${window.location.origin}/plataforma/onboarding/empresa/${token}`;
-    addEmpresa({ id: Date.now(), nombre: newNombre, ubicacion: newUbicacion, empleados: [], estado: 'Pendiente onboarding', contactoNombre: newResponsable, rrhhEmail: newEmail, token });
-    loadEmpresas();
+
+    try {
+      if (supabase) {
+        const { error } = await supabase.rpc('create_company_onboarding_invitation', {
+          company_name: newNombre,
+          company_location: newUbicacion,
+          contact_name: newResponsable,
+          rrhh_email: newEmail.trim().toLowerCase(),
+          invitation_token: token,
+        });
+        if (error) throw error;
+      }
+
+      addEmpresa({ id: Date.now(), nombre: newNombre, ubicacion: newUbicacion, empleados: [], estado: 'Pendiente onboarding', contactoNombre: newResponsable, rrhhEmail: newEmail, token });
+      void loadEmpresas();
+    } catch (err: any) {
+      alert(err?.message ?? 'No pudimos crear la empresa en Supabase.');
+      return;
+    }
+
     setGeneratedLink(link);
   };
 
@@ -217,13 +300,26 @@ export const Empresas: React.FC = () => {
     setIsModalOpen(false); setNewNombre(''); setNewUbicacion(''); setNewResponsable(''); setNewEmail(''); setGeneratedLink('');
   };
 
-  const handleEliminarEmpresa = (event: React.MouseEvent<HTMLButtonElement>, id: number, nombre: string) => {
+  const handleEliminarEmpresa = async (event: React.MouseEvent<HTMLButtonElement>, id: number, nombre: string) => {
     event.stopPropagation();
     const confirmar = window.confirm(`Eliminar ${nombre} por completo?`);
     if (!confirmar) return;
 
     const db = getDB();
     const empresa = db.empresas.find((item) => item.id === id);
+    const empresaActual = empresas.find((item) => item.id === id);
+
+    if (supabase && empresaActual?.supabaseId) {
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', empresaActual.supabaseId);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+    }
+
     const usuariosEmpresa = new Set(empresa?.empleados || []);
 
     db.empresas = db.empresas.filter((item) => item.id !== id);
@@ -232,7 +328,7 @@ export const Empresas: React.FC = () => {
     db.progresos = db.progresos.filter((progreso) => !usuariosEmpresa.has(progreso.usuario_id));
     db.formularios = db.formularios.filter((formulario) => !usuariosEmpresa.has(formulario.usuario_id));
     setDB(db);
-    loadEmpresas();
+    void loadEmpresas();
   };
 
   return (

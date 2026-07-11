@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 export interface PausaGuardada {
   dia: string;
@@ -58,6 +59,41 @@ const readPausas = (): PausaGuardada[] => {
   } catch {
     return [];
   }
+};
+
+const readPausasFromSupabase = async (): Promise<PausaGuardada[] | null> => {
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from('pause_sessions')
+    .select('day_label, block, occurred_at, energy, feeling, has_pain, pain_zone, answers')
+    .order('occurred_at', { ascending: false });
+
+  if (error || !data) {
+    console.error('No se pudieron cargar pausas desde Supabase', error);
+    return null;
+  }
+
+  return data.map((row: any) => ({
+    dia: row.day_label,
+    bloque: row.block,
+    fecha: row.occurred_at,
+    tipo: row.answers?.tipo ?? 'diario',
+    energia: row.energy ?? row.answers?.energia,
+    dolor: row.has_pain ?? row.answers?.dolor,
+    zona: row.pain_zone ?? row.answers?.zona,
+    feeling: row.feeling ?? row.answers?.feeling,
+    respuestas: {
+      feeling: row.feeling ?? row.answers?.feeling,
+      energia: row.energy ?? row.answers?.energia,
+      dolor: row.has_pain ?? row.answers?.dolor,
+      zona: row.pain_zone ?? row.answers?.zona,
+      tension: row.answers?.tension ?? row.answers?.estres,
+      trabajo: row.answers?.trabajo,
+      ayuda: row.answers?.ayuda,
+      comentario: row.answers?.comentario ?? row.answers?.mejora,
+    },
+  }));
 };
 
 const avg = (nums: number[]): number | null => {
@@ -171,10 +207,18 @@ export function usePausasStats(): PausasStats {
   const [stats, setStats] = useState<PausasStats>(() => computeStats(readPausas()));
 
   useEffect(() => {
-    const refresh = () => setStats(computeStats(readPausas()));
+    let mounted = true;
+    const refresh = () => {
+      setStats(computeStats(readPausas()));
+      readPausasFromSupabase().then((pausas) => {
+        if (mounted && pausas) setStats(computeStats(pausas));
+      });
+    };
+    refresh();
     window.addEventListener('reactiva-pausas-updated', refresh);
     window.addEventListener('storage', refresh);
     return () => {
+      mounted = false;
       window.removeEventListener('reactiva-pausas-updated', refresh);
       window.removeEventListener('storage', refresh);
     };

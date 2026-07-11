@@ -14,6 +14,7 @@ import { Usuarios } from './views/admin/Usuarios';
 import { Analiticas } from './views/admin/Analiticas';
 import { Contenido } from './views/admin/Contenido';
 import { Emails } from './views/admin/Emails';
+import { Feedback } from './views/admin/Feedback';
 import { EmpresaOnboarding } from './views/EmpresaOnboarding';
 import { UsuarioOnboarding } from './views/UsuarioOnboarding';
 import './index.css';
@@ -34,6 +35,7 @@ function App() {
               <Route path="usuarios" element={<Usuarios />} />
               <Route path="analiticas" element={<Analiticas />} />
               <Route path="emails" element={<Emails />} />
+              <Route path="feedback" element={<Feedback />} />
             </Route>
 
             {/* Rutas de RRHH */}
@@ -56,6 +58,7 @@ function App() {
             {/* Redirección por defecto */}
             <Route path="onboarding/empresa/:token" element={<EmpresaOnboarding />} />
             <Route path="onboarding/usuario/:token" element={<UsuarioOnboarding />} />
+            <Route path="invitacion/:token" element={<UsuarioOnboarding />} />
             <Route path="*" element={<Navigate to="login" replace />} />
           </Routes>
         </div>

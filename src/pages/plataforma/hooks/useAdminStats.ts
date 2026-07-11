@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 /**
  * Hook de métricas para las vistas de Admin (Dashboard / Analíticas).
@@ -19,6 +20,7 @@ import { useEffect, useState } from 'react';
  */
 
 interface PausaGuardada {
+  profileId?: string;
   dia: string;
   bloque: 'morning' | 'afternoon';
   fecha: string;
@@ -64,6 +66,48 @@ const DAYS_SHORT: Record<string, string> = { Lunes: 'Lun', Miércoles: 'Mié', V
 const FEELING_TO_SCORE: Record<string, number> = {
   Mal: 1, Regular: 2, Bien: 3, 'Muy bien': 4, Genial: 5,
 };
+
+const mapPauseRows = (rows: any[]): PausaGuardada[] => rows.map((row) => ({
+  profileId: row.profile_id,
+  dia: row.day_label,
+  bloque: row.block,
+  fecha: row.occurred_at,
+  tipo: row.answers?.tipo ?? 'diario',
+  energia: row.energy ?? row.answers?.energia,
+  dolor: row.has_pain ?? row.answers?.dolor,
+  zona: row.pain_zone ?? row.answers?.zona,
+  feeling: row.feeling ?? row.answers?.feeling,
+  respuestas: {
+    feeling: row.feeling ?? row.answers?.feeling,
+    energia: row.energy ?? row.answers?.energia,
+    dolor: row.has_pain ?? row.answers?.dolor,
+    zona: row.pain_zone ?? row.answers?.zona,
+    tension: row.answers?.tension ?? row.answers?.estres,
+    trabajo: row.answers?.trabajo,
+    ayuda: row.answers?.ayuda,
+    comentario: row.answers?.comentario ?? row.answers?.mejora,
+  },
+}));
+
+const readPausasFromSupabase = async (companyId?: string): Promise<PausaGuardada[] | null> => {
+  if (!supabase) return null;
+
+  let query = supabase
+    .from('pause_sessions')
+    .select('profile_id, day_label, block, occurred_at, energy, feeling, has_pain, pain_zone, answers')
+    .order('occurred_at', { ascending: false });
+
+  if (companyId) query = query.eq('company_id', companyId);
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    console.error('No se pudieron cargar métricas desde Supabase', error);
+    return null;
+  }
+
+  return mapPauseRows(data);
+};
 const AYUDA_TO_SATISF: Record<string, number> = {
   'Sí, mucho': 90, 'Sí, un poco': 55, No: 15,
 };
@@ -82,7 +126,7 @@ const readPausasFromStorage = (): PausaGuardada[] => {
   }
 };
 
-const getCampo = <T,>(p: PausaGuardada, campo: keyof PausaGuardada, fallback?: T): T | undefined => {
+const getCampo = <T,>(p: PausaGuardada, campo: keyof PausaGuardada | keyof NonNullable<PausaGuardada['respuestas']>, fallback?: T): T | undefined => {
   return (p[campo] ?? (p.respuestas as any)?.[campo] ?? fallback) as T | undefined;
 };
 
@@ -90,7 +134,8 @@ const computeStats = (pausas: PausaGuardada[]): AdminStats => {
   const totalPausas = pausas.length;
   const totalObjetivo = DAYS.length * 2;
   const hayDatos = totalPausas > 0;
-  const usuariosCount = hayDatos ? 1 : 0;
+  const usuariosUnicos = new Set(pausas.map(p => p.profileId).filter(Boolean));
+  const usuariosCount = usuariosUnicos.size > 0 ? usuariosUnicos.size : hayDatos ? 1 : 0;
   const adherencia = Math.min(100, Math.round((totalPausas / totalObjetivo) * 100));
 
   // Estado físico
@@ -193,18 +238,26 @@ const computeStats = (pausas: PausaGuardada[]): AdminStats => {
   };
 };
 
-export function useAdminStats(): AdminStats {
-  const [stats, setStats] = useState<AdminStats>(() => computeStats(readPausasFromStorage()));
+export function useAdminStats(companyId?: string): AdminStats {
+  const [stats, setStats] = useState<AdminStats>(() => computeStats(supabase ? [] : readPausasFromStorage()));
 
   useEffect(() => {
-    const refresh = () => setStats(computeStats(readPausasFromStorage()));
+    let mounted = true;
+    const refresh = () => {
+      setStats(computeStats(supabase ? [] : readPausasFromStorage()));
+      readPausasFromSupabase(companyId).then((pausas) => {
+        if (mounted && pausas) setStats(computeStats(pausas));
+      });
+    };
+    refresh();
     window.addEventListener('reactiva-pausas-updated', refresh);
     window.addEventListener('storage', refresh);
     return () => {
+      mounted = false;
       window.removeEventListener('reactiva-pausas-updated', refresh);
       window.removeEventListener('storage', refresh);
     };
-  }, []);
+  }, [companyId]);
 
   return stats;
 }
