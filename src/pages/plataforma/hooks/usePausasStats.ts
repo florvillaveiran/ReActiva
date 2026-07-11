@@ -204,12 +204,12 @@ const computeStats = (pausas: PausaGuardada[]): PausasStats => {
 };
 
 export function usePausasStats(): PausasStats {
-  const [stats, setStats] = useState<PausasStats>(() => computeStats(readPausas()));
+  const [stats, setStats] = useState<PausasStats>(() => computeStats(supabase ? [] : readPausas()));
 
   useEffect(() => {
     let mounted = true;
     const refresh = () => {
-      setStats(computeStats(readPausas()));
+      setStats(computeStats(supabase ? [] : readPausas()));
       readPausasFromSupabase().then((pausas) => {
         if (mounted && pausas) setStats(computeStats(pausas));
       });

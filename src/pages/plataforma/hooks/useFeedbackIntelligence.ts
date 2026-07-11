@@ -60,27 +60,6 @@ const TOPICS = [
   { key: 'accesibilidad', label: 'accesibilidad', action: 'Revisar contraste, tamaños y navegación de la plataforma.' },
 ];
 
-const AREAS = ['Operaciones', 'Administración', 'Comercial', 'RRHH', 'Tecnología', 'Atención al cliente'];
-
-const DEMO_COMMENTS = [
-  'Me gustó mucho la duración de los microentrenamientos, son fáciles de hacer entre reuniones.',
-  'Sería bueno sumar más ejercicios para cuello y cervicales.',
-  'Los ejercicios de respiración me ayudaron a bajar la tensión al final de la jornada.',
-  'El horario del viernes a veces se me complica, lo movería un poco más temprano.',
-  'Me gustaría tener más pausas de movilidad para espalda y hombros.',
-  'El video de respiración es excelente, claro y muy práctico.',
-  'Tuve problema para cargar un video desde la plataforma.',
-  'Podrían agregar un taller corto de fuerza para quienes pasan mucho tiempo sentados.',
-  'ReActiva Coach me dio recomendaciones útiles para organizar mis pausas.',
-  'La academia podría tener más talleres de ergonomía y postura.',
-  'Me encantó que las pausas sean cortas y no corten el ritmo de trabajo.',
-  'Necesito más opciones para dolor de cuello después de muchas horas de pantalla.',
-  'A veces el recordatorio llega en un horario que no coincide con mi agenda.',
-  'La plataforma es fácil de usar y encuentro rápido lo que necesito.',
-  'Me gustaría más contenido de respiración para días de mucho estrés.',
-  'Detecté un problema de accesibilidad en algunos textos chicos.',
-];
-
 const includesAny = (text: string, words: string[]) => words.some(word => text.includes(word));
 
 const classify = (comment: string): { tipo: FeedbackComment['tipo']; categoria: FeedbackKind; score: number } => {
@@ -98,26 +77,6 @@ const classify = (comment: string): { tipo: FeedbackComment['tipo']; categoria: 
 
 const monthKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`;
 
-const createDemoFeedback = (): FeedbackComment[] => {
-  const now = new Date();
-  return Array.from({ length: 184 }, (_, index) => {
-    const dayOffset = index < 161 ? index % 27 : 32 + (index % 25);
-    const fecha = new Date(now);
-    fecha.setDate(now.getDate() - dayOffset);
-    const comentario = DEMO_COMMENTS[index % DEMO_COMMENTS.length];
-    const classified = classify(comentario);
-    return {
-      id: `demo-feedback-${index}`,
-      empresa: ['Empresa Alpha', 'Empresa Beta', 'Empresa Gamma'][index % 3],
-      area: AREAS[index % AREAS.length],
-      fecha: fecha.toISOString(),
-      comentario,
-      ...classified,
-      destacado: classified.score >= 76 || index % 13 === 0,
-    };
-  });
-};
-
 const readStoredFeedback = (): FeedbackComment[] => {
   const db = getDB();
   const empresasById = new Map(db.empresas.map(empresa => [empresa.id, empresa.nombre]));
@@ -131,7 +90,7 @@ const readStoredFeedback = (): FeedbackComment[] => {
     comments.push({
       id: `form-${form.usuario_id}-${form.fecha}-${index}`,
       empresa: user ? empresasById.get(user.empresa_id) ?? 'Sin empresa' : 'Sin empresa',
-      area: user?.onboardingData?.area ?? AREAS[index % AREAS.length],
+      area: user?.onboardingData?.area ?? 'General',
       fecha: form.fecha,
       comentario: form.comentario.trim(),
       ...classified,
@@ -195,6 +154,7 @@ const readSupabaseFeedback = async (): Promise<FeedbackComment[] | null> => {
 };
 
 const topMentions = (comments: FeedbackComment[], options: { keys: string[]; fallback: string[] }) => {
+  if (comments.length === 0) return [];
   const text = comments.map(item => item.comentario.toLowerCase()).join(' ');
   const ranked = options.keys
     .map(key => ({ key, count: (text.match(new RegExp(key, 'g')) || []).length }))
@@ -286,8 +246,8 @@ export function useFeedbackIntelligence(): FeedbackIntelligence {
   }, []);
 
   return useMemo(() => {
-    if (supabaseComments && supabaseComments.length > 0) return computeIntelligence(supabaseComments);
+    if (supabase) return computeIntelligence(supabaseComments ?? []);
     const stored = readStoredFeedback();
-    return computeIntelligence(stored.length > 0 ? stored : createDemoFeedback());
+    return computeIntelligence(stored);
   }, [version, supabaseComments]);
 }

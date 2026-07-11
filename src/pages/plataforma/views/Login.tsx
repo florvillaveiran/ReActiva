@@ -23,6 +23,7 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [clearingSession, setClearingSession] = useState(false);
+  const [allowInvitationSession, setAllowInvitationSession] = useState(false);
   const { user, login, createAccess, activateInvitation, resetPassword, logout } = useAuth();
   const showDemoAccounts = false;
   const invitationToken = searchParams.get('token') ?? '';
@@ -68,12 +69,12 @@ export const Login: React.FC = () => {
   }, [invitationEmail, invitationToken, invitationType]);
 
   useEffect(() => {
-    if (!user || !invitationToken || clearingSession) return;
+    if (!user || !invitationToken || clearingSession || allowInvitationSession) return;
     setClearingSession(true);
     void logout().finally(() => setClearingSession(false));
-  }, [clearingSession, invitationToken, logout, user]);
+  }, [allowInvitationSession, clearingSession, invitationToken, logout, user]);
 
-  if (user && invitationToken) {
+  if (user && invitationToken && !allowInvitationSession) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>
         <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
@@ -106,6 +107,7 @@ export const Login: React.FC = () => {
         setLoading(false);
         return;
       }
+      setAllowInvitationSession(true);
       const result = await createAccess({
         email: email.trim(),
         password,
@@ -115,6 +117,7 @@ export const Login: React.FC = () => {
       ok = result.ok;
       if (result.message) nextError = result.message;
     } else {
+      setAllowInvitationSession(true);
       ok = await login(email.trim(), password);
       if (ok && invitationToken) {
         const activated = await activateInvitation(invitationToken);
@@ -126,12 +129,14 @@ export const Login: React.FC = () => {
     }
 
     if (!ok && nextError) {
+      setAllowInvitationSession(false);
       setError(nextError);
       setLoading(false);
       return;
     }
 
     if (!ok) {
+      setAllowInvitationSession(false);
       setError('Email o contraseña incorrectos. Verificá tus datos.');
     }
     setLoading(false);

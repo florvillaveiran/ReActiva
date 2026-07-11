@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getDB } from '../mock/data';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export type Role = 'admin' | 'usuario' | 'rrhh';
@@ -22,17 +21,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const DEMO_USERS = [
-  { email: 'admin@reactiva.com', password: 'Reactiva2025', role: 'admin' as Role, name: 'Administrador' },
-  { email: 'usuario@reactiva.com', password: 'Reactiva2025', role: 'usuario' as Role, name: 'Usuario Demo' },
-  { email: 'rrhh@alpha.com', password: 'Reactiva2025', role: 'rrhh' as Role, name: 'RRHH Empresa Alpha', empresa_id: 1 },
-];
-
-const persistMockUser = (setUser: (user: User) => void, user: User) => {
-  localStorage.setItem('reactiva_user', JSON.stringify(user));
-  setUser(user);
-};
 
 const roleFromValue = (value: unknown): Role => {
   if (value === 'admin' || value === 'rrhh' || value === 'usuario') return value;
@@ -116,10 +104,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoading(false);
           return;
         }
+      } else {
+        const storedUser = localStorage.getItem('reactiva_user');
+        if (storedUser && mounted) setUser(JSON.parse(storedUser));
       }
-
-      const storedUser = localStorage.getItem('reactiva_user');
-      if (storedUser && mounted) setUser(JSON.parse(storedUser));
       if (mounted) setIsLoading(false);
     };
 
@@ -140,42 +128,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const loginFallback = (email: string, password: string): boolean => {
-    const normalizedEmail = email.toLowerCase();
-    const found = DEMO_USERS.find(
-      (candidate) => candidate.email.toLowerCase() === normalizedEmail && candidate.password === password
-    );
-    if (found) {
-      persistMockUser(setUser, { email: found.email, role: found.role, name: found.name, empresa_id: found.empresa_id });
-      return true;
-    }
-
-    const db = getDB();
-    const invitedUser = db.usuarios.find((candidate) => candidate.email.toLowerCase() === normalizedEmail);
-    if (invitedUser && (password === invitedUser.passwordTemporal || password === 'Reactiva2025')) {
-      persistMockUser(setUser, {
-        email: invitedUser.email,
-        role: 'usuario',
-        name: invitedUser.nombre,
-        empresa_id: invitedUser.empresa_id,
-      });
-      return true;
-    }
-
-    const rrhhEmpresa = db.empresas.find((empresa) => empresa.rrhhEmail?.toLowerCase() === normalizedEmail);
-    if (rrhhEmpresa && password === 'Reactiva2025') {
-      persistMockUser(setUser, {
-        email: rrhhEmpresa.rrhhEmail ?? email,
-        role: 'rrhh',
-        name: rrhhEmpresa.contactoNombre ? `RRHH ${rrhhEmpresa.nombre}` : 'Responsable RRHH',
-        empresa_id: rrhhEmpresa.id,
-      });
-      return true;
-    }
-
-    return false;
-  };
-
   const activateInvitation = async (invitationToken: string): Promise<boolean> => {
     if (!supabase || !invitationToken) return false;
     return loadSupabaseUser(invitationToken);
@@ -188,9 +140,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const loaded = await loadSupabaseUser();
         if (loaded) return true;
       }
+      return false;
     }
 
-    return loginFallback(email, password);
+    return false;
   };
 
   const createAccess = async ({ email, password, fullName, invitationToken }: { email: string; password: string; fullName: string; invitationToken?: string }): Promise<{ ok: boolean; message?: string }> => {
@@ -210,6 +163,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
+      const normalizedError = error.message?.toLowerCase() ?? '';
+      if (normalizedError.includes('already') || normalizedError.includes('user_already_exists')) {
+        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        if (!loginError && await loadSupabaseUser(invitationToken)) return { ok: true };
+      }
       return { ok: false, message: readableAuthError(error) };
     }
 

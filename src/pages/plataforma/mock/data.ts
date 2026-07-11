@@ -138,7 +138,7 @@ export interface Workshop {
 }
 
 /** Helper to persist and retrieve mock data from localStorage */
-export const STORAGE_KEY = 'metodo-reactiva-mock';
+export const STORAGE_KEY = 'metodo-reactiva-empty-v1';
 
 export interface MockDB {
   empresas: Empresa[];
@@ -156,78 +156,18 @@ export interface MockDB {
 }
 
 const defaultData: MockDB = {
-  empresas: [
-    { id: 1, nombre: 'Empresa Alpha', ubicacion: 'Madrid, España', empleados: [1, 2], estado: 'Activa', contactoNombre: 'María González', rrhhEmail: 'rrhh@alpha.com' },
-    { id: 2, nombre: 'Empresa Beta', ubicacion: 'Bogotá, Colombia', empleados: [], estado: 'Activa', contactoNombre: 'Carlos Ramírez', rrhhEmail: 'contacto@beta.co' },
-    { id: 3, nombre: 'Empresa Gamma', ubicacion: 'CDMX, México', empleados: [], estado: 'Pendiente onboarding', contactoNombre: 'Ana Martínez', rrhhEmail: 'rh@gamma.mx', token: 'demo-token-123' },
-  ],
-  usuarios: [
-    {
-      id: 1,
-      nombre: 'Ana Pérez',
-      email: 'ana@example.com',
-      empresa_id: 1,
-      participacion: 80,
-      dolor: false,
-      ultima_interaccion: new Date().toISOString(),
-      estado: 'Activo',
-      fechaIngreso: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      nombre: 'Luis Gómez',
-      email: 'luis@example.com',
-      empresa_id: 1,
-      participacion: 65,
-      dolor: true,
-      ultima_interaccion: new Date().toISOString(),
-      estado: 'Activo',
-      fechaIngreso: new Date().toISOString(),
-    },
-  ],
-  videos: [
-    {
-      id: 1,
-      dia: 'viernes',
-      tipo: 'tarde',
-      hora: '17:00',
-      empresa_id: undefined,
-      url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    },
-    {
-      id: 2,
-      dia: 'lunes',
-      tipo: 'manana',
-      hora: '09:00',
-      empresa_id: undefined,
-      url: 'https://www.youtube.com/embed/9bZkp7q19f0',
-    },
-  ],
+  empresas: [],
+  usuarios: [],
+  videos: [],
   progresos: [],
   formularios: [],
   invitacionesUsuarios: [],
   emailAutomations: [],
   emailEvents: [],
-  mediaFiles: [
-    { id: '1', name: 'Respiracion Diafragmatica.mp4', type: 'video', sizeBytes: 15400000, url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', createdAt: new Date().toISOString() },
-    { id: '2', name: 'Portada Taller Ergo.jpg', type: 'image', sizeBytes: 450000, url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80', createdAt: new Date().toISOString() },
-  ],
-  coachAdvices: [
-    { id: '1', title: 'Regla 20-20-20', shortText: 'Descansa tu vista cada 20 minutos.', content: 'Cada 20 minutos, mira algo a 20 pies de distancia por 20 segundos.', category: 'Salud Visual', tags: ['Visión', 'Pantallas'], priority: 1, active: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), views: 45 },
-  ],
-  workshops: [
-    { id: '1', title: 'Ergonomía en casa', shortDescription: 'Aprende a preparar tu espacio.', category: 'Ergonomía', level: 'Básico', durationMinutes: 15, tags: ['Trabajo remoto', 'Postura'], active: true, featured: true, order: 1, createdAt: new Date().toISOString(), views: 120, coverImageId: '2' },
-  ],
-  tags: [
-    { id: '1', name: 'Ergonomía' },
-    { id: '2', name: 'Dolor cervical' },
-    { id: '3', name: 'Espalda baja' },
-    { id: '4', name: 'Estrés' },
-    { id: '5', name: 'Trabajo remoto' },
-    { id: '6', name: 'Visión' },
-    { id: '7', name: 'Pantallas' },
-    { id: '8', name: 'Postura' }
-  ],
+  mediaFiles: [],
+  coachAdvices: [],
+  workshops: [],
+  tags: [],
 };
 
 export const getDB = (): MockDB => {

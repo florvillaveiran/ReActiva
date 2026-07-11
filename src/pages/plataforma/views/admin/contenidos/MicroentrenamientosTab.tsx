@@ -3,39 +3,16 @@ import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, Chevr
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS_LABELS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
-const EMPRESAS = ['Todas las empresas','Global','Empresa Alpha','Empresa Beta'];
+const EMPRESAS = ['Todas las empresas','Global'];
 
-// Mock contenido base (Lun/Mié/Vie)
 const BASE_BLOQUES = [
-  { dia: 'Lunes',     bloques: [
-    { id:1, turno:'Mañana', horario:'08:00', empresa:'Global',        tipo:'Activación',   estado:'publicado'  },
-    { id:2, turno:'Tarde',  horario:'15:00', empresa:'Global',        tipo:'Relajación',   estado:'publicado'  },
-  ]},
-  { dia: 'Miércoles', bloques: [
-    { id:3, turno:'Mañana', horario:'08:00', empresa:'Empresa Alpha', tipo:'Postura',      estado:'programado' },
-    { id:4, turno:'Tarde',  horario:'15:00', empresa:'Global',        tipo:'Respiración',  estado:'programado' },
-  ]},
-  { dia: 'Viernes',   bloques: [
-    { id:5, turno:'Mañana', horario:'08:00', empresa:'Empresa Beta',  tipo:'Energía',      estado:'borrador'   },
-    { id:6, turno:'Tarde',  horario:'15:00', empresa:'Global',        tipo:'Estiramiento', estado:'borrador'   },
-  ]},
+  { dia: 'Lunes', bloques: [] },
+  { dia: 'Miércoles', bloques: [] },
+  { dia: 'Viernes', bloques: [] },
 ];
 
 // Mock calendario mensual: días con contenido y sus mini-eventos
-const EVENTOS_MES: Record<number, {horario:string; empresa:string}[]> = {
-  5:  [{horario:'08:00', empresa:'Global'}, {horario:'15:00', empresa:'Global'}],
-  7:  [{horario:'08:00', empresa:'Empresa Alpha'}, {horario:'15:00', empresa:'Global'}],
-  9:  [{horario:'08:00', empresa:'Global'}, {horario:'15:00', empresa:'Empresa Beta'}],
-  12: [{horario:'08:00', empresa:'Global'}],
-  14: [{horario:'08:00', empresa:'Empresa Alpha'}, {horario:'15:00', empresa:'Global'}],
-  16: [{horario:'08:00', empresa:'Global'}, {horario:'15:00', empresa:'Global'}],
-  19: [{horario:'08:00', empresa:'Empresa Beta'}],
-  21: [{horario:'08:00', empresa:'Global'}, {horario:'15:00', empresa:'Empresa Alpha'}],
-  23: [{horario:'08:00', empresa:'Global'}],
-  25: [{horario:'08:00', empresa:'Global'}, {horario:'15:00', empresa:'Global'}],
-  27: [{horario:'08:00', empresa:'Empresa Alpha'}, {horario:'15:00', empresa:'Global'}],
-  29: [{horario:'08:00', empresa:'Global'}, {horario:'15:00', empresa:'Empresa Beta'}],
-};
+const EVENTOS_MES: Record<number, {horario:string; empresa:string}[]> = {};
 
 function getCalDays(year:number, month:number) {
   const fd = new Date(year, month, 1).getDay();
@@ -59,8 +36,6 @@ function fmt(d:Date) { return `${d.getDate()} ${MESES[d.getMonth()]}`; }
 // Colores por empresa
 const colorEmpresa: Record<string,{bg:string;text:string}> = {
   'Global':        {bg:'#f0fdfa', text:'#0d9488'},
-  'Empresa Alpha': {bg:'#eff6ff', text:'#3b82f6'},
-  'Empresa Beta':  {bg:'#faf5ff', text:'#a855f7'},
 };
 
 export const MicroentrenamientosTab: React.FC = () => {
@@ -330,7 +305,7 @@ export const MicroentrenamientosTab: React.FC = () => {
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Empresa</label>
                 <select className="input-field" style={{fontSize:'0.875rem'}}>
-                  {['Global (todas)','Empresa Alpha','Empresa Beta'].map(e=><option key={e}>{e}</option>)}
+                  {['Global (todas)'].map(e=><option key={e}>{e}</option>)}
                 </select>
               </div>
             </div>

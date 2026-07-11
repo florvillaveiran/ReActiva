@@ -102,6 +102,7 @@ export const Feedback: React.FC = () => {
               <div key={group.title} style={{ background: group.bg, borderRadius: 10, padding: '1rem', minHeight: 160 }}>
                 <h4 style={{ margin: '0 0 0.75rem', color: group.color, fontSize: '0.9rem' }}>{group.title}</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  {group.items.length === 0 && <p style={{ margin: 0, color: '#64748b', fontSize: '0.84rem' }}>Sin datos.</p>}
                   {group.items.map(item => (
                     <p key={item} style={{ margin: 0, color: '#334155', fontSize: '0.84rem', lineHeight: 1.45 }}>• {item}</p>
                   ))}
@@ -119,6 +120,7 @@ export const Feedback: React.FC = () => {
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Tendencias del mes</h3>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {intelligence.trends.length === 0 && <p style={{ margin: 0, color: '#64748b', fontSize: '0.84rem' }}>Sin tendencias detectadas.</p>}
             {intelligence.trends.map(trend => (
               <div key={trend.tema} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.8rem' }}>
                 <p style={{ margin: 0, fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>{trend.text}</p>
@@ -175,6 +177,7 @@ export const Feedback: React.FC = () => {
         <section className="card" style={{ margin: 0, padding: '1.5rem', border: '1px solid #eef0f3', borderRadius: 12 }}>
           <h3 style={{ margin: '0 0 1rem', fontSize: '1.1rem', color: '#1e293b' }}>Comentarios destacados</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            {highlighted.length === 0 && <p style={{ margin: 0, color: '#64748b', fontSize: '0.84rem' }}>Sin comentarios destacados.</p>}
             {highlighted.map(item => (
               <article key={item.id} style={{ padding: '1rem', borderRadius: 10, background: '#f8fafc', border: '1px solid #eef0f3' }}>
                 <p style={{ margin: '0 0 0.65rem', color: '#334155', lineHeight: 1.5, fontSize: '0.88rem' }}>{item.comentario}</p>
@@ -190,6 +193,7 @@ export const Feedback: React.FC = () => {
             <span style={{ color: '#64748b', fontSize: '0.82rem', fontWeight: 600 }}>{filtered.length} resultados</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: showAllComments ? 560 : 460, overflowY: showAllComments ? 'auto' : 'hidden', paddingRight: showAllComments ? '0.25rem' : 0 }}>
+          {visibleComments.length === 0 && <div className="card" style={{ margin: 0, padding: '2rem', textAlign: 'center', color: '#64748b' }}>Todavía no hay comentarios.</div>}
           {visibleComments.map(item => {
             const tone = typeTone[item.tipo];
             return (

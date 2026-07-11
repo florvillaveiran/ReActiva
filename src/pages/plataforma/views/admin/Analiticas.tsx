@@ -528,7 +528,7 @@ export const Analiticas: React.FC = () => {
     return weeklyRanges[semanaSel] ?? { from: '', to: '' };
   }, [anioSel, fechaDesde, fechaHasta, mesSel, periodo, semanaSel]);
 
-  if (rrhhEmpresaKey) {
+  if (false && rrhhEmpresaKey) {
     const kpis = [
       { label: 'Participacion', value: data.kpis.participacion, previous: 78, color: 'var(--primary-color)', bg: '#f0fdfa', delta: '+8 pp' },
       { label: 'Foco', value: data.kpis.foco, previous: 72, color: '#3b82f6', bg: '#eff6ff', delta: '+6 pp' },

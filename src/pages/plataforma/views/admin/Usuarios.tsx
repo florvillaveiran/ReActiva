@@ -78,7 +78,6 @@ const companyStatusFromSupabase = (status?: string): Empresa['estado'] => {
   return 'Activa';
 };
 
-// Generador de mock data evolutiva para el usuario
 const generarMockAnaliticas = (periodo: string, data: any) => {
   let labels = [];
   if (periodo === 'semanal') labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
@@ -86,36 +85,25 @@ const generarMockAnaliticas = (periodo: string, data: any) => {
   else if (periodo === 'anual') labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   else labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
 
-  const baseEnergia = data?.energia === 'Baja' ? 30 : data?.energia === 'Media' ? 60 : 85;
-  const baseDolor = (data?.dolores?.length > 0 && !data?.dolores.includes('No tengo dolores')) ? 70 : 20;
+  const evolucion = labels.map(name => ({
+    name,
+    participacion: 0,
+    energiaPct: 0,
+    dolor: 0,
+    foco: 0,
+    impacto: 0,
+  }));
 
-  const evolucion = labels.map((name, i) => {
-    const factorMejora = i * (periodo === 'anual' ? 2 : 5);
-    return {
-      name,
-      participacion: Math.min(100, 60 + factorMejora + Math.random() * 10),
-      energiaPct: Math.min(100, baseEnergia + factorMejora * 0.8 + Math.random() * 10),
-      dolor: Math.max(0, baseDolor - factorMejora + Math.random() * 10),
-      foco: Math.min(100, 50 + factorMejora + Math.random() * 10),
-      impacto: Math.min(100, 65 + factorMejora + Math.random() * 5),
-    };
-  });
-
-  const last = evolucion[evolucion.length - 1];
   return {
     evolucion,
     kpis: {
-      participacion: Math.round(last.participacion),
-      dolor: Math.round(last.dolor),
-      foco: Math.round(last.foco),
-      impacto: Math.round(last.impacto),
-      energia: Math.round(last.energiaPct),
+      participacion: 0,
+      dolor: 0,
+      foco: 0,
+      impacto: 0,
+      energia: 0,
     },
-    zonasDolor: [
-      { zona: 'Cervical', tendencia: 'Disminuyó', color: '#10b981', icon: 'down' },
-      { zona: 'Lumbar', tendencia: 'Se mantuvo', color: '#f59e0b', icon: 'minus' },
-      { zona: 'Hombros', tendencia: 'Aumentó', color: '#ef4444', icon: 'up' },
-    ]
+    zonasDolor: [],
   };
 };
 

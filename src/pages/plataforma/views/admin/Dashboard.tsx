@@ -6,38 +6,6 @@ import { useAdminStats } from '../../hooks/useAdminStats';
 import { useEmpresas } from '../../context/EmpresasContext';
 import { useFeedbackIntelligence } from '../../hooks/useFeedbackIntelligence';
 
-// Mock data base (fallback cuando no hay datos reales o se filtra por empresa demo)
-const dataGlobal = [
-  { name: 'Lun', participacion: 85 },
-  { name: 'Mié', participacion: 90 },
-  { name: 'Vie', participacion: 95 },
-];
-
-const generateMockDataForEmpresa = (empleadosCount: number) => {
-  const adherencia = Math.floor(Math.random() * 20) + 70; // 70-90
-  return {
-    totales: empleadosCount || Math.floor(Math.random() * 100) + 10,
-    pausas: (empleadosCount || 50) * 8,
-    participacion: `${adherencia}%`,
-    dolor: `${Math.floor(Math.random() * 15) + 5}%`,
-    emocion: `${(Math.random() * 1 + 3.5).toFixed(1)}/5`,
-    zonas: ['Cuello', 'Hombros'],
-    data: [
-      { name: 'Lun', participacion: adherencia },
-      { name: 'Mié', participacion: adherencia - 5 },
-      { name: 'Vie', participacion: adherencia + 5 > 100 ? 100 : adherencia + 5 },
-    ],
-    foco: { enfocado: 65, normal: 25, disperso: 10 },
-    tension: [
-      { name: 'A la mañana', valor: 15 },
-      { name: 'Al mediodía', valor: 10 },
-      { name: 'A la tarde', valor: 45 },
-      { name: 'Al final de la jornada', valor: 30 },
-      { name: 'No sentí tensión', valor: 0 },
-    ]
-  };
-};
-
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [empresaId, setEmpresaId] = useState('all');
@@ -80,27 +48,18 @@ export const AdminDashboard: React.FC = () => {
       };
     }
 
-    if (empresaId === 'all') {
-      return {
-        totales: '1,240',
-        pausas: '3,450',
-        participacion: '87%',
-        dolor: '12%',
-        emocion: '3.9/5',
-        zonas: ['Cuello', 'Hombros'],
-        data: dataGlobal,
-        foco: { enfocado: 65, normal: 25, disperso: 10 },
-        tension: [
-          { name: 'A la tarde', valor: 45 },
-          { name: 'Al final de la jornada', valor: 30 },
-          { name: 'A la mañana', valor: 15 },
-          { name: 'Al mediodía', valor: 10 },
-        ],
-      };
-    }
-
-    return generateMockDataForEmpresa(selectedEmpresa?.empleados.length || 0);
-  }, [empresaId, stats, selectedEmpresa]);
+    return {
+      totales: '0',
+      pausas: '0',
+      participacion: '0%',
+      dolor: '0%',
+      emocion: '0/5',
+      zonas: [],
+      data: [],
+      foco: { enfocado: 0, normal: 0, disperso: 0 },
+      tension: [],
+    };
+  }, [stats]);
   const lastFeedbackDate = feedback.stats.lastDate
     ? new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(new Date(feedback.stats.lastDate))
     : 'Sin registros';
@@ -181,7 +140,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
           <div style={{ paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
             <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
-              Nivel de energía y motivación reportado consistentemente alto esta semana.
+              {stats.hayDatos ? 'Promedio calculado con las respuestas recibidas.' : 'Todavía no hay respuestas para calcular este indicador.'}
             </p>
           </div>
         </div>
