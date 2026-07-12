@@ -24,11 +24,23 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [clearingSession, setClearingSession] = useState(false);
   const [allowInvitationSession, setAllowInvitationSession] = useState(false);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const { user, login, createAccess, activateInvitation, resetPassword, logout } = useAuth();
   const showDemoAccounts = false;
   const invitationToken = searchParams.get('token') ?? '';
   const invitationType = searchParams.get('tipo') ?? '';
   const invitationEmail = searchParams.get('email') ?? '';
+
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    if (hashParams.get('type') === 'recovery') {
+      setIsRecoveryMode(true);
+      setAuthMode('login');
+      setPassword('');
+      setConfirmPassword('');
+      setError('');
+    }
+  }, []);
 
   useEffect(() => {
     const loadInvitationContext = async () => {
@@ -84,7 +96,7 @@ export const Login: React.FC = () => {
     );
   }
 
-  if (user) {
+  if (user && !isRecoveryMode) {
     return <Navigate to={homeForRole(user.role)} />;
   }
 
@@ -95,6 +107,37 @@ export const Login: React.FC = () => {
 
     let ok = false;
     let nextError = '';
+
+    if (isRecoveryMode) {
+      if (password.length < 6) {
+        setError('La contraseña debe tener al menos 6 caracteres.');
+        setLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Las contraseñas no coinciden.');
+        setLoading(false);
+        return;
+      }
+      if (!supabase) {
+        setError('Supabase no está configurado.');
+        setLoading(false);
+        return;
+      }
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) {
+        setError(updateError.message || 'No pudimos actualizar la contraseña.');
+        setLoading(false);
+        return;
+      }
+      window.history.replaceState(null, '', '/plataforma/login');
+      setIsRecoveryMode(false);
+      setError('Contraseña actualizada. Ya podés ingresar con tu nueva contraseña.');
+      setPassword('');
+      setConfirmPassword('');
+      setLoading(false);
+      return;
+    }
 
     if (authMode === 'create') {
       if (!fullName.trim()) {
@@ -205,7 +248,7 @@ export const Login: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
             <div style={{ height: 1, backgroundColor: 'var(--border-color)', flex: 1 }} />
             <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
-              {authMode === 'create' ? 'Creá tu acceso con correo' : 'Ingresá con tu correo'}
+            {isRecoveryMode ? 'Creá tu nueva contraseña' : authMode === 'create' ? 'Creá tu acceso con correo' : 'Ingresá con tu correo'}
             </span>
             <div style={{ height: 1, backgroundColor: 'var(--border-color)', flex: 1 }} />
           </div>
@@ -280,7 +323,7 @@ export const Login: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {authMode === 'create' && (
+            {authMode === 'create' && !isRecoveryMode && (
               <div>
                 <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' }}>
                   Nombre y apellido
@@ -298,7 +341,7 @@ export const Login: React.FC = () => {
             )}
 
             {/* Email */}
-            <div>
+            {!isRecoveryMode && <div>
               <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' }}>
                 Correo electrónico
               </label>
@@ -311,12 +354,12 @@ export const Login: React.FC = () => {
                 required
                 autoComplete="email"
               />
-            </div>
+            </div>}
 
             {/* Contraseña */}
             <div>
               <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' }}>
-                Contraseña
+                {isRecoveryMode ? 'Nueva contraseña' : 'Contraseña'}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -326,7 +369,7 @@ export const Login: React.FC = () => {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   required
-                  autoComplete={authMode === 'create' ? 'new-password' : 'current-password'}
+                  autoComplete={authMode === 'create' || isRecoveryMode ? 'new-password' : 'current-password'}
                   style={{ paddingRight: '2.75rem' }}
                 />
                 <button
@@ -342,14 +385,14 @@ export const Login: React.FC = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {authMode === 'create' && (
+              {(authMode === 'create' || isRecoveryMode) && (
                 <p style={{ margin: '0.4rem 0 0', color: 'var(--text-muted)', fontSize: '0.74rem', lineHeight: 1.35 }}>
                   Mínimo 6 caracteres.
                 </p>
               )}
             </div>
 
-            {authMode === 'create' && (
+            {(authMode === 'create' || isRecoveryMode) && (
               <div>
                 <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' }}>
                   Confirmar contraseña
@@ -394,13 +437,13 @@ export const Login: React.FC = () => {
               {loading ? (authMode === 'create' ? 'Creando acceso...' : 'Ingresando...') : (
                 <>
                   <LogIn size={18} />
-                  {authMode === 'create' ? 'Crear acceso' : 'Ingresar'}
+                  {isRecoveryMode ? 'Guardar contraseña' : authMode === 'create' ? 'Crear acceso' : 'Ingresar'}
                 </>
               )}
             </button>
           </form>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem', textAlign: 'center' }}>
+          {!isRecoveryMode && <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem', textAlign: 'center' }}>
             <button
               type="button"
               onClick={handlePasswordReset}
@@ -411,7 +454,7 @@ export const Login: React.FC = () => {
             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.45 }}>
               ¿No tenés cuenta? Contactá a tu empresa o al equipo de ReActiva.
             </p>
-          </div>
+          </div>}
         </div>
 
         {/* Cuentas demo */}
