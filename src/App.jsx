@@ -11,7 +11,6 @@ function App() {
         <Route path="/" element={<UserDashboard />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/usuario" element={<Usuario />} />
-        {/* Cualquier ruta que no exista vuelve al home (útil para Netlify) */}
         <Route path="*" element={<UserDashboard />} />
       </Routes>
     </BrowserRouter>
