@@ -3,7 +3,7 @@ import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, Chevr
 import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, fetchContentLibrary, getContentLibrary, removeContentItemFromSupabase, saveAcademyItem, saveCoachItem } from '../../data/contentLibrary';
 import { useEmpresas } from '../../context/EmpresasContext';
 import { fetchVideoUnlockSchedule, loadVideoUnlockSchedule, persistVideoUnlockSchedule, UNLOCK_LEAD_MINUTES, UnlockBlock, UnlockDay, VideoUnlockItem } from '../../lib/videoUnlockSchedule';
-import { fetchScheduledVideos, saveScheduledVideo, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
+import { deleteScheduledVideo, fetchScheduledVideos, saveScheduledVideo, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
 
 type AdminSection = 'micro' | 'coach' | 'academy' | 'media';
@@ -734,12 +734,15 @@ export const Contenido: React.FC = () => {
           const unlock = unlockSchedule.find(item => item.day === video.day && item.block === video.block);
           return {
             id: video.id,
+            day: video.day,
+            block: video.block,
             turno: video.block === 'morning' ? 'Mañana' : 'Tarde',
             tipo: video.title || 'Pausa activa',
             horario: unlock?.time ?? video.time,
             empresa: video.companyName ?? 'Global',
             estado: unlock?.enabled ? 'programado' : 'borrador',
             url: video.url,
+            createdAt: video.createdAt,
           };
         });
       return { ...d, fecha: fmt(fecha), bloques: videosDelDia };
@@ -823,6 +826,25 @@ export const Contenido: React.FC = () => {
     } finally {
       setSavingProgram(false);
     }
+  };
+
+  const eliminarVideoProgramado = async (video: ScheduledVideo) => {
+    if (!window.confirm(`Eliminar "${video.title}"? Esta pausa dejará de mostrarse a los usuarios.`)) return;
+
+    const result = await deleteScheduledVideo(video);
+    if (!result.ok) {
+      window.alert(result.error?.message ?? 'No pudimos eliminar el video programado.');
+      return;
+    }
+
+    setScheduledVideos(prev => prev.filter(item => !(
+      item.id === video.id
+      || (
+        item.day === video.day
+        && item.block === video.block
+        && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')
+      )
+    )));
   };
 
   const btnNav = (onClick:()=>void, children:React.ReactNode) => (
@@ -1003,6 +1025,18 @@ export const Contenido: React.FC = () => {
                           )}
                           <button onClick={()=>abrirModal()} style={{background:'none',border:'none',color:'#0d9488',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem'}}>
                             <Video size={12}/> Editar
+                          </button>
+                          <button onClick={() => void eliminarVideoProgramado({
+                            id: bloque.id,
+                            day: bloque.day,
+                            block: bloque.block,
+                            time: bloque.horario,
+                            title: bloque.tipo,
+                            url: bloque.url,
+                            companyName: bloque.empresa,
+                            createdAt: bloque.createdAt,
+                          })} title="Eliminar pausa" style={{background:'none',border:'none',color:'#ef4444',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem',marginLeft:'0.75rem'}}>
+                            <Trash2 size={12}/> Eliminar
                           </button>
                         </div>
                       </div>

@@ -828,15 +828,10 @@ export const Usuarios: React.FC = () => {
                     {inviteError}
                   </div>
                 )}
-                <div style={{ display: 'grid', gridTemplateColumns: isRrhh ? '1fr' : '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginTop: '0.5rem' }}>
                   <button type="button" disabled={inviteLoading} onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
                     <LinkIcon size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{inviteLoading ? 'Creando...' : isRrhh ? 'Generar link para empleados' : 'Generar enlace'}</span>
                   </button>
-                  {!isRrhh && (
-                    <button type="button" disabled={inviteLoading} onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
-                      <Mail size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{inviteLoading ? 'Creando...' : 'Generar para email'}</span>
-                    </button>
-                  )}
                 </div>
               </div>
             ) : (

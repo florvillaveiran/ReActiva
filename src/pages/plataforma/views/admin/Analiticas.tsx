@@ -375,6 +375,12 @@ const prettyZone = (name: string) => {
   return name;
 };
 
+const EmptyChartState: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
+  <div style={{ position: 'absolute', inset: 0, backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.88rem', lineHeight: 1.45, padding: '0 1rem' }}>
+    {children ?? 'Todavía no hay reportes para este período.'}
+  </div>
+);
+
 const PainZonesCard: React.FC<{ zonas: { name: string; valor: number }[]; totalPersonas: number }> = ({ zonas, totalPersonas }) => {
   const ordered = [...zonas]
     .filter(zone => ['cuello', 'hombros', 'espalda alta', 'espalda baja', 'munecas', 'muñecas', 'caderas', 'rodillas'].includes(normalizeZone(zone.name)))
@@ -740,6 +746,7 @@ export const Analiticas: React.FC = () => {
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Empresa */}
+          {user?.role !== 'rrhh' && (
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Filter size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
@@ -747,7 +754,6 @@ export const Analiticas: React.FC = () => {
               style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
               value={effectiveFiltro}
               onChange={(e) => setFiltro(e.target.value)}
-              disabled={!!rrhhEmpresaKey}
             >
               <option value="all">Todas</option>
               {empresas.map(emp => (
@@ -755,6 +761,7 @@ export const Analiticas: React.FC = () => {
               ))}
             </select>
           </div>
+          )}
 
           {/* Período (Principal) */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -873,7 +880,7 @@ export const Analiticas: React.FC = () => {
           {/* Participación */}
           <div className="card" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Participación</h3>
-            <div style={{ height: '180px' }}>
+            <div style={{ height: '180px', position: 'relative' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
@@ -883,6 +890,7 @@ export const Analiticas: React.FC = () => {
                   <Bar dataKey="participacion" name="Participación (%)" fill="var(--primary-color)" radius={[4, 4, 0, 0]} barSize={28} />
                 </BarChart>
               </ResponsiveContainer>
+              {!stats.hayDatos && <EmptyChartState />}
             </div>
           </div>
 
@@ -892,7 +900,7 @@ export const Analiticas: React.FC = () => {
           {/* Foco */}
           <div className="card" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Foco</h3>
-            <div style={{ height: '180px' }}>
+            <div style={{ height: '180px', position: 'relative' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <defs>
@@ -908,6 +916,7 @@ export const Analiticas: React.FC = () => {
                   <Area type="monotone" dataKey="foco" name="Foco (%)" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorFoco)" />
                 </AreaChart>
               </ResponsiveContainer>
+              {!stats.hayDatos && <EmptyChartState />}
             </div>
           </div>
         </div>
@@ -916,7 +925,7 @@ export const Analiticas: React.FC = () => {
           {/* Impacto Pausa */}
           <div className="card" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Impacto Pausa</h3>
-            <div style={{ height: '180px' }}>
+            <div style={{ height: '180px', position: 'relative' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <defs>
@@ -932,13 +941,14 @@ export const Analiticas: React.FC = () => {
                   <Area type="monotone" dataKey="impacto" name="Impacto (%)" stroke="#9333ea" strokeWidth={2.5} fillOpacity={1} fill="url(#colorImpacto)" />
                 </AreaChart>
               </ResponsiveContainer>
+              {!stats.hayDatos && <EmptyChartState />}
             </div>
           </div>
 
           {/* Energía */}
           <div className="card" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Energía</h3>
-            <div style={{ height: '180px' }}>
+            <div style={{ height: '180px', position: 'relative' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <defs>
@@ -954,6 +964,7 @@ export const Analiticas: React.FC = () => {
                   <Area type="monotone" dataKey="energiaPct" name="Energía (%)" stroke="#f59e0b" strokeWidth={2.5} fillOpacity={1} fill="url(#colorEnergia)" />
                 </AreaChart>
               </ResponsiveContainer>
+              {!stats.hayDatos && <EmptyChartState />}
             </div>
           </div>
 
@@ -962,7 +973,7 @@ export const Analiticas: React.FC = () => {
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: 6 }}>
               🕐 Momento de mayor tensión
             </h3>
-            <div style={{ height: '180px' }}>
+            <div style={{ height: '180px', position: 'relative' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart layout="vertical" data={data.tension} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
@@ -975,6 +986,7 @@ export const Analiticas: React.FC = () => {
                   <Bar dataKey="valor" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={14} />
                 </BarChart>
               </ResponsiveContainer>
+              {!stats.hayDatos && <EmptyChartState />}
             </div>
           </div>
         </div>

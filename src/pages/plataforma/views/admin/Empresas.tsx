@@ -449,12 +449,9 @@ export const Empresas: React.FC = () => {
                   <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email del responsable <span style={{color: '#dc2626'}}>*</span></label>
                   <input type="email" className="input-field" placeholder="correo@empresa.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginTop: '0.5rem' }}>
                   <button onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
                     <LinkIcon size={24} /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Generar enlace</span>
-                  </button>
-                  <button onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
-                    <Mail size={24} /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Enviar por email</span>
                   </button>
                 </div>
               </div>

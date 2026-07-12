@@ -78,13 +78,7 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
 
   if (error || !data) return readStoredVideos();
 
-  const remote = data.map(rowToScheduledVideo).filter(Boolean) as ScheduledVideo[];
-  const merged = new Map<string, ScheduledVideo>();
-  [...local, ...remote].forEach((video) => {
-    const key = `${video.day}__${video.block}__${video.companyName ?? 'Global'}`;
-    merged.set(key, video);
-  });
-  const videos = Array.from(merged.values());
+  const videos = data.map(rowToScheduledVideo).filter(Boolean) as ScheduledVideo[];
   saveScheduledVideosLocal(videos);
   return videos;
 };
@@ -117,6 +111,40 @@ export const saveScheduledVideo = async (video: ScheduledVideo) => {
       thumbnailUrl: video.thumbnailUrl ?? null,
     },
   });
+
+  return { ok: !error, error };
+};
+
+export const deleteScheduledVideo = async (video: ScheduledVideo) => {
+  const current = readStoredVideos();
+  saveScheduledVideosLocal(current.filter(item => !(
+    item.id === video.id
+    || (
+      item.day === video.day
+      && item.block === video.block
+      && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')
+    )
+  )));
+
+  if (!supabase) return { ok: true };
+
+  if (isUuid(video.id)) {
+    const { error } = await supabase
+      .from('content_items')
+      .update({ active: false })
+      .eq('id', video.id);
+
+    if (error) return { ok: false, error };
+  }
+
+  const { error } = await supabase
+    .from('content_items')
+    .update({ active: false })
+    .eq('kind', 'video')
+    .eq('active', true)
+    .eq('metadata->>day', video.day)
+    .eq('metadata->>block', video.block)
+    .eq('metadata->>companyName', video.companyName ?? 'Global');
 
   return { ok: !error, error };
 };
