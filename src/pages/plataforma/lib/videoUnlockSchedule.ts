@@ -80,12 +80,14 @@ export const fetchVideoUnlockSchedule = async (): Promise<VideoUnlockItem[]> => 
 
   if (error || !data) return loadVideoUnlockSchedule();
 
-  const schedule = mergeSchedule((data as VideoUnlockScheduleRow[]).map((row) => ({
+  const localSchedule = loadVideoUnlockSchedule();
+  const remoteSchedule = (data as VideoUnlockScheduleRow[]).map((row) => ({
     day: row.day_label,
     block: row.block,
     enabled: row.enabled,
     time: normalizeTime(row.unlock_time),
-  })));
+  }));
+  const schedule = mergeSchedule([...localSchedule, ...remoteSchedule]);
 
   saveVideoUnlockSchedule(schedule);
   return schedule;

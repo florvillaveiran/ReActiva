@@ -107,6 +107,11 @@ export const Login: React.FC = () => {
         setLoading(false);
         return;
       }
+      if (password.length < 6) {
+        setError('La contraseña debe tener al menos 6 caracteres.');
+        setLoading(false);
+        return;
+      }
       setAllowInvitationSession(true);
       const result = await createAccess({
         email: email.trim(),
@@ -337,6 +342,11 @@ export const Login: React.FC = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {authMode === 'create' && (
+                <p style={{ margin: '0.4rem 0 0', color: 'var(--text-muted)', fontSize: '0.74rem', lineHeight: 1.35 }}>
+                  Mínimo 6 caracteres.
+                </p>
+              )}
             </div>
 
             {authMode === 'create' && (

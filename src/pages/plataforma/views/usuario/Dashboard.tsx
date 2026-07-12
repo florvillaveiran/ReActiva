@@ -3,6 +3,7 @@ import { CheckCircle2, Lock, Play, Send, Clock, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
 import { fetchVideoUnlockSchedule, getCurrentProgramDay, getVideoUnlockStatus, loadVideoUnlockSchedule, VIDEO_UNLOCK_SCHEDULE_EVENT } from '../../lib/videoUnlockSchedule';
+import { fetchScheduledVideos, getScheduledVideoFor, getVideoThumbnail, getYouTubeIdFromUrl, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
 
 // ─── Configuración ──────────────────────────────────────────────────────────
@@ -50,19 +51,6 @@ const PAUSAS = {
     subtitulo: '8 min de relajación para tu mente',
   },
 };
-
-// Videos de YouTube por día y bloque (IDs)
-const VIDEOS_BY_DAY: Record<string, Record<'morning' | 'afternoon', string>> = {
-  Lunes:     { morning: '4tP5slYAwcY', afternoon: 'RO8ha2ltBo8' },
-  Miércoles: { morning: 'jxrxN5D1KhE', afternoon: 'pNIgbZvnZxY' },
-  Viernes:   { morning: '51yo4a4wlWA', afternoon: 'pogg_OsgWno' },
-};
-
-const getVideoId = (dia: string, bloque: 'morning' | 'afternoon'): string | null =>
-  VIDEOS_BY_DAY[dia]?.[bloque] ?? null;
-
-const getYouTubeThumb = (videoId: string): string =>
-  `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
 // ─── Mini Formulario (Lunes y Miércoles Tarde) ────────────────────────────────
 const MiniForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void; onSubmit: (r: Omit<PauseRecord, 'dia'>) => void; }> = ({ bloque, onClose, onSubmit }) => {
@@ -311,7 +299,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
 };
 
 // ─── Modal de Video (YouTube embed) ──────────────────────────────────────────
-const VideoModal: React.FC<{ videoId: string; titulo: string; onClose: () => void }> = ({ videoId, titulo, onClose }) => {
+const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => void }> = ({ videoUrl, titulo, onClose }) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -362,18 +350,31 @@ const VideoModal: React.FC<{ videoId: string; titulo: string; onClose: () => voi
             <X size={18} />
           </button>
         </div>
-        {/* Iframe 16:9 */}
+        {/* Video 16:9 */}
         <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-          <iframe
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
-            title={titulo}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            style={{
-              position: 'absolute', top: 0, left: 0,
-              width: '100%', height: '100%', border: 'none',
-            }}
-          />
+          {getYouTubeIdFromUrl(videoUrl) ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${getYouTubeIdFromUrl(videoUrl)}?autoplay=1&rel=0&modestbranding=1`}
+              title={titulo}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{
+                position: 'absolute', top: 0, left: 0,
+                width: '100%', height: '100%', border: 'none',
+              }}
+            />
+          ) : (
+            <video
+              src={videoUrl}
+              controls
+              autoPlay
+              style={{
+                position: 'absolute', top: 0, left: 0,
+                width: '100%', height: '100%', border: 'none',
+                backgroundColor: 'black',
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -385,8 +386,10 @@ const WeekPauseRow: React.FC<{
   bloque: 'morning' | 'afternoon';
   status: 'done' | 'available' | 'locked';
   isActive: boolean;
-}> = ({ bloque, status, isActive }) => {
-  const info = PAUSAS[bloque];
+  time?: string;
+  title?: string;
+}> = ({ bloque, status, isActive, time, title }) => {
+  const info = { ...PAUSAS[bloque], hora: time ? `${time} hs` : PAUSAS[bloque].hora };
   const showActive = isActive && status === 'available';
   return (
     <div style={{
@@ -411,7 +414,7 @@ const WeekPauseRow: React.FC<{
         {status === 'locked' && <Lock size={16} color="#94a3b8" />}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontWeight: 600, fontSize: '0.88rem', color: status === 'locked' ? 'var(--text-muted)' : 'var(--text-color)', marginBottom: '2px' }}>{info.titulo}</p>
+        <p style={{ fontWeight: 600, fontSize: '0.88rem', color: status === 'locked' ? 'var(--text-muted)' : 'var(--text-color)', marginBottom: '2px' }}>{title || info.titulo}</p>
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{info.hora} · {info.duracion}</p>
       </div>
       {showActive && (
@@ -516,6 +519,7 @@ export const UsuarioDashboard: React.FC = () => {
   const [videosVistos, setVideosVistos] = useState<Set<string>>(new Set());
   const [today, setToday] = useState(() => getCurrentProgramDay());
   const [unlockSchedule, setUnlockSchedule] = useState(() => loadVideoUnlockSchedule());
+  const [scheduledVideos, setScheduledVideos] = useState<ScheduledVideo[]>([]);
   const displayName = user?.name?.trim()?.split(' ')[0] || 'Usuario';
 
   useEffect(() => {
@@ -543,6 +547,17 @@ export const UsuarioDashboard: React.FC = () => {
     return () => {
       window.removeEventListener(VIDEO_UNLOCK_SCHEDULE_EVENT, syncSchedule);
       window.removeEventListener('storage', syncSchedule);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncVideos = () => fetchScheduledVideos().then(setScheduledVideos);
+    void syncVideos();
+    window.addEventListener(SCHEDULED_VIDEOS_EVENT, syncVideos);
+    window.addEventListener('storage', syncVideos);
+    return () => {
+      window.removeEventListener(SCHEDULED_VIDEOS_EVENT, syncVideos);
+      window.removeEventListener('storage', syncVideos);
     };
   }, []);
 
@@ -615,12 +630,13 @@ export const UsuarioDashboard: React.FC = () => {
 
   const activeInfo = activeBloque ? PAUSAS[activeBloque] : null;
   const activeStatusObj = activeBloque ? getStatus(today, activeBloque) : null;
-  const activeVideoId = activeBloque ? getVideoId(today, activeBloque) : null;
-  const contentLocked = activeStatusObj?.status === 'locked';
+  const activeScheduledVideo = activeBloque ? getScheduledVideoFor(scheduledVideos, today, activeBloque) : null;
+  const openScheduledVideo = openVideo ? getScheduledVideoFor(scheduledVideos, openVideo.dia, openVideo.bloque) : null;
+  const contentLocked = activeStatusObj?.status === 'locked' || (activeStatusObj?.status === 'available' && !activeScheduledVideo);
   const allDoneToday = activeBloque === null;
 
   const handleActiveAction = () => {
-    if (!activeBloque || activeStatusObj?.status !== 'available') return;
+    if (!activeBloque || activeStatusObj?.status !== 'available' || !activeScheduledVideo) return;
     if (activeBloque === 'morning') {
       handleFormSubmit({ bloque: 'morning', tipo: 'sin-form' });
     } else {
@@ -702,8 +718,8 @@ export const UsuarioDashboard: React.FC = () => {
               position: 'relative',
               flex: 1,
               minHeight: 420,
-              backgroundImage: !contentLocked && activeVideoId
-                ? `url(${getYouTubeThumb(activeVideoId)})`
+              backgroundImage: !contentLocked && activeInfo
+                ? `url(${getVideoThumbnail(activeScheduledVideo, activeInfo.img)})`
                 : !contentLocked && activeInfo ? `url(${activeInfo.img})` : 'none',
               backgroundColor: contentLocked ? '#f8fafc' : '#1e293b',
               backgroundSize: 'cover', backgroundPosition: 'center',
@@ -731,7 +747,7 @@ export const UsuarioDashboard: React.FC = () => {
               )}
 
               {/* Play central — abre el modal con el video de YouTube */}
-              {activeBloque && activeVideoId && activeStatusObj?.status === 'available' && (
+              {activeBloque && activeScheduledVideo && activeStatusObj?.status === 'available' && (
                 <button
                   onClick={() => { setOpenVideo({ dia: today, bloque: activeBloque }); markVideoVisto(today, activeBloque); }}
                   title="Reproducir video de la pausa"
@@ -794,13 +810,14 @@ export const UsuarioDashboard: React.FC = () => {
             {/* Barra de acción inferior */}
             {!allDoneToday && (() => {
               const videoKey = activeBloque ? `${today}__${activeBloque}` : '';
-              const requiereVideo = !!activeVideoId;
+              const requiereVideo = !!activeScheduledVideo;
               const videoVisto = videoKey ? videosVistos.has(videoKey) : false;
-              const isAvailable = activeStatusObj?.status === 'available';
+              const isAvailable = activeStatusObj?.status === 'available' && !!activeScheduledVideo;
               const puedeCompletar = isAvailable && (!requiereVideo || videoVisto);
 
               let prompt: string;
-              if (!isAvailable) prompt = activeStatusObj?.reason || 'Pausa bloqueada';
+              if (activeStatusObj?.status === 'available' && !activeScheduledVideo) prompt = 'Contenido pendiente de carga por ReActiva.';
+              else if (!isAvailable) prompt = activeStatusObj?.reason || 'Pausa bloqueada';
               else if (requiereVideo && !videoVisto) prompt = 'Mirá el video y después marcá la pausa como hecha.';
               else prompt = '¿Ya realizaste esta pausa?';
 
@@ -868,12 +885,16 @@ export const UsuarioDashboard: React.FC = () => {
                 {(['morning', 'afternoon'] as const).map(bloque => {
                   const { status } = getStatus(dia, bloque);
                   const isActive = isCurrent && activeBloque === bloque;
+                  const scheduledVideo = getScheduledVideoFor(scheduledVideos, dia, bloque);
+                  const scheduledTime = unlockSchedule.find(item => item.day === dia && item.block === bloque)?.time;
                   return (
                     <WeekPauseRow
                       key={bloque}
                       bloque={bloque}
                       status={status}
                       isActive={isActive}
+                      time={scheduledTime}
+                      title={scheduledVideo?.title}
                     />
                   );
                 })}
@@ -896,10 +917,10 @@ export const UsuarioDashboard: React.FC = () => {
       {/* Modales */}
       {openForm === 'afternoon' && today !== 'Viernes' && <MiniForm bloque={openForm} onClose={() => setOpenForm(null)} onSubmit={handleFormSubmit} />}
       {openForm === 'afternoon' && today === 'Viernes' && <WeeklyForm bloque={openForm} onClose={() => setOpenForm(null)} onSubmit={handleFormSubmit} />}
-      {openVideo && getVideoId(openVideo.dia, openVideo.bloque) && (
+      {openVideo && openScheduledVideo && (
         <VideoModal
-          videoId={getVideoId(openVideo.dia, openVideo.bloque)!}
-          titulo={`${PAUSAS[openVideo.bloque].titulo} · ${openVideo.dia} ${openVideo.bloque === 'morning' ? 'mañana' : 'tarde'}`}
+          videoUrl={openScheduledVideo.url}
+          titulo={`${openScheduledVideo.title || PAUSAS[openVideo.bloque].titulo} · ${openVideo.dia} ${openVideo.bloque === 'morning' ? 'mañana' : 'tarde'}`}
           onClose={() => setOpenVideo(null)}
         />
       )}

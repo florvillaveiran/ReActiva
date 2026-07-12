@@ -3,6 +3,7 @@ import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, Chevr
 import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, fetchContentLibrary, getContentLibrary, removeContentItemFromSupabase, saveAcademyItem, saveCoachItem } from '../../data/contentLibrary';
 import { useEmpresas } from '../../context/EmpresasContext';
 import { fetchVideoUnlockSchedule, loadVideoUnlockSchedule, persistVideoUnlockSchedule, UNLOCK_LEAD_MINUTES, UnlockBlock, UnlockDay, VideoUnlockItem } from '../../lib/videoUnlockSchedule';
+import { fetchScheduledVideos, saveScheduledVideo, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
 
 type AdminSection = 'micro' | 'coach' | 'academy' | 'media';
@@ -681,9 +682,29 @@ export const Contenido: React.FC = () => {
   const [empresa, setEmpresa]      = useState('Todas las empresas');
   const [recordatorio, setRecordatorio] = useState('15 minutos antes');
   const [unlockSchedule, setUnlockSchedule] = useState<VideoUnlockItem[]>(() => loadVideoUnlockSchedule());
+  const [modalDay, setModalDay] = useState<UnlockDay>('Lunes');
+  const [modalBlock, setModalBlock] = useState<UnlockBlock>('morning');
+  const [modalTime, setModalTime] = useState('08:00');
+  const [modalCompany, setModalCompany] = useState('Global');
+  const [modalVideoUrl, setModalVideoUrl] = useState('');
+  const [modalTitle, setModalTitle] = useState('Pausa activa');
+  const [modalFile, setModalFile] = useState<File | null>(null);
+  const [savingProgram, setSavingProgram] = useState(false);
+  const [scheduledVideos, setScheduledVideos] = useState<ScheduledVideo[]>([]);
 
   useEffect(() => {
     fetchVideoUnlockSchedule().then(setUnlockSchedule);
+  }, []);
+
+  useEffect(() => {
+    const refreshVideos = () => fetchScheduledVideos().then(setScheduledVideos);
+    void refreshVideos();
+    window.addEventListener(SCHEDULED_VIDEOS_EVENT, refreshVideos);
+    window.addEventListener('storage', refreshVideos);
+    return () => {
+      window.removeEventListener(SCHEDULED_VIDEOS_EVENT, refreshVideos);
+      window.removeEventListener('storage', refreshVideos);
+    };
   }, []);
 
   const updateUnlockSchedule = (day: UnlockDay, block: UnlockBlock, changes: Partial<VideoUnlockItem>) => {
@@ -702,13 +723,28 @@ export const Contenido: React.FC = () => {
     return `${lunes.getDate()} – ${v.getDate()} ${MESES[v.getMonth()]} ${v.getFullYear()}`;
   })();
 
-  const semana = useMemo(() => BASE_BLOQUES.map((d, i) => {
-    const fecha = new Date(lunes); fecha.setDate(lunes.getDate() + [0,2,4][i]);
-    const bloquesFiltrados = empresa === 'Todas las empresas'
-      ? d.bloques
-      : d.bloques.filter(b => b.empresa === empresa || b.empresa === 'Global' || empresa === 'Global');
-    return { ...d, fecha: fmt(fecha), bloques: bloquesFiltrados };
-  }), [offsetSem, empresa]);
+  const semana = useMemo(() => {
+    const dayOffsets: Record<string, number> = { Lunes: 0, Miércoles: 2, Viernes: 4 };
+    return BASE_BLOQUES.map((d) => {
+      const fecha = new Date(lunes); fecha.setDate(lunes.getDate() + (dayOffsets[d.dia] ?? 0));
+      const videosDelDia = scheduledVideos
+        .filter(video => video.day === d.dia)
+        .filter(video => empresa === 'Todas las empresas' || video.companyName === empresa || video.companyName === 'Global' || empresa === 'Global')
+        .map(video => {
+          const unlock = unlockSchedule.find(item => item.day === video.day && item.block === video.block);
+          return {
+            id: video.id,
+            turno: video.block === 'morning' ? 'Mañana' : 'Tarde',
+            tipo: video.title || 'Pausa activa',
+            horario: unlock?.time ?? video.time,
+            empresa: video.companyName ?? 'Global',
+            estado: unlock?.enabled ? 'programado' : 'borrador',
+            url: video.url,
+          };
+        });
+      return { ...d, fecha: fmt(fecha), bloques: videosDelDia };
+    });
+  }, [empresa, lunes, scheduledVideos, unlockSchedule]);
 
   const calDays = getCalDays(anio, mes);
 
@@ -718,7 +754,76 @@ export const Contenido: React.FC = () => {
     else setMes(m=>m+dir);
   };
 
-  const abrirModal = (dia?:number) => { setDiaModal(dia??null); setModal(true); };
+  const dayFromModalDate = (dia?: number): UnlockDay => {
+    if (!dia) return 'Lunes';
+    const selected = new Date(anio, mes, dia);
+    const day = selected.getDay();
+    if (day === 3) return 'Miércoles' as UnlockDay;
+    if (day === 5) return 'Viernes';
+    return 'Lunes';
+  };
+
+  const abrirModal = (dia?:number) => {
+    const nextDay = dayFromModalDate(dia);
+    const existing = unlockSchedule.find(item => item.day === nextDay && item.block === modalBlock);
+    setDiaModal(dia??null);
+    setModalDay(nextDay);
+    setModalTime(existing?.time ?? (modalBlock === 'morning' ? '08:00' : '15:00'));
+    setModalVideoUrl('');
+    setModalFile(null);
+    setModalTitle('Pausa activa');
+    setModal(true);
+  };
+
+  const uploadScheduledFile = async () => {
+    if (!modalFile) return modalVideoUrl.trim();
+    if (!supabase) throw new Error('Supabase no está configurado para subir videos.');
+
+    const safeName = modalFile.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+    const path = `scheduled-videos/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage
+      .from('reactiva-media')
+      .upload(path, modalFile, { upsert: true, contentType: modalFile.type });
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from('reactiva-media').getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const guardarProgramacionVideo = async () => {
+    if (!modalVideoUrl.trim() && !modalFile) {
+      window.alert('Agregá un link o subí un video antes de guardar.');
+      return;
+    }
+
+    setSavingProgram(true);
+    try {
+      const finalUrl = await uploadScheduledFile();
+      const title = modalTitle.trim() || `Pausa ${modalBlock === 'morning' ? 'mañana' : 'tarde'}`;
+      const result = await saveScheduledVideo({
+        id: `local-${Date.now()}`,
+        day: modalDay,
+        block: modalBlock,
+        time: modalTime,
+        title,
+        url: finalUrl,
+        companyName: modalCompany,
+        createdAt: new Date().toISOString(),
+      });
+
+      if (!result.ok) {
+        window.alert(result.error?.message ?? 'No pudimos guardar el video programado.');
+        return;
+      }
+
+      updateUnlockSchedule(modalDay, modalBlock, { enabled: true, time: modalTime });
+      setModal(false);
+    } catch (error: any) {
+      window.alert(error?.message ?? 'No pudimos subir o guardar el video.');
+    } finally {
+      setSavingProgram(false);
+    }
+  };
 
   const btnNav = (onClick:()=>void, children:React.ReactNode) => (
     <button onClick={onClick} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'0.35rem 0.6rem',cursor:'pointer',color:'#475569',display:'flex',alignItems:'center'}}>
@@ -891,6 +996,11 @@ export const Contenido: React.FC = () => {
                           </div>
                         </div>
                         <div style={{marginTop:'0.65rem',paddingTop:'0.55rem',borderTop:'1px solid #f8fafc',textAlign:'right'}}>
+                          {bloque.url && (
+                            <button onClick={()=>window.open(bloque.url, '_blank', 'noopener,noreferrer')} style={{background:'none',border:'none',color:'#2563eb',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem',marginRight:'0.75rem'}}>
+                              <Eye size={12}/> Ver video
+                            </button>
+                          )}
                           <button onClick={()=>abrirModal()} style={{background:'none',border:'none',color:'#0d9488',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem'}}>
                             <Video size={12}/> Editar
                           </button>
@@ -1002,12 +1112,18 @@ export const Contenido: React.FC = () => {
 
             <div style={{marginBottom:'0.9rem'}}>
               {tipoLink==='link'
-                ? <input type="url" className="input-field" placeholder="https://vimeo.com/..." style={{fontSize:'0.875rem'}}/>
-                : <div style={{border:'2px dashed #e2e8f0',borderRadius:'10px',padding:'1.25rem',textAlign:'center',cursor:'pointer',color:'#94a3b8',fontSize:'0.82rem'}}>
+                ? <input type="url" className="input-field" value={modalVideoUrl} onChange={e => setModalVideoUrl(e.target.value)} placeholder="https://youtube.com/... o https://vimeo.com/..." style={{fontSize:'0.875rem'}}/>
+                : <label style={{display:'block',border:'2px dashed #e2e8f0',borderRadius:'10px',padding:'1.25rem',textAlign:'center',cursor:'pointer',color:'#94a3b8',fontSize:'0.82rem'}}>
                     <Upload size={22} style={{marginBottom:'0.35rem',display:'block',margin:'0 auto 0.35rem'}}/>
-                    Arrastrá o hacé clic para subir
-                  </div>
+                    {modalFile ? modalFile.name : 'Hacé clic para subir un video'}
+                    <input type="file" accept="video/*" onChange={e => setModalFile(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
+                  </label>
               }
+            </div>
+
+            <div style={{marginBottom:'0.9rem'}}>
+              <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Título del video</label>
+              <input className="input-field" value={modalTitle} onChange={e => setModalTitle(e.target.value)} placeholder="Ej: Movilidad cervical" style={{fontSize:'0.875rem'}}/>
             </div>
 
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.65rem',marginBottom:'0.9rem'}}>
@@ -1019,24 +1135,34 @@ export const Contenido: React.FC = () => {
               </div>
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Empresa</label>
-                <select className="input-field" style={{fontSize:'0.875rem'}}>
-                  {opcionesEmpresasModal.map(e=><option key={e}>{e}</option>)}
+                <select className="input-field" value={modalCompany} onChange={e => setModalCompany(e.target.value.replace(' (todas)', ''))} style={{fontSize:'0.875rem'}}>
+                  {opcionesEmpresasModal.map(e=><option key={e} value={e.replace(' (todas)', '')}>{e}</option>)}
                 </select>
               </div>
             </div>
 
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.65rem',marginBottom:'1.25rem'}}>
               <div>
-                <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Fecha</label>
-                <input type="date" className="input-field" defaultValue={diaModal?`${anio}-${String(mes+1).padStart(2,'0')}-${String(diaModal).padStart(2,'0')}`:''} style={{fontSize:'0.875rem'}}/>
+                <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Día</label>
+                <select className="input-field" value={modalDay} onChange={e => setModalDay(e.target.value as UnlockDay)} style={{fontSize:'0.875rem'}}>
+                  {(['Lunes', 'Miércoles', 'Viernes'] as UnlockDay[]).map(day => <option key={day} value={day}>{day}</option>)}
+                </select>
               </div>
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Turno</label>
-                <select className="input-field" style={{fontSize:'0.875rem'}}><option>Mañana</option><option>Tarde</option></select>
+                <select className="input-field" value={modalBlock} onChange={e => {
+                  const nextBlock = e.target.value as UnlockBlock;
+                  setModalBlock(nextBlock);
+                  const existing = unlockSchedule.find(item => item.day === modalDay && item.block === nextBlock);
+                  setModalTime(existing?.time ?? (nextBlock === 'morning' ? '08:00' : '15:00'));
+                }} style={{fontSize:'0.875rem'}}>
+                  <option value="morning">Mañana</option>
+                  <option value="afternoon">Tarde</option>
+                </select>
               </div>
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Hora</label>
-                <input type="time" className="input-field" defaultValue="08:00" style={{fontSize:'0.875rem'}}/>
+                <input type="time" className="input-field" value={modalTime} onChange={e => setModalTime(e.target.value)} style={{fontSize:'0.875rem'}}/>
               </div>
             </div>
 
@@ -1062,8 +1188,8 @@ export const Contenido: React.FC = () => {
 
             <div style={{display:'flex',gap:'0.65rem'}}>
               <button onClick={()=>setModal(false)} className="btn-secondary" style={{flex:1,fontSize:'0.875rem'}}>Cancelar</button>
-              <button className="btn-primary" style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:'0.4rem',fontSize:'0.875rem'}}>
-                <Save size={15}/> Guardar programación
+              <button onClick={guardarProgramacionVideo} disabled={savingProgram} className="btn-primary" style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:'0.4rem',fontSize:'0.875rem',opacity:savingProgram?0.7:1}}>
+                <Save size={15}/> {savingProgram ? 'Guardando...' : 'Guardar programación'}
               </button>
             </div>
           </div>
