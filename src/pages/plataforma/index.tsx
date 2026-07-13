@@ -56,6 +56,8 @@ function App() {
             </Route>
 
             {/* Redirección por defecto */}
+            <Route path="e/:token" element={<EmpresaOnboarding />} />
+            <Route path="i/:token" element={<UsuarioOnboarding />} />
             <Route path="onboarding/empresa/:token" element={<EmpresaOnboarding />} />
             <Route path="onboarding/usuario/:token" element={<UsuarioOnboarding />} />
             <Route path="invitacion/:token" element={<UsuarioOnboarding />} />

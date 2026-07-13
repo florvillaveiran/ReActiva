@@ -80,22 +80,23 @@ export const fetchVideoUnlockSchedule = async (): Promise<VideoUnlockItem[]> => 
 
   if (error || !data) return loadVideoUnlockSchedule();
 
-  const localSchedule = loadVideoUnlockSchedule();
   const remoteSchedule = (data as VideoUnlockScheduleRow[]).map((row) => ({
     day: row.day_label,
     block: row.block,
     enabled: row.enabled,
     time: normalizeTime(row.unlock_time),
   }));
-  const schedule = mergeSchedule([...localSchedule, ...remoteSchedule]);
+  const schedule = mergeSchedule(remoteSchedule);
 
   saveVideoUnlockSchedule(schedule);
   return schedule;
 };
 
 export const persistVideoUnlockSchedule = async (schedule: VideoUnlockItem[]) => {
-  saveVideoUnlockSchedule(schedule);
-  if (!supabase) return { ok: true };
+  if (!supabase) {
+    saveVideoUnlockSchedule(schedule);
+    return { ok: true };
+  }
 
   const rows = schedule.map((item) => ({
     company_id: null,
@@ -109,6 +110,7 @@ export const persistVideoUnlockSchedule = async (schedule: VideoUnlockItem[]) =>
     schedule: rows,
   });
 
+  if (!error) saveVideoUnlockSchedule(schedule);
   return { ok: !error, error };
 };
 

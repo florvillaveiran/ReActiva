@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, ChevronRight, X, Link, Upload, Save, Filter, Eye, Pencil, Trash2, CalendarCheck, Droplets, Leaf, Lightbulb, Moon, Monitor, Search, Sparkles, Star, Zap, FileImage, FileVideo, Info } from 'lucide-react';
-import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, fetchContentLibrary, getContentLibrary, removeContentItemFromSupabase, saveAcademyItem, saveCoachItem } from '../../data/contentLibrary';
+import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, ChevronRight, X, Link, Upload, Save, Filter, Eye, Pencil, Trash2, CalendarCheck, Droplets, Leaf, Lightbulb, Moon, Monitor, Search, Settings, Sparkles, Star, Zap, FileImage, FileVideo, Info, Plus } from 'lucide-react';
+import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, fetchAcademyCategories, fetchContentLibrary, getContentLibrary, isAcademyVideoReady, normalizeAcademyCategory, normalizeAcademyVideoUrl, removeAcademyCategory, removeContentItemFromSupabase, renameAcademyCategory, saveAcademyCategory, saveAcademyItem, saveCoachItem } from '../../data/contentLibrary';
 import { useEmpresas } from '../../context/EmpresasContext';
 import { fetchVideoUnlockSchedule, loadVideoUnlockSchedule, persistVideoUnlockSchedule, UNLOCK_LEAD_MINUTES, UnlockBlock, UnlockDay, VideoUnlockItem } from '../../lib/videoUnlockSchedule';
-import { deleteScheduledVideo, fetchScheduledVideos, saveScheduledVideo, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
+import { fetchScheduledVideos, getYouTubeIdFromUrl, saveScheduledVideo, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
+import { uploadResumableStorageFile } from '../../lib/resumableStorageUpload';
 
 type AdminSection = 'micro' | 'coach' | 'academy' | 'media';
 
@@ -15,6 +16,33 @@ const fieldLabelStyle: React.CSSProperties = {
   fontWeight: 800,
   margin: '0 0 0.35rem 0.15rem',
 };
+
+const hasAcademyVideo = (item: AcademyItem) => isAcademyVideoReady(item.videoUrl);
+
+const academyVideoEmbedUrl = (url: string) => {
+  const youtubeId = getYouTubeIdFromUrl(url);
+  return youtubeId ? `https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1` : null;
+};
+
+const ACADEMY_CATEGORIES_STORAGE_KEY = 'reactiva-academy-custom-categories';
+const UNCATEGORIZED_ACADEMY_LABEL = 'Sin categoría';
+
+const readCustomAcademyCategories = (): string[] => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(ACADEMY_CATEGORIES_STORAGE_KEY) || '[]');
+    return Array.isArray(stored)
+      ? stored.filter(value => typeof value === 'string' && value.trim()).map(normalizeAcademyCategory)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveCustomAcademyCategories = (categories: string[]) => {
+  localStorage.setItem(ACADEMY_CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+};
+
+const categoryKey = (value: string) => value.trim().toLocaleLowerCase('es');
 
 const coachIconFor = (id: string) => {
   if (id.includes('visual')) return { icon: <Eye size={18} />, bg: '#f3e8ff', color: '#8b5cf6' };
@@ -60,7 +88,12 @@ const AdminCoachPanel: React.FC = () => {
   const [editing, setEditing] = useState<CoachItem | null>(null);
   const reload = () => setItems(getContentLibrary().coach);
   useEffect(() => {
-    fetchContentLibrary().then(library => setItems(library.coach));
+    const refresh = () => void fetchContentLibrary().then(library => setItems(library.coach));
+    refresh();
+    const channel = supabase
+      ? supabase.channel('admin-reactiva-tips').on('postgres_changes', { event: '*', schema: 'public', table: 'content_items' }, refresh).subscribe()
+      : null;
+    return () => { if (channel && supabase) void supabase.removeChannel(channel); };
   }, []);
 
   const save = async () => {
@@ -88,9 +121,9 @@ const AdminCoachPanel: React.FC = () => {
       <section style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
           <Lightbulb size={15} />
-          <span>RECOMENDACION PARA HOY</span>
+          <span>RECOMENDACIÓN PARA HOY</span>
         </div>
-        <p style={{ margin: 0, color: '#020617', fontSize: '0.98rem', fontWeight: 800 }}>Cada 20 minutos, mira algo a 20 pies (6 metros) de distancia durante 20 segundos.</p>
+        <p style={{ margin: 0, color: '#020617', fontSize: '0.98rem', fontWeight: 800 }}>Cada 20 minutos, mirá algo a 20 pies (6 metros) de distancia durante 20 segundos.</p>
       </section>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: '1rem' }}>
         {items.map(item => {
@@ -109,7 +142,7 @@ const AdminCoachPanel: React.FC = () => {
             <h3 style={{ margin: '0 0 0.55rem', fontSize: '1.05rem', color: '#020617', lineHeight: 1.2 }}>{item.title}</h3>
             <p style={{ color: '#64748b', margin: '0 0 0.85rem', lineHeight: 1.4, fontSize: '0.88rem' }}>{item.description}</p>
             <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.75rem 0.85rem', marginBottom: '0.85rem' }}>
-              <p style={{ margin: '0 0 0.3rem', color: 'var(--primary-color)', fontWeight: 900, fontSize: '0.72rem', letterSpacing: '0.04em' }}>RECOMENDACION</p>
+              <p style={{ margin: '0 0 0.3rem', color: 'var(--primary-color)', fontWeight: 900, fontSize: '0.72rem', letterSpacing: '0.04em' }}>RECOMENDACIÓN</p>
               <p style={{ margin: 0, color: '#020617', fontSize: '0.88rem', lineHeight: 1.35 }}>{item.recommendation}</p>
             </div>
             <p style={{ color: '#64748b', margin: '0 0 1rem', fontSize: '0.86rem' }}>{item.tags.map(tag => `◇ ${tag}`).join('  ')}</p>
@@ -117,7 +150,7 @@ const AdminCoachPanel: React.FC = () => {
               <button className="btn-primary" onClick={() => window.alert(`${item.title}\n\n${item.recommendation}`)} style={{ padding: '0.55rem 0.9rem', fontSize: '0.82rem' }}>Ver consejo</button>
               <div style={{ display: 'flex', gap: '0.6rem' }}>
                 <button title="Editar" onClick={() => setEditing(item)} style={{ color: 'var(--primary-color)' }}><Pencil size={17} /></button>
-                <button title="Eliminar" onClick={async () => { if (window.confirm('Deseas eliminar este consejo?')) { const result = await removeContentItemFromSupabase(item.id); if (!result.ok) { window.alert(result.error?.message ?? 'No pudimos eliminar el consejo.'); return; } deleteCoachItem(item.id); reload(); } }} style={{ color: '#020617' }}><Trash2 size={17} /></button>
+                <button title="Eliminar" onClick={async () => { if (window.confirm('¿Deseás eliminar este consejo?')) { const result = await removeContentItemFromSupabase(item.id); if (!result.ok) { window.alert(result.error?.message ?? 'No pudimos eliminar el consejo.'); return; } deleteCoachItem(item.id); reload(); } }} style={{ color: '#020617' }}><Trash2 size={17} /></button>
               </div>
             </div>
           </article>
@@ -128,16 +161,16 @@ const AdminCoachPanel: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="card" style={{ width: 720, maxWidth: '94vw', maxHeight: '88vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
             <h3 style={{ marginTop: 0 }}>Editar consejo</h3>
-            <label style={fieldLabelStyle}>Categoria / nombre del consejo</label>
+            <label style={fieldLabelStyle}>Categoría / nombre del consejo</label>
             <input className="input-field" value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Descripcion de la tarjeta</label>
+            <label style={fieldLabelStyle}>Descripción de la tarjeta</label>
             <textarea className="input-field" rows={3} value={editing.description} onChange={e => setEditing({ ...editing, description: e.target.value })} style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Recomendacion principal</label>
+            <label style={fieldLabelStyle}>Recomendación principal</label>
             <textarea className="input-field" rows={3} value={editing.recommendation} onChange={e => setEditing({ ...editing, recommendation: e.target.value })} style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Titulo del detalle</label>
-            <input className="input-field" value={editing.detailTitle} onChange={e => setEditing({ ...editing, detailTitle: e.target.value })} placeholder="Titulo del detalle" style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Subtitulo del detalle</label>
-            <input className="input-field" value={editing.subtitle} onChange={e => setEditing({ ...editing, subtitle: e.target.value })} placeholder="Subtitulo del detalle" style={{ marginBottom: '0.7rem' }} />
+            <label style={fieldLabelStyle}>Título del detalle</label>
+            <input className="input-field" value={editing.detailTitle} onChange={e => setEditing({ ...editing, detailTitle: e.target.value })} placeholder="Título del detalle" style={{ marginBottom: '0.7rem' }} />
+            <label style={fieldLabelStyle}>Subtítulo del detalle</label>
+            <input className="input-field" value={editing.subtitle} onChange={e => setEditing({ ...editing, subtitle: e.target.value })} placeholder="Subtítulo del detalle" style={{ marginBottom: '0.7rem' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.7rem', marginBottom: '0.7rem' }}>
               <div>
                 <label style={fieldLabelStyle}>Tiempo</label>
@@ -152,16 +185,16 @@ const AdminCoachPanel: React.FC = () => {
                 <input className="input-field" value={editing.benefit} onChange={e => setEditing({ ...editing, benefit: e.target.value })} placeholder="Beneficio" />
               </div>
             </div>
-            <label style={fieldLabelStyle}>Por que importa</label>
-            <textarea className="input-field" rows={3} value={editing.why} onChange={e => setEditing({ ...editing, why: e.target.value })} placeholder="Por que importa" style={{ marginBottom: '0.7rem' }} />
+            <label style={fieldLabelStyle}>Por qué importa</label>
+            <textarea className="input-field" rows={3} value={editing.why} onChange={e => setEditing({ ...editing, why: e.target.value })} placeholder="Por qué importa" style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Evidencia</label>
             <textarea className="input-field" rows={3} value={editing.evidence} onChange={e => setEditing({ ...editing, evidence: e.target.value })} placeholder="Evidencia" style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Como aplicarlo hoy</label>
-            <textarea className="input-field" rows={3} value={editing.steps.join('\n')} onChange={e => setEditing({ ...editing, steps: e.target.value.split('\n').filter(Boolean) })} placeholder="Como aplicarlo hoy (una linea por paso)" style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Senales</label>
-            <textarea className="input-field" rows={3} value={editing.signals.join('\n')} onChange={e => setEditing({ ...editing, signals: e.target.value.split('\n').filter(Boolean) })} placeholder="Senales (una linea por senal)" style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Mini desafio</label>
-            <textarea className="input-field" rows={2} value={editing.challenge} onChange={e => setEditing({ ...editing, challenge: e.target.value })} placeholder="Mini desafio" style={{ marginBottom: '0.7rem' }} />
+            <label style={fieldLabelStyle}>Cómo aplicarlo hoy</label>
+            <textarea className="input-field" rows={3} value={editing.steps.join('\n')} onChange={e => setEditing({ ...editing, steps: e.target.value.split('\n').filter(Boolean) })} placeholder="Cómo aplicarlo hoy (una línea por paso)" style={{ marginBottom: '0.7rem' }} />
+            <label style={fieldLabelStyle}>Señales</label>
+            <textarea className="input-field" rows={3} value={editing.signals.join('\n')} onChange={e => setEditing({ ...editing, signals: e.target.value.split('\n').filter(Boolean) })} placeholder="Señales (una línea por señal)" style={{ marginBottom: '0.7rem' }} />
+            <label style={fieldLabelStyle}>Mini desafío</label>
+            <textarea className="input-field" rows={2} value={editing.challenge} onChange={e => setEditing({ ...editing, challenge: e.target.value })} placeholder="Mini desafío" style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Consejo relacionado</label>
             <input className="input-field" value={editing.related} onChange={e => setEditing({ ...editing, related: e.target.value })} placeholder="Consejo relacionado" style={{ marginBottom: '0.7rem' }} />
             <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}><input type="checkbox" checked={editing.active} onChange={e => setEditing({ ...editing, active: e.target.checked })} /> Activo</label>
@@ -179,21 +212,283 @@ const AdminCoachPanel: React.FC = () => {
 const AdminAcademyPanel: React.FC = () => {
   const [items, setItems] = useState(() => getContentLibrary().academy);
   const [editing, setEditing] = useState<AcademyItem | null>(null);
+  const [creating, setCreating] = useState(false);
   const [mediaItems, setMediaItems] = useState<MediaItem[]>(() => readMediaItems());
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [previewing, setPreviewing] = useState<AcademyItem | null>(null);
+  const [previewObjectUrl, setPreviewObjectUrl] = useState('');
+  const [previewError, setPreviewError] = useState('');
+  const [query, setQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('Todos');
+  const [customCategories, setCustomCategories] = useState<string[]>(readCustomAcademyCategories);
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+  const [editingCategory, setEditingCategory] = useState('');
+  const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
   const reload = () => setItems(getContentLibrary().academy);
   useEffect(() => {
-    fetchContentLibrary().then(library => setItems(library.academy));
-    fetchMediaItems().then(setMediaItems);
+    const refresh = () => {
+      void fetchContentLibrary().then(library => setItems(library.academy));
+      void fetchMediaItems().then(setMediaItems);
+      void fetchAcademyCategories().then(setCustomCategories);
+    };
+    refresh();
+    const channel = supabase
+      ? supabase
+          .channel('admin-reactiva-academy')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'content_items' }, refresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'content_categories' }, refresh)
+          .subscribe()
+      : null;
+    return () => { if (channel && supabase) void supabase.removeChannel(channel); };
   }, []);
-  const save = async () => {
-    if (!editing) return;
-    const result = await saveAcademyItem(editing);
-    if (!result.ok) {
-      window.alert(result.error?.message ?? 'No pudimos guardar el taller.');
+
+  const categories = useMemo(() => {
+    const unique = new Map<string, string>();
+    [...items.map(item => item.category), ...customCategories].forEach((value) => {
+      const trimmed = value.trim();
+      if (trimmed) unique.set(categoryKey(trimmed), trimmed);
+    });
+    return Array.from(unique.values()).sort((left, right) => left.localeCompare(right, 'es'));
+  }, [customCategories, items]);
+
+  useEffect(() => {
+    if (categoryFilter !== 'Todos' && !categories.some(category => categoryKey(category) === categoryKey(categoryFilter))) {
+      setCategoryFilter('Todos');
+    }
+  }, [categories, categoryFilter]);
+
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase('es');
+    return items
+      .filter((item) => {
+        const matchesCategory = categoryFilter === 'Todos' || categoryKey(item.category) === categoryKey(categoryFilter);
+        const matchesQuery = !normalizedQuery || [item.title, item.description, item.category]
+          .some(value => value.toLocaleLowerCase('es').includes(normalizedQuery));
+        return matchesCategory && matchesQuery;
+      })
+      .sort((left, right) => Number(right.active && hasAcademyVideo(right)) - Number(left.active && hasAcademyVideo(left)));
+  }, [categoryFilter, items, query]);
+
+  const persistCustomCategories = (next: string[]) => {
+    const unique = Array.from(new Map(next.map(value => {
+      const normalized = normalizeAcademyCategory(value);
+      return [categoryKey(normalized), normalized];
+    })).values()).filter(Boolean);
+    setCustomCategories(unique);
+    saveCustomAcademyCategories(unique);
+  };
+
+  const createCategory = async () => {
+    const name = normalizeAcademyCategory(newCategory);
+    if (!name) return;
+    const existing = categories.find(category => categoryKey(category) === categoryKey(name));
+    if (existing) {
+      setCategoryFilter(existing);
+      setEditing(current => current ? { ...current, category: existing } : current);
+      setNewCategory('');
       return;
     }
-    setEditing(null);
-    fetchContentLibrary().then(library => setItems(library.academy));
+    const result = await saveAcademyCategory(name);
+    if (!result.ok) {
+      window.alert(result.error?.message ?? 'No pudimos crear la categoria.');
+      return;
+    }
+    const remoteCategories = await fetchAcademyCategories();
+    persistCustomCategories(remoteCategories);
+    setCategoryFilter(name);
+    setEditing(current => current ? { ...current, category: name } : current);
+    setNewCategory('');
+  };
+
+  const renameCategory = async () => {
+    const oldName = editingCategory;
+    const nextName = normalizeAcademyCategory(editingCategoryName);
+    if (!oldName || !nextName || categoryKey(oldName) === categoryKey(nextName)) {
+      setEditingCategory('');
+      return;
+    }
+    const collision = categories.some(category => categoryKey(category) === categoryKey(nextName) && categoryKey(category) !== categoryKey(oldName));
+    if (collision) {
+      window.alert('Ya existe una categoría con ese nombre.');
+      return;
+    }
+
+    setSavingCategory(true);
+    try {
+      const affectedItems = items.filter(item => categoryKey(item.category) === categoryKey(oldName));
+      for (const item of affectedItems) {
+        const result = await saveAcademyItem({ ...item, category: nextName });
+        if (!result.ok) throw result.error;
+      }
+      const categoryResult = await renameAcademyCategory(oldName, nextName);
+      if (!categoryResult.ok) throw categoryResult.error;
+      persistCustomCategories(await fetchAcademyCategories());
+      const library = await fetchContentLibrary();
+      setItems(library.academy);
+      if (categoryFilter === oldName) setCategoryFilter(nextName);
+      setEditing(current => current && categoryKey(current.category) === categoryKey(oldName) ? { ...current, category: nextName } : current);
+      setEditingCategory('');
+      setEditingCategoryName('');
+    } catch (error: any) {
+      window.alert(error?.message ?? 'No pudimos actualizar la categoría.');
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const deleteCategory = async (category: string) => {
+    if (categoryKey(category) === categoryKey(UNCATEGORIZED_ACADEMY_LABEL)) {
+      window.alert(`La categoría "${UNCATEGORIZED_ACADEMY_LABEL}" se utiliza para conservar talleres que quedaron sin categoría y no se puede eliminar.`);
+      return;
+    }
+
+    const affectedItems = items.filter(item => categoryKey(item.category) === categoryKey(category));
+    const confirmation = affectedItems.length > 0
+      ? `¿Eliminar la categoría "${category}"? Sus ${affectedItems.length} ${affectedItems.length === 1 ? 'taller pasará' : 'talleres pasarán'} a "${UNCATEGORIZED_ACADEMY_LABEL}".`
+      : `¿Eliminar la categoría "${category}"?`;
+    if (!window.confirm(confirmation)) return;
+
+    setSavingCategory(true);
+    try {
+      for (const item of affectedItems) {
+        const result = await saveAcademyItem({ ...item, category: UNCATEGORIZED_ACADEMY_LABEL });
+        if (!result.ok) throw result.error;
+      }
+      const categoryResult = await removeAcademyCategory(category, UNCATEGORIZED_ACADEMY_LABEL);
+      if (!categoryResult.ok) throw categoryResult.error;
+      persistCustomCategories(await fetchAcademyCategories());
+
+      const library = await fetchContentLibrary();
+      setItems(library.academy);
+      if (categoryKey(categoryFilter) === categoryKey(category)) setCategoryFilter('Todos');
+      setEditing(current => current && categoryKey(current.category) === categoryKey(category)
+        ? { ...current, category: UNCATEGORIZED_ACADEMY_LABEL }
+        : current);
+      if (editingCategory === category) {
+        setEditingCategory('');
+        setEditingCategoryName('');
+      }
+    } catch (error: any) {
+      window.alert(error?.message ?? 'No pudimos eliminar la categoría.');
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const openEditor = (item: AcademyItem) => {
+    setVideoFile(null);
+    setCreating(false);
+    setEditing({ ...item, active: item.active && hasAcademyVideo(item) });
+  };
+
+  const openCreateEditor = () => {
+    const generatedId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? `academy-${crypto.randomUUID()}`
+      : `academy-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setVideoFile(null);
+    setCreating(true);
+    setEditing({
+      id: generatedId,
+      sourceId: generatedId,
+      category: categories[0] ?? UNCATEGORIZED_ACADEMY_LABEL,
+      title: '',
+      description: '',
+      duration: '10 min',
+      level: 'Basico',
+      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1400',
+      videoUrl: undefined,
+      recommended: false,
+      active: false,
+    });
+  };
+
+  const closePreview = () => {
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    setPreviewObjectUrl('');
+    setPreviewError('');
+    setPreviewing(null);
+  };
+
+  const openPreview = (item: AcademyItem, file?: File | null) => {
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    const localUrl = file ? URL.createObjectURL(file) : '';
+    const videoUrl = localUrl || normalizeAcademyVideoUrl(item.videoUrl);
+    if (!videoUrl) {
+      window.alert('Subí o seleccioná un video para ver la vista previa.');
+      return;
+    }
+    setPreviewObjectUrl(localUrl);
+    setPreviewError('');
+    setPreviewing({ ...item, videoUrl });
+  };
+
+  const uploadAcademyVideo = async (file: File) => {
+    const extension = file.name.includes('.') ? file.name.split('.').pop() : 'mp4';
+    const baseName = file.name.replace(/\.[^.]+$/, '');
+    const path = `academy-videos/${Date.now()}-${fileSafe(baseName)}.${extension}`;
+    return uploadResumableStorageFile({
+      bucket: 'reactiva-media',
+      path,
+      file,
+      onProgress: setUploadProgress,
+    });
+  };
+
+  const publishAcademyItem = async (item: AcademyItem) => {
+    if (!hasAcademyVideo(item)) {
+      window.alert('Este taller todavía no tiene un video válido. Cargalo o seleccionalo desde la Biblioteca Multimedia antes de publicar.');
+      return;
+    }
+
+    setPublishingId(item.id);
+    try {
+      const result = await saveAcademyItem({ ...item, active: true });
+      if (!result.ok) throw result.error;
+      const library = await fetchContentLibrary();
+      setItems(library.academy);
+    } catch (error: any) {
+      window.alert(error?.message ?? 'No pudimos publicar el taller.');
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
+  const save = async () => {
+    if (!editing) return;
+    if (!editing.title.trim()) {
+      window.alert('Ingresá un título para crear el video.');
+      return;
+    }
+    if (editing.active && !hasAcademyVideo(editing) && !videoFile) {
+      window.alert('Para publicar el taller primero tenés que subir o seleccionar un video.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(videoFile ? 0 : null);
+    try {
+      const finalVideoUrl = videoFile ? await uploadAcademyVideo(videoFile) : editing.videoUrl?.trim();
+      const finalItem = { ...editing, videoUrl: finalVideoUrl || undefined };
+      const result = await saveAcademyItem(finalItem);
+      if (!result.ok) {
+        window.alert(result.error?.message ?? 'No pudimos guardar el taller.');
+        return;
+      }
+      setEditing(null);
+      setCreating(false);
+      setVideoFile(null);
+      fetchContentLibrary().then(library => setItems(library.academy));
+    } catch (error: any) {
+      window.alert(error?.message ?? 'No pudimos subir o guardar el taller.');
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+    }
   };
 
   return (
@@ -204,69 +499,145 @@ const AdminAcademyPanel: React.FC = () => {
           <p className="text-muted" style={{ margin: 0 }}>Mismos talleres que ve el usuario.</p>
         </div>
         <div style={{ minWidth: 160 }}>
-          <p style={{ margin: '0 0 0.35rem', color: '#64748b', fontSize: '0.78rem', fontWeight: 800 }}>Progreso: 0 de 9 <span style={{ color: 'var(--primary-color)' }}>(0%)</span></p>
+          <p style={{ margin: '0 0 0.35rem', color: '#64748b', fontSize: '0.78rem', fontWeight: 800 }}>Publicados: <span style={{ color: 'var(--primary-color)' }}>{items.filter(item => item.active && hasAcademyVideo(item)).length} de {items.length}</span></p>
           <div style={{ height: 5, background: '#e2e8f0', borderRadius: 999 }} />
         </div>
       </header>
-      <div style={{ position: 'relative', maxWidth: 420, marginBottom: '0.9rem' }}>
-        <Search size={16} color="#94a3b8" style={{ position: 'absolute', top: 13, left: 13 }} />
-        <input className="input-field" placeholder="Buscar por titulo o palabra clave..." readOnly style={{ height: 44, borderRadius: 12, paddingLeft: 38, fontSize: '0.88rem' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', width: 420, maxWidth: '100%' }}>
+          <Search size={16} color="#94a3b8" style={{ position: 'absolute', top: 13, left: 13 }} />
+          <input className="input-field" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar por título o palabra clave..." style={{ height: 44, borderRadius: 12, paddingLeft: 38, fontSize: '0.88rem' }} />
+        </div>
+        <button className="btn-secondary" onClick={() => setCategoryManagerOpen(true)} style={{ height: 44, display: 'inline-flex', alignItems: 'center', gap: 7 }}><Settings size={16} /> Gestionar categorías</button>
+        <button className="btn-primary" onClick={openCreateEditor} style={{ height: 44, display: 'inline-flex', alignItems: 'center', gap: 7 }}><Plus size={17} /> Crear video</button>
       </div>
       <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-        {['Todos', 'Ergonomia', 'Dolor musculoesqueletico', 'Sueno', 'Hidratacion', 'Salud visual', 'Entorno saludable', 'Estres', 'Respiracion'].map(category => (
-          <span key={category} style={{ border: '1px solid #e2e8f0', borderRadius: 999, padding: '0.34rem 0.7rem', background: category === 'Todos' ? 'var(--primary-color)' : 'white', color: category === 'Todos' ? 'white' : '#64748b', fontWeight: 800, fontSize: '0.78rem' }}>{category}</span>
+        {['Todos', ...categories].map(category => (
+          <button key={category} type="button" onClick={() => setCategoryFilter(category)} style={{ border: '1px solid #e2e8f0', borderRadius: 999, padding: '0.34rem 0.7rem', background: categoryFilter === category ? 'var(--primary-color)' : 'white', color: categoryFilter === category ? 'white' : '#64748b', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer' }}>{category}</button>
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
-        {items.map(item => (
+        {filteredItems.map(item => {
+          const hasVideo = hasAcademyVideo(item);
+          const published = item.active && hasVideo;
+          return (
           <article key={item.id} className="card" style={{ margin: 0, padding: '0 1rem 1rem', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 24px rgba(15,23,42,0.05)', border: item.recommended ? '1.5px solid var(--primary-color)' : '1px solid #e5e7eb' }}>
             <div style={{ height: 118, margin: '0 -1rem', background: `linear-gradient(rgba(15,23,42,0.12), rgba(15,23,42,0.18)), url(${item.image}) center/cover`, position: 'relative' }}>
               <span style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '0.35rem 0.65rem', color: '#1e293b', fontWeight: 900, fontSize: '0.72rem' }}>{item.category}</span>
               {item.recommended && <span style={{ position: 'absolute', top: 12, right: 12, background: 'var(--primary-color)', color: 'white', borderRadius: 999, padding: '0.35rem 0.65rem', fontWeight: 900, fontSize: '0.72rem' }}>Recomendado</span>}
             </div>
-            <div style={{ display: 'none', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', margin: '0.85rem 0 0.2rem' }}>
               <span style={{ background: '#f1f5f9', borderRadius: 6, padding: '0.45rem 0.65rem', color: '#020617', fontWeight: 800, fontSize: '0.82rem' }}>{item.category}</span>
-              <span style={{ color: item.active ? 'var(--primary-color)' : '#94a3b8', fontWeight: 800 }}>{item.active ? 'Activo' : 'Inactivo'}</span>
+              <span style={{ color: published ? 'var(--primary-color)' : hasVideo ? '#d97706' : '#94a3b8', fontWeight: 800, fontSize: '0.8rem', alignSelf: 'center' }}>
+                {published ? 'Publicado' : hasVideo ? 'Borrador' : 'Sin video'}
+              </span>
             </div>
             <h3 style={{ margin: '1rem 0 0.5rem', fontSize: '1.02rem', color: '#020617', lineHeight: 1.18 }}>{item.title}</h3>
             <p style={{ color: '#64748b', margin: '0 0 0.9rem', lineHeight: 1.4, fontSize: '0.86rem' }}>{item.description}</p>
             <p style={{ color: '#64748b', margin: '0 0 1rem', fontSize: '0.86rem' }}>{item.duration} · {item.level}</p>
+            {!published && (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => void publishAcademyItem(item)}
+                disabled={!hasVideo || publishingId === item.id}
+                style={{ width: '100%', marginBottom: '0.8rem', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 7, opacity: !hasVideo ? 0.55 : 1 }}
+                title={hasVideo ? 'Publicar y desbloquear para los usuarios' : 'Primero cargá un video'}
+              >
+                <CheckCircle2 size={16} />
+                {publishingId === item.id ? 'Publicando...' : hasVideo ? 'Publicar' : 'Cargá un video para publicar'}
+              </button>
+            )}
             <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.7rem' }}>
-              <button className={item.recommended ? 'btn-primary' : 'btn-secondary'} onClick={() => window.alert(`${item.title}\n\n${item.description}`)} style={{ padding: '0.55rem 0.9rem', fontSize: '0.82rem' }}>{item.recommended ? 'Continuar' : 'Ver taller'}</button>
+              <button className="btn-secondary" onClick={() => hasVideo ? openPreview(item) : openEditor(item)} style={{ padding: '0.55rem 0.9rem', fontSize: '0.82rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {hasVideo ? <><Eye size={15} /> Vista previa</> : <><Upload size={15} /> Cargar video</>}
+              </button>
               <div style={{ display: 'flex', gap: '0.6rem' }}>
-                <button title="Editar" onClick={() => setEditing(item)} style={{ color: 'var(--primary-color)' }}><Pencil size={17} /></button>
+                <button title="Editar" onClick={() => openEditor(item)} style={{ color: 'var(--primary-color)' }}><Pencil size={17} /></button>
                 <button title="Eliminar" onClick={async () => { if (window.confirm('Deseas eliminar este taller?')) { const result = await removeContentItemFromSupabase(item.id); if (!result.ok) { window.alert(result.error?.message ?? 'No pudimos eliminar el taller.'); return; } deleteAcademyItem(item.id); reload(); } }} style={{ color: '#020617' }}><Trash2 size={17} /></button>
               </div>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
+      {filteredItems.length === 0 && (
+        <div style={{ padding: '2.5rem', textAlign: 'center', border: '1px dashed #cbd5e1', borderRadius: 16, color: '#64748b' }}>No hay talleres en esta categoría.</div>
+      )}
+      {categoryManagerOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setCategoryManagerOpen(false)}>
+          <div className="card" style={{ width: 520, maxWidth: '96vw', maxHeight: '86vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }} onClick={event => event.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ margin: '0 0 0.25rem' }}>Categorías de Academia</h3>
+                <p style={{ margin: 0, color: '#64748b', fontSize: '0.84rem' }}>Creá categorías o renombrá las existentes.</p>
+              </div>
+              <button type="button" onClick={() => setCategoryManagerOpen(false)} style={{ width: 34, height: 34, borderRadius: 999, border: '1px solid #e2e8f0', background: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={17} /></button>
+            </div>
+            <div style={{ display: 'flex', gap: '0.55rem', marginBottom: '1rem' }}>
+              <input className="input-field" value={newCategory} onChange={event => setNewCategory(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') createCategory(); }} placeholder="Nueva categoría" />
+              <button type="button" className="btn-primary" onClick={createCategory} disabled={!newCategory.trim()} style={{ whiteSpace: 'nowrap' }}>Crear</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              {categories.map(category => (
+                <div key={category} style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', padding: '0.7rem', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                  {editingCategory === category ? (
+                    <>
+                      <input className="input-field" value={editingCategoryName} onChange={event => setEditingCategoryName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void renameCategory(); }} autoFocus />
+                      <button type="button" className="btn-primary" onClick={() => void renameCategory()} disabled={savingCategory || !editingCategoryName.trim()}>{savingCategory ? 'Guardando...' : 'Guardar'}</button>
+                      <button type="button" className="btn-secondary" onClick={() => setEditingCategory('')}>Cancelar</button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ flex: 1, color: '#334155', fontWeight: 700 }}>{category}</span>
+                      <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{items.filter(item => categoryKey(item.category) === categoryKey(category)).length} talleres</span>
+                      <button type="button" title="Renombrar categoría" onClick={() => { setEditingCategory(category); setEditingCategoryName(category); }} style={{ color: 'var(--primary-color)' }}><Pencil size={16} /></button>
+                      <button type="button" title="Eliminar categoría" onClick={() => void deleteCategory(category)} disabled={savingCategory || categoryKey(category) === categoryKey(UNCATEGORIZED_ACADEMY_LABEL)} style={{ color: categoryKey(category) === categoryKey(UNCATEGORIZED_ACADEMY_LABEL) ? '#cbd5e1' : '#dc2626', cursor: categoryKey(category) === categoryKey(UNCATEGORIZED_ACADEMY_LABEL) ? 'not-allowed' : 'pointer' }}><Trash2 size={16} /></button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {editing && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ width: 560, maxWidth: '94vw', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
-            <h3 style={{ marginTop: 0 }}>Editar taller</h3>
-            <label style={fieldLabelStyle}>Titulo del taller</label>
+          <div className="card" style={{ width: 560, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
+            <h3 style={{ marginTop: 0 }}>{creating ? 'Crear video' : 'Editar taller'}</h3>
+            <label style={fieldLabelStyle}>Título del taller</label>
             <input className="input-field" value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Descripcion del taller</label>
+            <label style={fieldLabelStyle}>Categoría</label>
+            <div style={{ display: 'flex', gap: '0.55rem', marginBottom: '0.7rem' }}>
+              <select className="input-field" value={editing.category} onChange={event => setEditing({ ...editing, category: event.target.value })}>
+                {!categories.some(category => categoryKey(category) === categoryKey(editing.category)) && <option value={editing.category}>{editing.category}</option>}
+                {categories.map(category => <option key={category} value={category}>{category}</option>)}
+              </select>
+              <button type="button" className="btn-secondary" onClick={() => setCategoryManagerOpen(true)} style={{ whiteSpace: 'nowrap' }}><Settings size={15} /> Categorías</button>
+            </div>
+            <label style={fieldLabelStyle}>Descripción del taller</label>
             <textarea className="input-field" rows={3} value={editing.description} onChange={e => setEditing({ ...editing, description: e.target.value })} style={{ marginBottom: '0.7rem' }} />
-            <label style={fieldLabelStyle}>Duracion</label>
+            <label style={fieldLabelStyle}>Duración</label>
             <input className="input-field" value={editing.duration} onChange={e => setEditing({ ...editing, duration: e.target.value })} style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Imagen de portada</label>
             <input className="input-field" value={editing.image} onChange={e => setEditing({ ...editing, image: e.target.value })} placeholder="URL de portada" style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Subir video / URL del video</label>
-            <input className="input-field" value={editing.videoUrl ?? ''} onChange={e => setEditing({ ...editing, videoUrl: e.target.value })} placeholder="https://... o ruta del video subido" style={{ marginBottom: '0.7rem' }} />
+            <input className="input-field" value={editing.videoUrl ?? ''} onChange={e => setEditing({ ...editing, videoUrl: e.target.value, active: e.target.value.trim() ? editing.active : false })} placeholder="https://..." style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Elegir video desde Biblioteca Multimedia</label>
             <select
               className="input-field"
               value=""
               onChange={event => {
                 const selected = mediaItems.find(item => item.id === event.target.value);
-                if (selected) setEditing({
-                  ...editing,
-                  videoUrl: selected.url,
-                  image: selected.thumbnailUrl || (selected.kind === 'Image' ? selected.url : editing.image),
-                  duration: selected.duration || editing.duration,
-                });
+                if (selected) {
+                  setVideoFile(null);
+                  setEditing({
+                    ...editing,
+                    videoUrl: selected.url,
+                    image: selected.thumbnailUrl || (selected.kind === 'Image' ? selected.url : editing.image),
+                    duration: selected.duration || editing.duration,
+                  });
+                }
               }}
               style={{ marginBottom: '0.7rem' }}
             >
@@ -277,12 +648,57 @@ const AdminAcademyPanel: React.FC = () => {
             </select>
             <input type="file" accept="video/*" className="input-field" onChange={e => {
               const file = e.target.files?.[0];
-              if (file) setEditing({ ...editing, videoUrl: file.name });
+              setVideoFile(file ?? null);
             }} style={{ marginBottom: '0.7rem', paddingTop: '0.75rem' }} />
-            <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}><input type="checkbox" checked={editing.active} onChange={e => setEditing({ ...editing, active: e.target.checked })} /> Activo</label>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.7rem' }}>
-              <button className="btn-secondary" onClick={() => setEditing(null)}>Cancelar</button>
-              <button className="btn-primary" onClick={save}>Guardar</button>
+            {videoFile && <p style={{ margin: '-0.25rem 0 0.8rem', color: '#64748b', fontSize: '0.82rem' }}>Video seleccionado: <strong>{videoFile.name}</strong></p>}
+            <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.45rem', fontWeight: 700 }}>
+              <input
+                type="checkbox"
+                checked={editing.active}
+                disabled={!hasAcademyVideo(editing) && !videoFile}
+                onChange={e => setEditing({ ...editing, active: e.target.checked })}
+              />
+              Publicado para usuarios
+            </label>
+            {!hasAcademyVideo(editing) && !videoFile && (
+              <p style={{ margin: '0 0 1rem 1.45rem', color: '#94a3b8', fontSize: '0.8rem' }}>Subí o seleccioná un video para habilitar la publicación.</p>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.7rem', flexWrap: 'wrap' }}>
+              <button className="btn-secondary" onClick={() => openPreview(editing, videoFile)} disabled={!hasAcademyVideo(editing) && !videoFile} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Eye size={15} /> Vista previa</button>
+              <div style={{ display: 'flex', gap: '0.7rem' }}>
+                <button className="btn-secondary" onClick={() => { setEditing(null); setCreating(false); setVideoFile(null); }} disabled={uploading}>Cancelar</button>
+                <button className="btn-primary" onClick={save} disabled={uploading}>
+                  {uploading ? uploadProgress === null ? 'Guardando...' : `Subiendo ${uploadProgress}%` : creating ? 'Crear video' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {previewing?.videoUrl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.72)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={closePreview}>
+          <div style={{ width: 900, maxWidth: '96vw', background: 'white', borderRadius: 18, overflow: 'hidden', boxShadow: '0 24px 80px rgba(15,23,42,0.35)' }} onClick={event => event.stopPropagation()}>
+            <div style={{ padding: '0.9rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb' }}>
+              <div>
+                <p style={{ margin: '0 0 0.2rem', color: 'var(--primary-color)', fontSize: '0.72rem', fontWeight: 900 }}>VISTA PREVIA DEL USUARIO</p>
+                <h3 style={{ margin: 0, color: '#020617' }}>{previewing.title}</h3>
+              </div>
+              <button type="button" title="Cerrar" onClick={closePreview} style={{ width: 36, height: 36, borderRadius: 999, border: '1px solid #e2e8f0', background: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+            </div>
+            <div style={{ padding: '1rem' }}>
+              {academyVideoEmbedUrl(previewing.videoUrl) ? (
+                <iframe
+                  title={`Vista previa de ${previewing.title}`}
+                  src={academyVideoEmbedUrl(previewing.videoUrl) ?? ''}
+                  style={{ width: '100%', aspectRatio: '16 / 9', border: 0, borderRadius: 14, background: '#0f172a' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video src={previewing.videoUrl} poster={previewing.image} controls onError={() => setPreviewError('No pudimos reproducir esta dirección. Verificá que sea un enlace directo al video o elegilo desde la Biblioteca Multimedia.')} style={{ width: '100%', aspectRatio: '16 / 9', borderRadius: 14, background: '#0f172a', objectFit: 'contain' }} />
+              )}
+              {previewError && <p style={{ margin: '0.8rem 0 0', padding: '0.75rem', borderRadius: 10, background: '#fef2f2', color: '#b91c1c', fontSize: '0.84rem', fontWeight: 700 }}>{previewError}</p>}
+              <p style={{ margin: '0.85rem 0 0', color: '#64748b', lineHeight: 1.5 }}>{previewing.description}</p>
             </div>
           </div>
         </div>
@@ -376,9 +792,15 @@ const AdminMediaPanel: React.FC = () => {
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState<MediaEditorState | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchMediaItems().then(setItems);
+    const refresh = () => void fetchMediaItems().then(setItems);
+    refresh();
+    const channel = supabase
+      ? supabase.channel('admin-reactiva-media').on('postgres_changes', { event: '*', schema: 'public', table: 'content_items' }, refresh).subscribe()
+      : null;
+    return () => { if (channel && supabase) void supabase.removeChannel(channel); };
   }, []);
 
   const persist = (next: MediaItem[]) => {
@@ -398,6 +820,7 @@ const AdminMediaPanel: React.FC = () => {
   const save = async () => {
     if (!editing || !editing.name.trim()) return;
     setUploading(true);
+    setUploadProgress(null);
     try {
       let url = editing.url;
       let thumbnailUrl = editing.thumbnailUrl ?? '';
@@ -414,16 +837,24 @@ const AdminMediaPanel: React.FC = () => {
         if (!supabase) throw new Error('Supabase no está configurado.');
         const extension = file.name.includes('.') ? file.name.split('.').pop() : 'bin';
         const path = `${finalKind.toLowerCase()}s/${Date.now()}-${fileSafe(finalName)}.${extension}`;
-        const { error: uploadError } = await supabase.storage
-          .from('reactiva-media')
-          .upload(path, file, { upsert: true, contentType: file.type });
-        if (uploadError) throw uploadError;
-
-        const { data } = supabase.storage.from('reactiva-media').getPublicUrl(path);
-        url = data.publicUrl;
+        if (finalKind === 'Video') {
+          setUploadProgress(0);
+          url = await uploadResumableStorageFile({
+            bucket: 'reactiva-media',
+            path,
+            file,
+            onProgress: setUploadProgress,
+          });
+        } else {
+          const { error: uploadError } = await supabase.storage
+            .from('reactiva-media')
+            .upload(path, file, { upsert: true, contentType: file.type });
+          if (uploadError) throw uploadError;
+          url = supabase.storage.from('reactiva-media').getPublicUrl(path).data.publicUrl;
+        }
 
         if (finalKind === 'Image' && !thumbnailUrl) {
-          thumbnailUrl = data.publicUrl;
+          thumbnailUrl = url;
         }
       }
 
@@ -476,6 +907,7 @@ const AdminMediaPanel: React.FC = () => {
       window.alert(err?.message ?? 'No pudimos subir el archivo.');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -618,9 +1050,9 @@ const AdminMediaPanel: React.FC = () => {
               </>
             )}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.7rem' }}>
-              <button className="btn-secondary" onClick={() => setEditing(null)}>Cancelar</button>
+              <button className="btn-secondary" onClick={() => setEditing(null)} disabled={uploading}>Cancelar</button>
               <button className="btn-primary" onClick={save} disabled={uploading} style={{ opacity: uploading ? 0.7 : 1 }}>
-                {uploading ? 'Subiendo...' : 'Guardar'}
+                {uploading ? uploadProgress === null ? 'Guardando...' : `Subiendo ${uploadProgress}%` : 'Guardar'}
               </button>
             </div>
           </div>
@@ -693,7 +1125,12 @@ export const Contenido: React.FC = () => {
   const [scheduledVideos, setScheduledVideos] = useState<ScheduledVideo[]>([]);
 
   useEffect(() => {
-    fetchVideoUnlockSchedule().then(setUnlockSchedule);
+    const refreshSchedule = () => void fetchVideoUnlockSchedule().then(setUnlockSchedule);
+    refreshSchedule();
+    const channel = supabase
+      ? supabase.channel('admin-video-unlock-schedule').on('postgres_changes', { event: '*', schema: 'public', table: 'video_unlock_schedule' }, refreshSchedule).subscribe()
+      : null;
+    return () => { if (channel && supabase) void supabase.removeChannel(channel); };
   }, []);
 
   useEffect(() => {
@@ -701,9 +1138,13 @@ export const Contenido: React.FC = () => {
     void refreshVideos();
     window.addEventListener(SCHEDULED_VIDEOS_EVENT, refreshVideos);
     window.addEventListener('storage', refreshVideos);
+    const channel = supabase
+      ? supabase.channel('admin-scheduled-videos').on('postgres_changes', { event: '*', schema: 'public', table: 'content_items' }, refreshVideos).subscribe()
+      : null;
     return () => {
       window.removeEventListener(SCHEDULED_VIDEOS_EVENT, refreshVideos);
       window.removeEventListener('storage', refreshVideos);
+      if (channel && supabase) void supabase.removeChannel(channel);
     };
   }, []);
 
@@ -734,15 +1175,12 @@ export const Contenido: React.FC = () => {
           const unlock = unlockSchedule.find(item => item.day === video.day && item.block === video.block);
           return {
             id: video.id,
-            day: video.day,
-            block: video.block,
             turno: video.block === 'morning' ? 'Mañana' : 'Tarde',
             tipo: video.title || 'Pausa activa',
             horario: unlock?.time ?? video.time,
             empresa: video.companyName ?? 'Global',
             estado: unlock?.enabled ? 'programado' : 'borrador',
             url: video.url,
-            createdAt: video.createdAt,
           };
         });
       return { ...d, fecha: fmt(fecha), bloques: videosDelDia };
@@ -826,25 +1264,6 @@ export const Contenido: React.FC = () => {
     } finally {
       setSavingProgram(false);
     }
-  };
-
-  const eliminarVideoProgramado = async (video: ScheduledVideo) => {
-    if (!window.confirm(`Eliminar "${video.title}"? Esta pausa dejará de mostrarse a los usuarios.`)) return;
-
-    const result = await deleteScheduledVideo(video);
-    if (!result.ok) {
-      window.alert(result.error?.message ?? 'No pudimos eliminar el video programado.');
-      return;
-    }
-
-    setScheduledVideos(prev => prev.filter(item => !(
-      item.id === video.id
-      || (
-        item.day === video.day
-        && item.block === video.block
-        && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')
-      )
-    )));
   };
 
   const btnNav = (onClick:()=>void, children:React.ReactNode) => (
@@ -1025,18 +1444,6 @@ export const Contenido: React.FC = () => {
                           )}
                           <button onClick={()=>abrirModal()} style={{background:'none',border:'none',color:'#0d9488',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem'}}>
                             <Video size={12}/> Editar
-                          </button>
-                          <button onClick={() => void eliminarVideoProgramado({
-                            id: bloque.id,
-                            day: bloque.day,
-                            block: bloque.block,
-                            time: bloque.horario,
-                            title: bloque.tipo,
-                            url: bloque.url,
-                            companyName: bloque.empresa,
-                            createdAt: bloque.createdAt,
-                          })} title="Eliminar pausa" style={{background:'none',border:'none',color:'#ef4444',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem',marginLeft:'0.75rem'}}>
-                            <Trash2 size={12}/> Eliminar
                           </button>
                         </div>
                       </div>

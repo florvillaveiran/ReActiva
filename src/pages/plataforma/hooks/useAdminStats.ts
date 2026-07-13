@@ -4,19 +4,9 @@ import { supabase } from '../lib/supabase';
 /**
  * Hook de métricas para las vistas de Admin (Dashboard / Analíticas).
  *
- * Hoy lee del mismo `localStorage` que el dashboard de usuario (key `reactiva_pausas`).
- * Esto sirve para la demo en un solo navegador: usuario completa pausas → admin las ve.
- *
- * En producción real (multi-usuario, multi-empresa) habría que reemplazar
- * `readPausasFromStorage` por un fetch al backend que devuelva las pausas agregadas
- * de todos los usuarios (filtradas por empresa si corresponde):
- *
- *   const fetchPausasFromBackend = async (empresaId?: string) => {
- *     const res = await fetch(`/api/admin/pausas?empresa=${empresaId ?? 'all'}`);
- *     return res.json();
- *   };
- *
- * El resto del cálculo (estadísticas) puede seguir igual o moverse al backend.
+ * Supabase es la fuente principal: consulta `pause_sessions`, filtra por empresa
+ * y periodo, y se actualiza por Realtime. El almacenamiento local solo se usa
+ * cuando Supabase no esta configurado, para conservar el modo de demostracion.
  */
 
 interface PausaGuardada {
@@ -89,7 +79,29 @@ const mapPauseRows = (rows: any[]): PausaGuardada[] => rows.map((row) => ({
   },
 }));
 
-const readPausasFromSupabase = async (companyId?: string): Promise<PausaGuardada[] | null> => {
+const nextDayIso = (value: string) => {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return '';
+  date.setDate(date.getDate() + 1);
+  return date.toISOString();
+};
+
+const startDayIso = (value: string) => {
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+};
+
+const isWithinPeriod = (pause: PausaGuardada, periodFrom?: string, periodTo?: string) => {
+  const date = new Date(pause.fecha);
+  if (Number.isNaN(date.getTime())) return false;
+  const inclusiveStart = periodFrom ? startDayIso(periodFrom) : '';
+  if (inclusiveStart && date < new Date(inclusiveStart)) return false;
+  const exclusiveEnd = periodTo ? nextDayIso(periodTo) : '';
+  if (exclusiveEnd && date >= new Date(exclusiveEnd)) return false;
+  return true;
+};
+
+const readPausasFromSupabase = async (companyId?: string, periodFrom?: string, periodTo?: string): Promise<PausaGuardada[] | null> => {
   if (!supabase) return null;
 
   let query = supabase
@@ -98,6 +110,10 @@ const readPausasFromSupabase = async (companyId?: string): Promise<PausaGuardada
     .order('occurred_at', { ascending: false });
 
   if (companyId) query = query.eq('company_id', companyId);
+  const inclusiveStart = periodFrom ? startDayIso(periodFrom) : '';
+  if (inclusiveStart) query = query.gte('occurred_at', inclusiveStart);
+  const exclusiveEnd = periodTo ? nextDayIso(periodTo) : '';
+  if (exclusiveEnd) query = query.lt('occurred_at', exclusiveEnd);
 
   const { data, error } = await query;
 
@@ -112,7 +128,6 @@ const AYUDA_TO_SATISF: Record<string, number> = {
   'Sí, mucho': 90, 'Sí, un poco': 55, No: 15,
 };
 
-// TODO(backend): reemplazar por fetch al endpoint /api/admin/pausas?empresa=...
 const readPausasFromStorage = (): PausaGuardada[] => {
   try {
     const all: PausaGuardada[] = JSON.parse(localStorage.getItem('reactiva_pausas') || '[]');
@@ -130,7 +145,18 @@ const getCampo = <T,>(p: PausaGuardada, campo: keyof PausaGuardada | keyof NonNu
   return (p[campo] ?? (p.respuestas as any)?.[campo] ?? fallback) as T | undefined;
 };
 
-const computeStats = (pausas: PausaGuardada[]): AdminStats => {
+const evolutionLabelsForPeriod = (periodFrom?: string, periodTo?: string) => {
+  if (!periodFrom || !periodTo) return ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+  const start = new Date(`${periodFrom}T00:00:00.000Z`);
+  const end = new Date(`${periodTo}T00:00:00.000Z`);
+  const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1);
+  if (days <= 9) return ['Inicio', 'Mitad', 'Cierre'];
+  if (days <= 45) return ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+  if (days >= 300) return ['T1', 'T2', 'T3', 'T4'];
+  return ['Inicio', 'Periodo 2', 'Periodo 3', 'Cierre'];
+};
+
+const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: string): AdminStats => {
   const totalPausas = pausas.length;
   const totalObjetivo = DAYS.length * 2;
   const hayDatos = totalPausas > 0;
@@ -214,7 +240,7 @@ const computeStats = (pausas: PausaGuardada[]): AdminStats => {
     : 0;
   const participacionGeneral = adherencia;
 
-  const evolucion = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'].map(name => ({
+  const evolucion = evolutionLabelsForPeriod(periodFrom, periodTo).map(name => ({
     name,
     energia: Math.round(energiaPromedio * 10) / 10,
     satisfaccion,
@@ -238,26 +264,39 @@ const computeStats = (pausas: PausaGuardada[]): AdminStats => {
   };
 };
 
-export function useAdminStats(companyId?: string): AdminStats {
-  const [stats, setStats] = useState<AdminStats>(() => computeStats(supabase ? [] : readPausasFromStorage()));
+export function useAdminStats(companyId?: string, periodFrom?: string, periodTo?: string): AdminStats {
+  const filteredLocalPauses = () => readPausasFromStorage().filter(pause => isWithinPeriod(pause, periodFrom, periodTo));
+  const [stats, setStats] = useState<AdminStats>(() => computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
 
   useEffect(() => {
     let mounted = true;
     const refresh = () => {
-      setStats(computeStats(supabase ? [] : readPausasFromStorage()));
-      readPausasFromSupabase(companyId).then((pausas) => {
-        if (mounted && pausas) setStats(computeStats(pausas));
+      setStats(computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
+      readPausasFromSupabase(companyId, periodFrom, periodTo).then((pausas) => {
+        if (mounted && pausas) setStats(computeStats(pausas, periodFrom, periodTo));
       });
     };
     refresh();
     window.addEventListener('reactiva-pausas-updated', refresh);
     window.addEventListener('storage', refresh);
+    const channel = supabase
+      ? supabase
+          .channel(`admin-stats-${companyId ?? 'all'}-${periodFrom ?? 'start'}-${periodTo ?? 'end'}`)
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'pause_sessions',
+            ...(companyId ? { filter: `company_id=eq.${companyId}` } : {}),
+          }, refresh)
+          .subscribe()
+      : null;
     return () => {
       mounted = false;
       window.removeEventListener('reactiva-pausas-updated', refresh);
       window.removeEventListener('storage', refresh);
+      if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, [companyId]);
+  }, [companyId, periodFrom, periodTo]);
 
   return stats;
 }

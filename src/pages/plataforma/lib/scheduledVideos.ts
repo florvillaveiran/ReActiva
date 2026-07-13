@@ -66,8 +66,7 @@ const rowToScheduledVideo = (row: any): ScheduledVideo | null => {
 };
 
 export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
-  const local = readStoredVideos();
-  if (!supabase) return local;
+  if (!supabase) return readStoredVideos();
 
   const { data, error } = await supabase
     .from('content_items')
@@ -78,18 +77,24 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
 
   if (error || !data) return readStoredVideos();
 
-  const videos = data.map(rowToScheduledVideo).filter(Boolean) as ScheduledVideo[];
+  const remote = data.map(rowToScheduledVideo).filter(Boolean) as ScheduledVideo[];
+  const merged = new Map<string, ScheduledVideo>();
+  remote.forEach((video) => {
+    const key = `${video.day}__${video.block}__${video.companyName ?? 'Global'}`;
+    merged.set(key, video);
+  });
+  const videos = Array.from(merged.values());
   saveScheduledVideosLocal(videos);
   return videos;
 };
 
 export const saveScheduledVideo = async (video: ScheduledVideo) => {
-  const current = readStoredVideos();
-  const withoutSameSlot = current.filter(item => !(item.day === video.day && item.block === video.block && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')));
-  const next = [...withoutSameSlot, video];
-  saveScheduledVideosLocal(next);
-
-  if (!supabase) return { ok: true };
+  if (!supabase) {
+    const current = readStoredVideos();
+    const withoutSameSlot = current.filter(item => !(item.day === video.day && item.block === video.block && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')));
+    saveScheduledVideosLocal([...withoutSameSlot, video]);
+    return { ok: true };
+  }
 
   const { error } = await supabase.rpc('save_content_item', {
     item_id: isUuid(video.id) ? video.id : null,
@@ -112,53 +117,39 @@ export const saveScheduledVideo = async (video: ScheduledVideo) => {
     },
   });
 
-  return { ok: !error, error };
-};
-
-export const deleteScheduledVideo = async (video: ScheduledVideo) => {
-  const current = readStoredVideos();
-  saveScheduledVideosLocal(current.filter(item => !(
-    item.id === video.id
-    || (
-      item.day === video.day
-      && item.block === video.block
-      && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')
-    )
-  )));
-
-  if (!supabase) return { ok: true };
-
-  if (isUuid(video.id)) {
-    const { error } = await supabase
-      .from('content_items')
-      .update({ active: false })
-      .eq('id', video.id);
-
-    if (error) return { ok: false, error };
-  }
-
-  const { error } = await supabase
-    .from('content_items')
-    .update({ active: false })
-    .eq('kind', 'video')
-    .eq('active', true)
-    .eq('metadata->>day', video.day)
-    .eq('metadata->>block', video.block)
-    .eq('metadata->>companyName', video.companyName ?? 'Global');
-
+  if (!error) await fetchScheduledVideos();
   return { ok: !error, error };
 };
 
 export const getYouTubeIdFromUrl = (url: string) => {
-  const patterns = [
-    /youtube\.com\/watch\?v=([^&]+)/,
-    /youtube\.com\/embed\/([^?&]+)/,
-    /youtu\.be\/([^?&]+)/,
-  ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match?.[1]) return match[1];
+  const value = url.trim();
+  if (!value) return null;
+
+  try {
+    const parsed = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    const hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    const cleanId = (candidate?: string | null) => {
+      const id = candidate?.trim();
+      return id && /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
+    };
+
+    if (hostname === 'youtu.be') return cleanId(parsed.pathname.split('/').filter(Boolean)[0]);
+
+    const isYouTubeHost = hostname === 'youtube.com'
+      || hostname.endsWith('.youtube.com')
+      || hostname === 'youtube-nocookie.com'
+      || hostname.endsWith('.youtube-nocookie.com');
+    if (!isYouTubeHost) return null;
+
+    const queryId = cleanId(parsed.searchParams.get('v'));
+    if (queryId) return queryId;
+
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (['embed', 'shorts', 'live', 'v'].includes(parts[0])) return cleanId(parts[1]);
+  } catch {
+    return null;
   }
+
   return null;
 };
 

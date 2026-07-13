@@ -4,6 +4,7 @@ export type AdminContentKind = 'coach' | 'academy';
 
 export interface CoachItem {
   id: string;
+  sourceId?: string;
   category: string;
   title: string;
   description: string;
@@ -26,6 +27,7 @@ export interface CoachItem {
 
 export interface AcademyItem {
   id: string;
+  sourceId?: string;
   category: string;
   title: string;
   description: string;
@@ -37,10 +39,22 @@ export interface AcademyItem {
   active: boolean;
 }
 
+export const normalizeAcademyVideoUrl = (videoUrl?: string) => {
+  const value = videoUrl?.trim() ?? '';
+  if (/^(www\.)?(youtube\.com|youtu\.be)\//i.test(value)) return `https://${value}`;
+  return value;
+};
+
+export const isAcademyVideoReady = (videoUrl?: string) => /^(https?:\/\/|\/|blob:|data:video\/)/i.test(normalizeAcademyVideoUrl(videoUrl));
+
+export const isAcademyItemPublished = (item: AcademyItem) => item.active && isAcademyVideoReady(item.videoUrl);
+
 const STORAGE_KEY = 'reactiva-content-library';
+const ACADEMY_CATEGORIES_STORAGE_KEY = 'reactiva-academy-custom-categories';
 
 const coachDetail = (overrides: Partial<CoachItem>): CoachItem => ({
   id: '',
+  sourceId: overrides.sourceId ?? overrides.id,
   category: '',
   title: '',
   description: '',
@@ -49,11 +63,11 @@ const coachDetail = (overrides: Partial<CoachItem>): CoachItem => ({
   subtitle: overrides.description ?? '',
   time: '5 minutos',
   difficulty: 'Moderado',
-  benefit: 'Reduce el estres y aumenta la productividad.',
-  why: 'Este habito ayuda a trabajar con mas claridad, menos dispersion y mayor sensacion de avance.',
-  evidence: 'La evidencia sugiere que pausas breves y habitos concretos favorecen la concentracion y el bienestar durante la jornada.',
-  steps: ['Aplicalo antes de empezar una tarea importante.', 'Repetilo durante una pausa breve.', 'Observa como cambia tu energia o foco.'],
-  signals: ['Baja energia', 'Dificultad para concentrarte', 'Tension acumulada'],
+  benefit: 'Reduce el estrés y aumenta la productividad.',
+  why: 'Este hábito ayuda a trabajar con más claridad, menos dispersión y mayor sensación de avance.',
+  evidence: 'La evidencia sugiere que pausas breves y hábitos concretos favorecen la concentración y el bienestar durante la jornada.',
+  steps: ['Aplicalo antes de empezar una tarea importante.', 'Repetilo durante una pausa breve.', 'Observá cómo cambia tu energía o foco.'],
+  signals: ['Baja energía', 'Dificultad para concentrarte', 'Tensión acumulada'],
   challenge: overrides.recommendation ?? '',
   related: 'Entorno saludable',
   tags: [],
@@ -62,27 +76,178 @@ const coachDetail = (overrides: Partial<CoachItem>): CoachItem => ({
 });
 
 export const defaultCoachItems: CoachItem[] = [
-  coachDetail({ id: 'coach-salud-visual', category: 'Salud Visual', title: 'Salud visual', detailTitle: 'Descanso visual activo', subtitle: 'Practicas para proteger tu vista durante largas jornadas.', description: 'Practicas para proteger tu vista durante largas jornadas.', recommendation: 'Ajusta el brillo de tu monitor al entorno.', tags: ['Vision', 'Pantallas'], active: true, isNew: true }),
-  coachDetail({ id: 'coach-organizacion', category: 'Organizacion', title: 'Organizacion', detailTitle: 'Mas foco, menos sobrecarga mental', subtitle: 'Una forma simple de ordenar prioridades y bajar la dispersion.', description: 'Habitos simples para trabajar con mas foco y menos agotamiento.', recommendation: 'Antes de empezar el dia, elegi tus 3 tareas mas importantes.', why: 'Elegir prioridades baja la saturacion mental. Te ayuda a trabajar con mas claridad, menos dispersion y mayor sensacion de avance.', evidence: 'La evidencia sobre carga cognitiva sugiere que reducir multitarea, ordenar prioridades y trabajar por bloques favorece la concentracion.', steps: ['Antes de abrir mails o chats, anota tus 3 prioridades.', 'Elegi una tarea principal para empezar.', 'Agrupa tareas similares para cambiar menos de contexto.'], signals: ['Saltas de tarea en tarea', 'Sentis poco avance', 'Muchas pestanas abiertas', 'No sabes por donde empezar', 'Sentis saturacion mental'], challenge: 'Elegi ahora las 3 tareas mas importantes del dia y marca una como prioridad principal.', tags: ['Foco', 'Prioridades'], active: true, isNew: true }),
-  coachDetail({ id: 'coach-sueno', category: 'Sueno', title: 'Sueno', detailTitle: 'Mejor descanso para rendir mejor manana', subtitle: 'Un cierre mas tranquilo del dia para recuperar energia y foco.', description: 'Consejos para descansar mejor y recuperar energia.', recommendation: 'Genera una rutina breve para cerrar el dia.', tags: ['Descanso'], active: true, isNew: true }),
-  coachDetail({ id: 'coach-estres', category: 'Estres', title: 'Estres', detailTitle: 'Gestion de estres en momentos de tension', subtitle: 'Una tecnica simple para bajar revoluciones.', description: 'Tecnicas para gestionar momentos de tension y ansiedad.', recommendation: 'Escribi lo que te preocupa para sacarlo de tu cabeza.', tags: ['Tension'], active: true, isNew: true }),
-  coachDetail({ id: 'coach-ergonomia', category: 'Ergonomia', title: 'Ergonomia', detailTitle: 'Ajustes ergonomicos simples', subtitle: 'Pequenos cambios para prevenir molestias.', description: 'Ajustes en tu espacio fisico para prevenir dolores musculares.', recommendation: 'Mantene los pies apoyados en el suelo.', tags: ['Postura'], active: true }),
-  coachDetail({ id: 'coach-entorno', category: 'Entorno saludable', title: 'Entorno saludable', detailTitle: 'Disena un entorno que te ayude', subtitle: 'Orden, luz y pequenos detalles para trabajar mejor.', description: 'Optimiza tu espacio de trabajo para mayor comodidad y enfoque.', recommendation: 'Agrega una planta a tu espacio de trabajo.', tags: ['Espacio'], active: true }),
-  coachDetail({ id: 'coach-energia', category: 'Energia', title: 'Energia', detailTitle: 'Recupera energia sin depender del cafe', subtitle: 'Movimiento breve para volver con claridad.', description: 'Ideas para mantenerte activo sin depender solo del cafe.', recommendation: 'Activa el cuerpo unos minutos entre reuniones.', tags: ['Movimiento'], active: true }),
-  coachDetail({ id: 'coach-hidratacion', category: 'Hidratacion', title: 'Hidratacion', detailTitle: 'Hidratacion inteligente durante la jornada', subtitle: 'Un habito simple para sostener energia y foco.', description: 'Recordatorios simples para tomar mas agua durante la jornada.', recommendation: 'Aprovecha cada pausa para hidratarte.', tags: ['Agua'], active: true }),
+  coachDetail({ id: 'coach-salud-visual', category: 'Salud visual', title: 'Salud visual', detailTitle: 'Descanso visual activo', subtitle: 'Prácticas para proteger tu vista durante largas jornadas.', description: 'Prácticas para proteger tu vista durante largas jornadas.', recommendation: 'Ajustá el brillo de tu monitor al entorno.', tags: ['Visión', 'Pantallas'], active: true, isNew: true }),
+  coachDetail({ id: 'coach-organizacion', category: 'Organización', title: 'Organización', detailTitle: 'Más foco, menos sobrecarga mental', subtitle: 'Una forma simple de ordenar prioridades y bajar la dispersión.', description: 'Hábitos simples para trabajar con más foco y menos agotamiento.', recommendation: 'Antes de empezar el día, elegí tus 3 tareas más importantes.', why: 'Elegir prioridades baja la saturación mental. Te ayuda a trabajar con más claridad, menos dispersión y mayor sensación de avance.', evidence: 'La evidencia sobre carga cognitiva sugiere que reducir la multitarea, ordenar prioridades y trabajar por bloques favorece la concentración.', steps: ['Antes de abrir mails o chats, anotá tus 3 prioridades.', 'Elegí una tarea principal para empezar.', 'Agrupá tareas similares para cambiar menos de contexto.'], signals: ['Saltás de tarea en tarea', 'Sentís poco avance', 'Muchas pestañas abiertas', 'No sabés por dónde empezar', 'Sentís saturación mental'], challenge: 'Elegí ahora las 3 tareas más importantes del día y marcá una como prioridad principal.', tags: ['Foco', 'Prioridades'], active: true, isNew: true }),
+  coachDetail({ id: 'coach-sueno', category: 'Sueño', title: 'Sueño', detailTitle: 'Mejor descanso para rendir mejor mañana', subtitle: 'Un cierre más tranquilo del día para recuperar energía y foco.', description: 'Consejos para descansar mejor y recuperar energía.', recommendation: 'Generá una rutina breve para cerrar el día.', tags: ['Descanso'], active: true, isNew: true }),
+  coachDetail({ id: 'coach-estres', category: 'Estrés', title: 'Estrés', detailTitle: 'Gestión del estrés en momentos de tensión', subtitle: 'Una técnica simple para bajar revoluciones.', description: 'Técnicas para gestionar momentos de tensión y ansiedad.', recommendation: 'Escribí lo que te preocupa para sacarlo de tu cabeza.', tags: ['Tensión'], active: true, isNew: true }),
+  coachDetail({ id: 'coach-ergonomia', category: 'Ergonomía', title: 'Ergonomía', detailTitle: 'Ajustes ergonómicos simples', subtitle: 'Pequeños cambios para prevenir molestias.', description: 'Ajustes en tu espacio físico para prevenir dolores musculares.', recommendation: 'Mantené los pies apoyados en el suelo.', tags: ['Postura'], active: true }),
+  coachDetail({ id: 'coach-entorno', category: 'Entorno saludable', title: 'Entorno saludable', detailTitle: 'Diseñá un entorno que te ayude', subtitle: 'Orden, luz y pequeños detalles para trabajar mejor.', description: 'Optimizá tu espacio de trabajo para mayor comodidad y enfoque.', recommendation: 'Agregá una planta a tu espacio de trabajo.', tags: ['Espacio'], active: true }),
+  coachDetail({ id: 'coach-energia', category: 'Energía', title: 'Energía', detailTitle: 'Recuperá energía sin depender del café', subtitle: 'Movimiento breve para volver con claridad.', description: 'Ideas para mantenerte activo sin depender sólo del café.', recommendation: 'Activá el cuerpo unos minutos entre reuniones.', tags: ['Movimiento'], active: true }),
+  coachDetail({ id: 'coach-hidratacion', category: 'Hidratación', title: 'Hidratación', detailTitle: 'Hidratación inteligente durante la jornada', subtitle: 'Un hábito simple para sostener energía y foco.', description: 'Recordatorios simples para tomar más agua durante la jornada.', recommendation: 'Aprovechá cada pausa para hidratarte.', tags: ['Agua'], active: true }),
 ];
 
 export const defaultAcademyItems: AcademyItem[] = [
-  { id: 'academy-cervical', category: 'Dolor musculoesqueletico', title: 'Prevencion de dolor cervical', description: 'Entiende por que duele el cuello y como evitarlo.', duration: '15 min', level: 'Intermedio', image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=1400', recommended: true, active: true },
-  { id: 'academy-ergonomia', category: 'Ergonomia', title: 'Ergonomia en el Home Office', description: 'Ajustes esenciales para trabajar sin dolor desde casa.', duration: '12 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1400', active: true },
-  { id: 'academy-sueno', category: 'Sueno', title: 'Higiene del sueno para profesionales', description: 'Estrategias nocturnas para recuperar energia real.', duration: '10 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&q=80&w=1400', active: true },
-  { id: 'academy-hidratacion', category: 'Hidratacion', title: 'Agua y cerebro: el link invisible', description: 'Como la hidratacion impacta tu capacidad de concentracion.', duration: '8 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&q=80&w=1400', active: true },
+  { id: 'academy-cervical', category: 'Dolor musculoesquelético', title: 'Prevencion de dolor cervical', description: 'Entiende por que duele el cuello y como evitarlo.', duration: '15 min', level: 'Intermedio', image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=1400', recommended: true, active: true },
+  { id: 'academy-ergonomia', category: 'Ergonomía', title: 'Ergonomia en el Home Office', description: 'Ajustes esenciales para trabajar sin dolor desde casa.', duration: '12 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1400', active: true },
+  { id: 'academy-sueno', category: 'Sueño', title: 'Higiene del sueno para profesionales', description: 'Estrategias nocturnas para recuperar energia real.', duration: '10 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&q=80&w=1400', active: true },
+  { id: 'academy-hidratacion', category: 'Hidratación', title: 'Agua y cerebro: el link invisible', description: 'Como la hidratacion impacta tu capacidad de concentracion.', duration: '8 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&q=80&w=1400', active: true },
   { id: 'academy-visual', category: 'Salud visual', title: 'Descanso visual activo', description: 'Protege tus ojos en jornadas intensas de pantallas.', duration: '6 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=1400', active: true },
   { id: 'academy-entorno', category: 'Entorno saludable', title: 'Disena tu espacio, disena tu mente', description: 'Optimiza luz, ruido y plantas para reducir estres.', duration: '14 min', level: 'Intermedio', image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1400', active: true },
-  { id: 'academy-estres', category: 'Estres', title: 'Reseteo del sistema nervioso', description: 'Tecnicas express para bajar revoluciones en dias dificiles.', duration: '9 min', level: 'Avanzado', image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1400', active: true },
-  { id: 'academy-respiracion', category: 'Respiracion', title: 'Respiracion para el enfoque', description: 'Utiliza tu respiracion para volver al presente.', duration: '5 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1400', active: true },
-  { id: 'academy-organizacion', category: 'Organizacion del trabajo', title: 'Trabajo profundo y bloques', description: 'Como organizar tu agenda para reducir la carga mental.', duration: '18 min', level: 'Intermedio', image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=1400', active: true },
+  { id: 'academy-estres', category: 'Estrés', title: 'Reseteo del sistema nervioso', description: 'Tecnicas express para bajar revoluciones en dias dificiles.', duration: '9 min', level: 'Avanzado', image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1400', active: true },
+  { id: 'academy-respiracion', category: 'Respiración', title: 'Respiracion para el enfoque', description: 'Utiliza tu respiracion para volver al presente.', duration: '5 min', level: 'Basico', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1400', active: true },
+  { id: 'academy-organizacion', category: 'Organización del trabajo', title: 'Trabajo profundo y bloques', description: 'Como organizar tu agenda para reducir la carga mental.', duration: '18 min', level: 'Intermedio', image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=1400', active: true },
 ];
+
+const normalizeLookup = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim();
+
+const coachAccentReplacements: [RegExp, string][] = [
+  [/\bSueno\b/g, 'Sueño'], [/\bsueno\b/g, 'sueño'],
+  [/\bmanana\b/g, 'mañana'], [/\bpestanas\b/g, 'pestañas'],
+  [/\bPracticas\b/g, 'Prácticas'], [/\bpracticas\b/g, 'prácticas'],
+  [/\bVision\b/g, 'Visión'], [/\bOrganizacion\b/g, 'Organización'],
+  [/\borganizacion\b/g, 'organización'], [/\bMas\b/g, 'Más'], [/\bmas\b/g, 'más'],
+  [/\bdispersion\b/g, 'dispersión'], [/\bHabitos\b/g, 'Hábitos'], [/\bhabitos\b/g, 'hábitos'],
+  [/\bhabito\b/g, 'hábito'], [/\bdia\b/g, 'día'], [/\belegi\b/g, 'elegí'],
+  [/\bsaturacion\b/g, 'saturación'], [/\bsensacion\b/g, 'sensación'],
+  [/\bconcentracion\b/g, 'concentración'], [/\banota\b/g, 'anotá'],
+  [/\bAgrupa\b/g, 'Agrupá'], [/\bSaltas\b/g, 'Saltás'], [/\bSentis\b/g, 'Sentís'],
+  [/\bsabes\b/g, 'sabés'], [/\bdonde\b/g, 'dónde'], [/\bmarca\b/g, 'marcá'],
+  [/\benergia\b/g, 'energía'], [/\bEnergia\b/g, 'Energía'],
+  [/\bGenera\b/g, 'Generá'], [/\bEstres\b/g, 'Estrés'], [/\bestres\b/g, 'estrés'],
+  [/\bGestion\b/g, 'Gestión'], [/\btension\b/g, 'tensión'], [/\bTension\b/g, 'Tensión'],
+  [/\btecnica\b/g, 'técnica'], [/\bTecnicas\b/g, 'Técnicas'], [/\bEscribi\b/g, 'Escribí'],
+  [/\bErgonomia\b/g, 'Ergonomía'], [/\bergonomicos\b/g, 'ergonómicos'],
+  [/\bPequenos\b/g, 'Pequeños'], [/\bpequenos\b/g, 'pequeños'],
+  [/\bfisico\b/g, 'físico'], [/\bMantene\b/g, 'Mantené'], [/\bDisena\b/g, 'Diseñá'],
+  [/\bOptimiza\b/g, 'Optimizá'], [/\bAgrega\b/g, 'Agregá'], [/\bcafe\b/g, 'café'],
+  [/\bActiva\b/g, 'Activá'], [/\bHidratacion\b/g, 'Hidratación'],
+  [/\bAprovecha\b/g, 'Aprovechá'], [/\bObserva\b/g, 'Observá'], [/\bcomo\b/g, 'cómo'],
+  [/\bRespiracion\b/g, 'Respiración'], [/\brespiracion\b/g, 'respiración'],
+  [/\bMusculoesqueletico\b/g, 'Musculoesquelético'], [/\bmusculoesqueletico\b/g, 'musculoesquelético'],
+  [/\bNutricion\b/g, 'Nutrición'], [/\bnutricion\b/g, 'nutrición'],
+  [/\bMeditacion\b/g, 'Meditación'], [/\bmeditacion\b/g, 'meditación'],
+  [/\bPrevencion\b/g, 'Prevención'], [/\bprevencion\b/g, 'prevención'],
+  [/\bAtencion\b/g, 'Atención'], [/\batencion\b/g, 'atención'],
+  [/\bRelajacion\b/g, 'Relajación'], [/\brelajacion\b/g, 'relajación'],
+  [/\bCategoria\b/g, 'Categoría'], [/\bcategoria\b/g, 'categoría'],
+];
+
+const accentText = (value: string) => coachAccentReplacements.reduce(
+  (result, [pattern, replacement]) => result.replace(pattern, replacement),
+  value,
+);
+
+export const normalizeAcademyCategory = (category: string) => accentText(category.trim());
+
+const readAcademyCategoriesCache = (): string[] => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(ACADEMY_CATEGORIES_STORAGE_KEY) || '[]');
+    return Array.isArray(stored)
+      ? stored.filter(value => typeof value === 'string' && value.trim()).map(normalizeAcademyCategory)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const cacheAcademyCategories = (categories: string[]) => {
+  const normalized = Array.from(new Set(categories.map(normalizeAcademyCategory).filter(Boolean)));
+  localStorage.setItem(ACADEMY_CATEGORIES_STORAGE_KEY, JSON.stringify(normalized));
+  window.dispatchEvent(new Event('reactiva-content-categories-updated'));
+  return normalized;
+};
+
+export const fetchAcademyCategories = async (): Promise<string[]> => {
+  if (!supabase) return readAcademyCategoriesCache();
+  const { data, error } = await supabase
+    .from('content_categories')
+    .select('name')
+    .eq('kind', 'academy')
+    .eq('active', true)
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error || !data) {
+    console.error('No se pudieron cargar las categorias desde Supabase', error);
+    return readAcademyCategoriesCache();
+  }
+  return cacheAcademyCategories(data.map(row => row.name));
+};
+
+export const saveAcademyCategory = async (name: string) => {
+  const normalized = normalizeAcademyCategory(name);
+  if (!supabase) {
+    cacheAcademyCategories([...readAcademyCategoriesCache(), normalized]);
+    return { ok: true, error: null };
+  }
+  const { error } = await supabase.rpc('save_content_category', { category_name: normalized });
+  if (!error) await fetchAcademyCategories();
+  return { ok: !error, error };
+};
+
+export const renameAcademyCategory = async (oldName: string, newName: string) => {
+  const normalized = normalizeAcademyCategory(newName);
+  if (!supabase) {
+    cacheAcademyCategories(readAcademyCategoriesCache().map(name => name === oldName ? normalized : name));
+    return { ok: true, error: null };
+  }
+  const { error } = await supabase.rpc('rename_content_category', { old_name: oldName, new_name: normalized });
+  if (!error) await fetchAcademyCategories();
+  return { ok: !error, error };
+};
+
+export const removeAcademyCategory = async (name: string, replacementName: string) => {
+  if (!supabase) {
+    cacheAcademyCategories(readAcademyCategoriesCache().filter(category => category !== name));
+    return { ok: true, error: null };
+  }
+  const { error } = await supabase.rpc('delete_content_category', {
+    category_name: name,
+    replacement_name: replacementName,
+  });
+  if (!error) await fetchAcademyCategories();
+  return { ok: !error, error };
+};
+
+const defaultCoachIdForTitle = (title: string) => defaultCoachItems.find(
+  item => normalizeLookup(item.title) === normalizeLookup(title),
+)?.id;
+
+const defaultAcademyIdForTitle = (title: string) => defaultAcademyItems.find(
+  item => normalizeLookup(item.title) === normalizeLookup(title),
+)?.id;
+
+const normalizeCoachTypography = (item: CoachItem): CoachItem => ({
+  ...item,
+  sourceId: item.sourceId ?? defaultCoachIdForTitle(item.title) ?? item.id,
+  category: accentText(item.category),
+  title: accentText(item.title),
+  description: accentText(item.description),
+  recommendation: accentText(item.recommendation),
+  detailTitle: accentText(item.detailTitle),
+  subtitle: accentText(item.subtitle),
+  benefit: accentText(item.benefit),
+  why: accentText(item.why),
+  evidence: accentText(item.evidence),
+  steps: item.steps.map(accentText),
+  signals: item.signals.map(accentText),
+  challenge: accentText(item.challenge),
+  related: accentText(item.related),
+  tags: item.tags.map(accentText),
+});
+
+const normalizeAcademyItem = (item: AcademyItem): AcademyItem => ({
+  ...item,
+  sourceId: item.sourceId ?? defaultAcademyIdForTitle(item.title) ?? item.id,
+  category: normalizeAcademyCategory(item.category),
+  videoUrl: normalizeAcademyVideoUrl(item.videoUrl) || undefined,
+  active: item.active && isAcademyVideoReady(item.videoUrl),
+});
 
 interface ContentLibrary {
   coach: CoachItem[];
@@ -93,8 +258,8 @@ const readLibrary = (): ContentLibrary => {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') as Partial<ContentLibrary>;
     return {
-      coach: (parsed.coach ?? defaultCoachItems).map(item => coachDetail(item)),
-      academy: parsed.academy ?? defaultAcademyItems,
+      coach: (parsed.coach ?? defaultCoachItems).map(item => normalizeCoachTypography(coachDetail(item))),
+      academy: (parsed.academy ?? defaultAcademyItems).map(normalizeAcademyItem),
     };
   } catch {
     return { coach: defaultCoachItems, academy: defaultAcademyItems };
@@ -116,7 +281,10 @@ export const updateCoachItem = (item: CoachItem) => {
 
 export const updateAcademyItem = (item: AcademyItem) => {
   const library = readLibrary();
-  library.academy = library.academy.map(existing => existing.id === item.id ? item : existing);
+  const exists = library.academy.some(existing => existing.id === item.id);
+  library.academy = exists
+    ? library.academy.map(existing => existing.id === item.id ? item : existing)
+    : [...library.academy, item];
   saveContentLibrary(library);
 };
 
@@ -134,8 +302,9 @@ export const deleteAcademyItem = (id: string) => {
 
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
-const rowToCoachItem = (row: any): CoachItem => coachDetail({
+const rowToCoachItem = (row: any): CoachItem => normalizeCoachTypography(coachDetail({
   id: row.id,
+  sourceId: row.metadata?.sourceId ?? defaultCoachIdForTitle(row.title),
   category: row.category ?? row.metadata?.category ?? 'General',
   title: row.title,
   description: row.description ?? '',
@@ -154,10 +323,11 @@ const rowToCoachItem = (row: any): CoachItem => coachDetail({
   tags: row.tags ?? [],
   active: row.active,
   isNew: row.featured,
-});
+}));
 
-const rowToAcademyItem = (row: any): AcademyItem => ({
+const rowToAcademyItem = (row: any): AcademyItem => normalizeAcademyItem({
   id: row.id,
+  sourceId: row.metadata?.sourceId ?? defaultAcademyIdForTitle(row.title),
   category: row.category ?? row.metadata?.category ?? 'General',
   title: row.title,
   description: row.description ?? '',
@@ -172,97 +342,133 @@ const rowToAcademyItem = (row: any): AcademyItem => ({
 export const fetchContentLibrary = async (): Promise<ContentLibrary> => {
   if (!supabase) return readLibrary();
 
-  const { data, error } = await supabase
-    .from('content_items')
-    .select('id, kind, title, description, category, tags, url, thumbnail_url, active, featured, sort_order, metadata')
-    .in('kind', ['coach_tip', 'workshop'])
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
+  const [{ data, error }, { data: tombstones, error: tombstonesError }] = await Promise.all([
+    supabase
+      .from('content_items')
+      .select('id, kind, title, description, category, tags, url, thumbnail_url, active, featured, sort_order, metadata')
+      .in('kind', ['coach_tip', 'workshop'])
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('content_item_tombstones')
+      .select('source_id, kind'),
+  ]);
 
   if (error || !data) {
     console.error('No se pudo cargar contenido desde Supabase', error);
     return readLibrary();
   }
+  if (tombstonesError) console.warn('La migracion de contenido todavia no esta aplicada; se usara compatibilidad local.', tombstonesError);
+
+  const deleted = new Set((tombstonesError ? [] : (tombstones ?? [])).map(row => `${row.kind}__${row.source_id}`));
 
   const library = {
     coach: data.filter((row: any) => row.kind === 'coach_tip').map(rowToCoachItem),
     academy: data.filter((row: any) => row.kind === 'workshop').map(rowToAcademyItem),
   };
 
-  const mergeByTitle = <T extends { title: string }>(base: T[], remote: T[]) => {
-    const merged = new Map(base.map(item => [item.title.trim().toLowerCase(), item]));
-    remote.forEach(item => merged.set(item.title.trim().toLowerCase(), item));
+  const mergeCoachItems = (base: CoachItem[], remote: CoachItem[]) => {
+    const keyFor = (item: CoachItem) => item.sourceId ?? normalizeLookup(item.title);
+    const merged = new Map(base.map(item => [keyFor(item), item]));
+    remote.forEach(item => merged.set(keyFor(item), item));
+    return Array.from(merged.values());
+  };
+
+  const mergeAcademyItems = (base: AcademyItem[], remote: AcademyItem[]) => {
+    const keyFor = (item: AcademyItem) => item.sourceId ?? normalizeLookup(item.title);
+    const merged = new Map(base.map(item => [keyFor(item), normalizeAcademyItem(item)]));
+    remote.forEach(item => merged.set(keyFor(item), normalizeAcademyItem(item)));
     return Array.from(merged.values());
   };
 
   const merged = {
-    coach: mergeByTitle(defaultCoachItems, library.coach),
-    academy: mergeByTitle(defaultAcademyItems, library.academy),
+    coach: mergeCoachItems(
+      defaultCoachItems.filter(item => !deleted.has(`coach_tip__${item.sourceId ?? item.id}`)),
+      library.coach,
+    ),
+    academy: mergeAcademyItems(
+      defaultAcademyItems.filter(item => !deleted.has(`workshop__${item.sourceId ?? item.id}`)),
+      library.academy,
+    ),
   };
   saveContentLibrary(merged);
   return merged;
 };
 
 export const saveCoachItem = async (item: CoachItem) => {
-  updateCoachItem(item);
-  if (!supabase) return { ok: true };
+  const normalizedItem = normalizeCoachTypography(item);
+  if (!supabase) {
+    updateCoachItem(normalizedItem);
+    return { ok: true };
+  }
 
   const { error } = await supabase.rpc('save_content_item', {
-    item_id: isUuid(item.id) ? item.id : null,
+    item_id: isUuid(normalizedItem.id) ? normalizedItem.id : null,
     item_kind: 'coach_tip',
-    item_title: item.title,
-    item_description: item.description,
-    item_category: item.category,
-    item_tags: item.tags,
+    item_title: normalizedItem.title,
+    item_description: normalizedItem.description,
+    item_category: normalizedItem.category,
+    item_tags: normalizedItem.tags,
     item_url: null,
     item_thumbnail_url: null,
-    item_active: item.active,
-    item_featured: Boolean(item.isNew),
+    item_active: normalizedItem.active,
+    item_featured: Boolean(normalizedItem.isNew),
     item_sort_order: 0,
     item_metadata: {
-      recommendation: item.recommendation,
-      detailTitle: item.detailTitle,
-      subtitle: item.subtitle,
-      time: item.time,
-      difficulty: item.difficulty,
-      benefit: item.benefit,
-      why: item.why,
-      evidence: item.evidence,
-      steps: item.steps,
-      signals: item.signals,
-      challenge: item.challenge,
-      related: item.related,
+      sourceId: normalizedItem.sourceId,
+      recommendation: normalizedItem.recommendation,
+      detailTitle: normalizedItem.detailTitle,
+      subtitle: normalizedItem.subtitle,
+      time: normalizedItem.time,
+      difficulty: normalizedItem.difficulty,
+      benefit: normalizedItem.benefit,
+      why: normalizedItem.why,
+      evidence: normalizedItem.evidence,
+      steps: normalizedItem.steps,
+      signals: normalizedItem.signals,
+      challenge: normalizedItem.challenge,
+      related: normalizedItem.related,
     },
   });
 
-  return { ok: !error, error };
+  if (error) return { ok: false, error };
+  updateCoachItem(normalizedItem);
+  await fetchContentLibrary();
+  return { ok: true, error: null };
 };
 
 export const saveAcademyItem = async (item: AcademyItem) => {
-  updateAcademyItem(item);
-  if (!supabase) return { ok: true };
+  const normalizedItem = normalizeAcademyItem(item);
+  if (!supabase) {
+    updateAcademyItem(normalizedItem);
+    return { ok: true };
+  }
 
   const { error } = await supabase.rpc('save_content_item', {
-    item_id: isUuid(item.id) ? item.id : null,
+    item_id: isUuid(normalizedItem.id) ? normalizedItem.id : null,
     item_kind: 'workshop',
-    item_title: item.title,
-    item_description: item.description,
-    item_category: item.category,
+    item_title: normalizedItem.title,
+    item_description: normalizedItem.description,
+    item_category: normalizedItem.category,
     item_tags: [],
-    item_url: item.videoUrl ?? null,
-    item_thumbnail_url: item.image,
-    item_active: item.active,
-    item_featured: Boolean(item.recommended),
+    item_url: normalizedItem.videoUrl ?? null,
+    item_thumbnail_url: normalizedItem.image,
+    item_active: normalizedItem.active,
+    item_featured: Boolean(normalizedItem.recommended),
     item_sort_order: 0,
     item_metadata: {
-      duration: item.duration,
-      level: item.level,
-      image: item.image,
-      videoUrl: item.videoUrl ?? null,
+      sourceId: normalizedItem.sourceId,
+      duration: normalizedItem.duration,
+      level: normalizedItem.level,
+      image: normalizedItem.image,
+      videoUrl: normalizedItem.videoUrl ?? null,
     },
   });
 
-  return { ok: !error, error };
+  if (error) return { ok: false, error };
+  updateAcademyItem(normalizedItem);
+  await fetchContentLibrary();
+  return { ok: true, error: null };
 };
 
 export const removeContentItemFromSupabase = async (id: string) => {

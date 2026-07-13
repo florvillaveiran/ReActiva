@@ -523,8 +523,65 @@ export const UsuarioDashboard: React.FC = () => {
   const displayName = user?.name?.trim()?.split(' ')[0] || 'Usuario';
 
   useEffect(() => {
-    setCompleted(loadPausasFromStorage(user?.email));
-    setVideosVistos(loadVideosVistos(user?.email));
+    let mounted = true;
+    const refreshProgress = async () => {
+      if (!supabase) {
+        if (mounted) {
+          setCompleted(loadPausasFromStorage(user?.email));
+          setVideosVistos(loadVideosVistos(user?.email));
+        }
+        return;
+      }
+
+      const [{ data: pauses, error: pausesError }, { data: views, error: viewsError }] = await Promise.all([
+        supabase
+          .from('pause_sessions')
+          .select('day_label, block, energy, feeling, has_pain, pain_zone, answers, occurred_at')
+          .order('occurred_at', { ascending: true }),
+        supabase
+          .from('user_content_progress')
+          .select('content_key'),
+      ]);
+
+      if (!mounted) return;
+      if (!pausesError && pauses) {
+        const unique = new Map<string, PauseRecord>();
+        pauses.forEach((row: any) => {
+          const record: PauseRecord = {
+            dia: row.day_label,
+            bloque: row.block,
+            energia: row.energy ?? row.answers?.energia,
+            dolor: row.has_pain ?? row.answers?.dolor,
+            zona: row.pain_zone ?? row.answers?.zona,
+            feeling: row.feeling ?? row.answers?.feeling,
+            estres: row.answers?.estres,
+            ayuda: row.answers?.ayuda,
+            mejora: row.answers?.mejora,
+            tipo: row.answers?.tipo,
+          };
+          unique.set(`${record.dia}__${record.bloque}`, record);
+        });
+        setCompleted(Array.from(unique.values()));
+      } else {
+        setCompleted(loadPausasFromStorage(user?.email));
+      }
+
+      if (!viewsError && views) setVideosVistos(new Set(views.map(row => row.content_key)));
+      else setVideosVistos(loadVideosVistos(user?.email));
+    };
+
+    void refreshProgress();
+    const channel = supabase
+      ? supabase
+          .channel('user-dashboard-progress')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'pause_sessions' }, refreshProgress)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'user_content_progress' }, refreshProgress)
+          .subscribe()
+      : null;
+    return () => {
+      mounted = false;
+      if (channel && supabase) void supabase.removeChannel(channel);
+    };
   }, [user?.email]);
 
   // Marca un video como visto y persiste en localStorage
@@ -535,18 +592,27 @@ export const UsuarioDashboard: React.FC = () => {
       const next = new Set(prev);
       next.add(key);
       localStorage.setItem(userStorageKey('reactiva_videos_vistos', user?.email), JSON.stringify(Array.from(next)));
+      if (supabase) {
+        void supabase.rpc('record_content_view', { content_key: key }).then(({ error }) => {
+          if (error) console.error('No se pudo guardar el progreso del video en Supabase', error);
+        });
+      }
       return next;
     });
   };
 
   useEffect(() => {
-    const syncSchedule = () => setUnlockSchedule(loadVideoUnlockSchedule());
-    fetchVideoUnlockSchedule().then(setUnlockSchedule);
+    const syncSchedule = () => void fetchVideoUnlockSchedule().then(setUnlockSchedule);
+    syncSchedule();
     window.addEventListener(VIDEO_UNLOCK_SCHEDULE_EVENT, syncSchedule);
     window.addEventListener('storage', syncSchedule);
+    const channel = supabase
+      ? supabase.channel('user-video-unlock-schedule').on('postgres_changes', { event: '*', schema: 'public', table: 'video_unlock_schedule' }, syncSchedule).subscribe()
+      : null;
     return () => {
       window.removeEventListener(VIDEO_UNLOCK_SCHEDULE_EVENT, syncSchedule);
       window.removeEventListener('storage', syncSchedule);
+      if (channel && supabase) void supabase.removeChannel(channel);
     };
   }, []);
 
@@ -555,9 +621,13 @@ export const UsuarioDashboard: React.FC = () => {
     void syncVideos();
     window.addEventListener(SCHEDULED_VIDEOS_EVENT, syncVideos);
     window.addEventListener('storage', syncVideos);
+    const channel = supabase
+      ? supabase.channel('user-scheduled-videos').on('postgres_changes', { event: '*', schema: 'public', table: 'content_items' }, syncVideos).subscribe()
+      : null;
     return () => {
       window.removeEventListener(SCHEDULED_VIDEOS_EVENT, syncVideos);
       window.removeEventListener('storage', syncVideos);
+      if (channel && supabase) void supabase.removeChannel(channel);
     };
   }, []);
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -15,11 +15,6 @@ function Layout() {
   const isPresentacion = path === '/presentacion' || path === '/presentaci%c3%b3n' || path === '/presentación';
   const isDeck = path === '/deck';
   const isPlataforma = path.startsWith('/plataforma');
-
-  useEffect(() => {
-    if (location.pathname !== '/' || !window.location.hash.includes('type=recovery')) return;
-    window.location.replace(`/plataforma/login${window.location.hash}`);
-  }, [location.pathname]);
 
   if (isPresentacion) {
     return (

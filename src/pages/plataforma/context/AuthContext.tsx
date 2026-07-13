@@ -22,9 +22,43 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEV_USERS = [
+type DevUser = {
+  email: string;
+  password: string;
+  role: Role;
+  name: string;
+};
+
+const DEFAULT_DEV_USERS: DevUser[] = [
   { email: 'usuario@reactiva.com', password: 'reactiva', role: 'usuario' as Role, name: 'Usuario Demo' },
 ];
+
+/**
+ * Allows a local checkout to use test accounts without committing real access
+ * details to the repository. `VITE_LOCAL_AUTH_USERS` must be a JSON array of
+ * { email, password, role, name } values and is intentionally read only when
+ * Supabase has not been configured.
+ */
+const getLocalDevUsers = (): DevUser[] => {
+  const value = (import.meta as any).env?.VITE_LOCAL_AUTH_USERS as string | undefined;
+  if (!value) return DEFAULT_DEV_USERS;
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return DEFAULT_DEV_USERS;
+
+    const users = parsed.filter((user): user is DevUser =>
+      typeof user?.email === 'string'
+      && typeof user?.password === 'string'
+      && typeof user?.name === 'string'
+      && (user?.role === 'admin' || user?.role === 'rrhh' || user?.role === 'usuario'),
+    );
+
+    return users.length ? users : DEFAULT_DEV_USERS;
+  } catch {
+    return DEFAULT_DEV_USERS;
+  }
+};
 
 const roleFromValue = (value: unknown): Role => {
   if (value === 'admin' || value === 'rrhh' || value === 'usuario') return value;
@@ -146,7 +180,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    const fallbackUser = DEV_USERS.find(candidate => candidate.email.toLowerCase() === email.trim().toLowerCase() && candidate.password === password);
+    const fallbackUser = !isSupabaseConfigured
+      ? getLocalDevUsers().find(candidate => candidate.email.toLowerCase() === email.trim().toLowerCase() && candidate.password === password)
+      : undefined;
     if (fallbackUser) {
       const user = { email: fallbackUser.email, role: fallbackUser.role, name: fallbackUser.name };
       localStorage.setItem('reactiva_user', JSON.stringify(user));

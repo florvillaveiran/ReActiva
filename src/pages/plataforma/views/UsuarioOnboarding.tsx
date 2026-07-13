@@ -120,6 +120,16 @@ export const UsuarioOnboarding: React.FC = () => {
         </div>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', marginBottom: '1rem' }}>Aviso</h2>
         <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.5 }}>{error}</p>
+        {invitacion && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setError('')}
+            style={{ width: '100%', marginTop: '1.25rem', padding: '0.85rem 1rem' }}
+          >
+            Volver al formulario
+          </button>
+        )}
       </div>
     </div>
   );
@@ -161,16 +171,40 @@ export const UsuarioOnboarding: React.FC = () => {
     setError('');
 
     if (supabase && token) {
+      const { data: invitationData, error: invitationError } = await supabase
+        .rpc('get_invitation_context', { invitation_token: token })
+        .maybeSingle();
+      const invitationContext = invitationData as any;
+
+      if (invitationError || !invitationContext?.is_valid) {
+        console.error('La invitacion dejo de ser valida antes de completar el onboarding', invitationError, invitationContext);
+        setLoading(false);
+        setError('La invitación ya no está vigente o ya fue utilizada. Generá un nuevo enlace desde el panel de Usuarios.');
+        return;
+      }
+
+      const invitedEmail = String(invitationContext.email ?? '').trim().toLowerCase();
+      const submittedEmail = respuestas.email.trim().toLowerCase();
+      if (invitedEmail && invitedEmail !== submittedEmail) {
+        setLoading(false);
+        setError(`El enlace fue creado para ${invitedEmail}. Volvé al formulario y utilizá ese mismo correo.`);
+        return;
+      }
+
       const { error: onboardingError } = await supabase.rpc('complete_user_onboarding', {
         invitation_token: token,
-        user_email: respuestas.email.trim().toLowerCase(),
+        user_email: submittedEmail,
         user_full_name: respuestas.nombre.trim(),
         onboarding_data: respuestas,
       });
 
       if (onboardingError) {
+        console.error('No se pudo completar el onboarding de usuario', onboardingError);
         setLoading(false);
-        setError('No pudimos guardar el onboarding. Revisá el enlace y volvé a intentarlo.');
+        const detail = onboardingError.message?.trim();
+        setError(detail
+          ? `No pudimos guardar el onboarding. Supabase indicó: ${detail}`
+          : 'No pudimos guardar el onboarding. Revisá el enlace y volvé a intentarlo.');
         return;
       }
     }
