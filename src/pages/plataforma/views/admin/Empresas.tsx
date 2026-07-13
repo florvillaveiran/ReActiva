@@ -3,6 +3,7 @@ import { Search, MapPin, Users, Building, Plus, Mail, User, Link as LinkIcon, Co
 import { getDB, setDB, addEmpresa, Empresa } from '../../mock/data';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { invitationPath, makeShortInvitationCode } from '../../lib/invitationLinks';
 
 const hashToNumericId = (value: string) => {
   let hash = 0;
@@ -17,13 +18,6 @@ const companyStatusFromSupabase = (status?: string): Empresa['estado'] => {
   if (status === 'pending_onboarding') return 'Pendiente onboarding';
   if (status === 'inactive') return 'Inactiva';
   return 'Activa';
-};
-
-const makeCompanyToken = () => {
-  const random = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return `cmp-${random.replace(/[^a-zA-Z0-9]/g, '').slice(0, 28)}`;
 };
 
 const ESTADO_STYLES: Record<string, { bg: string; color: string; dot: string }> = {
@@ -265,8 +259,19 @@ export const Empresas: React.FC = () => {
 
   const handleGenerateLink = async () => {
     if (!newNombre || !newUbicacion || !newResponsable || !newEmail) return alert('Completa todos los campos obligatorios');
-    const token = makeCompanyToken();
-    const link = `${window.location.origin}/plataforma/onboarding/empresa/${token}`;
+    const token = makeShortInvitationCode();
+    const onboardingUrl = new URL(invitationPath('company', token), window.location.origin);
+
+    // In local/demo mode there is no shared backend. Include the minimum
+    // company context in the URL so the onboarding remains valid when it is
+    // opened in another browser profile or device.
+    if (!supabase) {
+      onboardingUrl.searchParams.set('empresa', newNombre.trim());
+      onboardingUrl.searchParams.set('ubicacion', newUbicacion.trim());
+      onboardingUrl.searchParams.set('responsable', newResponsable.trim());
+      onboardingUrl.searchParams.set('email', newEmail.trim().toLowerCase());
+    }
+    const link = onboardingUrl.toString();
 
     try {
       if (supabase) {

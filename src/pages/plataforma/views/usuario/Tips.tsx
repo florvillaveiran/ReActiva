@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarCheck, Clock, Droplets, Eye, Leaf, Lightbulb, Moon, Monitor, Sparkles, Star, Target, Trophy, Zap } from 'lucide-react';
 import { CoachItem, fetchContentLibrary, getContentLibrary } from '../../data/contentLibrary';
+import { supabase } from '../../lib/supabase';
 
 const iconFor = (id: string) => {
   if (id.includes('visual')) return { icon: <Eye size={18} />, bg: '#f3e8ff', color: '#8b5cf6' };
@@ -18,10 +19,35 @@ export const UsuarioTips: React.FC = () => {
   const [selected, setSelected] = useState<CoachItem | null>(null);
 
   useEffect(() => {
-    const refresh = () => setVersion(value => value + 1);
-    fetchContentLibrary().then(() => refresh());
-    window.addEventListener('reactiva-content-library-updated', refresh);
-    return () => window.removeEventListener('reactiva-content-library-updated', refresh);
+    let mounted = true;
+    const applyLibrary = (library = getContentLibrary()) => {
+      if (!mounted) return;
+      setVersion(value => value + 1);
+      setSelected(current => {
+        if (!current) return null;
+        return library.coach.find(item => item.id === current.id || item.sourceId === current.sourceId) ?? null;
+      });
+    };
+    const refreshRemote = () => void fetchContentLibrary().then(applyLibrary);
+    const refreshLocal = () => applyLibrary();
+
+    refreshRemote();
+    window.addEventListener('focus', refreshRemote);
+    window.addEventListener('reactiva-content-library-updated', refreshLocal);
+
+    const channel = supabase
+      ? supabase
+          .channel('user-reactiva-tips')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'content_items' }, refreshRemote)
+          .subscribe()
+      : null;
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('focus', refreshRemote);
+      window.removeEventListener('reactiva-content-library-updated', refreshLocal);
+      if (channel && supabase) void supabase.removeChannel(channel);
+    };
   }, []);
 
   const items = useMemo(() => getContentLibrary().coach.filter(item => item.active), [version]);
@@ -51,28 +77,28 @@ export const UsuarioTips: React.FC = () => {
         </div>
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(235px, 1fr))', gap: '1rem' }}>
           {[
-            ['RECOMENDACION PRINCIPAL', selected.recommendation, <Target size={17} />],
-            ['POR QUE IMPORTA', selected.why, <Sparkles size={17} />],
+            ['RECOMENDACIÓN PRINCIPAL', selected.recommendation, <Target size={17} />],
+            ['POR QUÉ IMPORTA', selected.why, <Sparkles size={17} />],
             ['EVIDENCIA', selected.evidence, <Lightbulb size={17} />],
           ].map(([title, text, iconNode]) => (
-            <article key={String(title)} style={{ background: title === 'RECOMENDACION PRINCIPAL' ? '#f0fdf9' : 'white', border: '1px solid #d1fae5', borderRadius: 16, padding: '0.9rem', minHeight: 108 }}>
+            <article key={String(title)} style={{ background: title === 'RECOMENDACIÓN PRINCIPAL' ? '#f0fdf9' : 'white', border: '1px solid #d1fae5', borderRadius: 16, padding: '0.9rem', minHeight: 108 }}>
               <p style={{ display: 'flex', alignItems: 'center', gap: 7, margin: '0 0 0.65rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', fontSize: '0.78rem' }}>{iconNode}{title}</p>
-              <p style={{ margin: 0, color: '#020617', lineHeight: 1.4, fontWeight: title === 'RECOMENDACION PRINCIPAL' ? 800 : 500, fontSize: '0.9rem' }}>{text}</p>
+              <p style={{ margin: 0, color: '#020617', lineHeight: 1.4, fontWeight: title === 'RECOMENDACIÓN PRINCIPAL' ? 800 : 500, fontSize: '0.9rem' }}>{text}</p>
             </article>
           ))}
           <article style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 16, padding: '0.9rem', minHeight: 148 }}>
-            <p style={{ margin: '0 0 0.65rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', fontSize: '0.78rem' }}>COMO APLICARLO HOY</p>
+            <p style={{ margin: '0 0 0.65rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', fontSize: '0.78rem' }}>CÓMO APLICARLO HOY</p>
             {selected.steps.map(step => <p key={step} style={{ margin: '0 0 0.48rem', color: '#64748b', fontSize: '0.9rem' }}>{step}</p>)}
           </article>
           <article style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 16, padding: '0.9rem', minHeight: 148 }}>
-            <p style={{ margin: '0 0 0.65rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', fontSize: '0.78rem' }}>SENALES</p>
+            <p style={{ margin: '0 0 0.65rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', fontSize: '0.78rem' }}>SEÑALES</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
               {selected.signals.map(signal => <span key={signal} style={{ border: '1px solid #e5e7eb', borderRadius: 999, padding: '0.28rem 0.58rem', color: '#64748b', fontSize: '0.84rem' }}>{signal}</span>)}
             </div>
-            <p style={{ borderTop: '1px solid #e5e7eb', marginTop: '0.75rem', paddingTop: '0.65rem', color: '#64748b', fontStyle: 'italic', fontSize: '0.82rem' }}>Estas senales son orientativas y no reemplazan una indicacion medica.</p>
+            <p style={{ borderTop: '1px solid #e5e7eb', marginTop: '0.75rem', paddingTop: '0.65rem', color: '#64748b', fontStyle: 'italic', fontSize: '0.82rem' }}>Estas señales son orientativas y no reemplazan una indicación médica.</p>
           </article>
           <article style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 16, padding: '0.9rem', minHeight: 148 }}>
-            <p style={{ display: 'flex', alignItems: 'center', gap: 7, margin: '0 0 0.65rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', fontSize: '0.78rem' }}><Trophy size={16} /> MINI DESAFIO</p>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 7, margin: '0 0 0.65rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', fontSize: '0.78rem' }}><Trophy size={16} /> MINI DESAFÍO</p>
             <p style={{ margin: 0, color: '#020617', lineHeight: 1.4, fontWeight: 800, fontSize: '0.9rem' }}>{selected.challenge}</p>
           </article>
         </section>
@@ -89,7 +115,7 @@ export const UsuarioTips: React.FC = () => {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
         <div>
           <h1 style={{ margin: 0, color: '#020617', fontSize: '1.65rem', fontWeight: 900 }}>ReActiva Tips</h1>
-          <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.95rem' }}>Tu acompanante diario de habitos, personalizado segun tu bienestar.</p>
+          <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.95rem' }}>Tu acompañante diario de hábitos, personalizado según tu bienestar.</p>
         </div>
         <div style={{ width: 44, height: 44, borderRadius: 14, background: '#ecfdf5', color: 'var(--primary-color)', border: '1px solid #99f6e4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Sparkles size={21} />
@@ -99,9 +125,9 @@ export const UsuarioTips: React.FC = () => {
       <section style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', marginBottom: '0.4rem', fontSize: '0.78rem' }}>
           <Lightbulb size={15} />
-          <span>RECOMENDACION PARA HOY</span>
+          <span>RECOMENDACIÓN PARA HOY</span>
         </div>
-        <p style={{ margin: 0, color: '#020617', fontSize: '0.98rem', fontWeight: 800 }}>Cada 20 minutos, mira algo a 20 pies (6 metros) de distancia durante 20 segundos.</p>
+        <p style={{ margin: 0, color: '#020617', fontSize: '0.98rem', fontWeight: 800 }}>Cada 20 minutos, mirá algo a 20 pies (6 metros) de distancia durante 20 segundos.</p>
       </section>
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: '1rem' }}>
@@ -118,7 +144,7 @@ export const UsuarioTips: React.FC = () => {
               </div>
               <p style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.4, minHeight: 45, margin: '0 0 0.85rem' }}>{item.description}</p>
               <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.75rem 0.85rem', marginBottom: '0.95rem' }}>
-                <p style={{ margin: '0 0 0.3rem', color: 'var(--primary-color)', fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.04em' }}>RECOMENDACION</p>
+                <p style={{ margin: '0 0 0.3rem', color: 'var(--primary-color)', fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.04em' }}>RECOMENDACIÓN</p>
                 <p style={{ margin: 0, color: '#020617', lineHeight: 1.35, fontSize: '0.88rem' }}>{item.recommendation}</p>
               </div>
               <button type="button" onClick={() => setSelected(item)} className="btn-primary" style={{ borderRadius: 999, padding: '0.55rem 0.9rem', fontWeight: 900, fontSize: '0.82rem' }}>Ver consejo</button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getEmpresaByToken, updateEmpresa, Empresa } from '../mock/data';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { addEmpresa, getEmpresaByToken, updateEmpresa, Empresa } from '../mock/data';
 import { Building, CheckCircle2, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -37,6 +37,7 @@ const checkOption = (label: string, selected: boolean, onChange: () => void) => 
 export const EmpresaOnboarding: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -92,13 +93,36 @@ export const EmpresaOnboarding: React.FC = () => {
           setEmpresa(found);
         }
       } else {
-        setError('El enlace de onboarding es inválido o ha caducado.');
+        // A local link can be opened in a browser where the mock database has
+        // not yet been created. Restore the pending company from the link
+        // context instead of treating a newly generated link as expired.
+        const nombre = searchParams.get('empresa')?.trim();
+        const ubicacion = searchParams.get('ubicacion')?.trim() ?? '';
+        const responsable = searchParams.get('responsable')?.trim() ?? '';
+        const email = searchParams.get('email')?.trim().toLowerCase() ?? '';
+
+        if (nombre) {
+          const restoredEmpresa: Empresa = {
+            id: Date.now(),
+            nombre,
+            ubicacion,
+            empleados: [],
+            estado: 'Pendiente onboarding',
+            contactoNombre: responsable,
+            rrhhEmail: email,
+            token,
+          };
+          addEmpresa(restoredEmpresa);
+          setEmpresa(restoredEmpresa);
+        } else {
+          setError('El enlace de onboarding es inválido o ha caducado.');
+        }
       }
       setLoading(false);
     };
 
     void loadInvitation();
-  }, [token]);
+  }, [searchParams, token]);
   if (loading) return (
     <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
       <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />

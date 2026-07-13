@@ -23,3 +23,22 @@
    `Supabase no está configurado. Establecé VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY para habilitar funciones remotas.`
 
 6. Seguridad: nunca pongas claves de servicio o role keys en variables accesibles al frontend.
+
+## Troubleshooting — permisos (permission denied)
+
+Si al probar la app ves errores del tipo `permission denied for table ...` significa que el rol público (`anon`) no tiene permisos para consultar ciertas tablas o ejecutar funciones. Para corregirlo, abrí el **SQL Editor** de tu proyecto Supabase y ejecutá las siguientes sentencias (ajustá nombres si tu esquema difiere):
+
+```sql
+-- Permitir SELECT en tablas usadas por la app
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+
+-- Permitir ejecutar todas las funciones públicas (RPCs)
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon;
+
+-- Opcional: dar permisos sobre secuencias si las consultas las requieren
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
+```
+
+Notas:
+- Si usás Row Level Security (RLS), además debés crear políticas (`Policies`) que permitan el acceso a `anon` según corresponda.
+- Es más seguro otorgar permisos de forma concreta (por tabla/función) en vez de conceder todo el schema, pero las reglas anteriores ayudan a poner la demo en marcha rápidamente.

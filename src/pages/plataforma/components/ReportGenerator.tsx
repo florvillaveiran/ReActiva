@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Clock,
   HeartPulse,
   LineChart,
   Target,
@@ -17,6 +18,8 @@ import {
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Empresa, Formulario, getDB, MockDB, Progreso, Usuario } from '../mock/data';
+import { AnalyticsPeriod, calculateIndividualAnalytics, IndividualAnalytics, IndividualPauseSession } from '../lib/individualAnalytics';
+import { supabase } from '../lib/supabase';
 
 type ReportKind = 'empresa' | 'usuario';
 
@@ -48,6 +51,7 @@ interface Props {
   periodoLabel: string;
   periodFrom?: string;
   periodTo?: string;
+  periodReady?: boolean;
 }
 
 const COLORS = {
@@ -73,13 +77,24 @@ const getTrend = (points: ReportPoint[], key: keyof ReportPoint) => {
   return Math.round(last - first);
 };
 
-const buildUserData = (usuario: Usuario | undefined, fallback: ReportData): ReportData => {
+const buildUserData = (usuario: Usuario | undefined, fallback: ReportData, analytics?: IndividualAnalytics): ReportData => {
   if (!usuario) return fallback;
+  if (analytics?.hasSessions) {
+    return {
+      evolucion: analytics.evolucion,
+      zonas: analytics.zonasDolor.map(zone => ({ name: zone.zona, valor: Number.parseInt(zone.tendencia, 10) || 0 })),
+      tension: analytics.tension.map(item => ({ name: item.name, valor: item.valor })),
+      kpis: analytics.kpis,
+    };
+  }
   const baseParticipacion = clamp(usuario.participacion);
   const baseDolor = usuario.dolor ? 24 : 8;
   const focoBase = usuario.onboardingData?.trabajo === 'Disperso' ? 58 : usuario.onboardingData?.trabajo === 'Normal' ? 72 : 82;
   const energiaBase = usuario.onboardingData?.energia === 'Baja' ? 42 : usuario.onboardingData?.energia === 'Alta' ? 76 : 60;
-  const evolucion = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'].map((name, index) => ({
+  const periodNames = fallback.evolucion.length >= 2
+    ? fallback.evolucion.map(point => point.name)
+    : ['Inicio', 'Periodo 2', 'Periodo 3', 'Cierre'];
+  const evolucion = periodNames.map((name, index) => ({
     name,
     participacion: clamp(baseParticipacion - 6 + index * 2),
     foco: clamp(focoBase + index * 5),
@@ -95,6 +110,8 @@ const buildUserData = (usuario: Usuario | undefined, fallback: ReportData): Repo
   return {
     evolucion,
     zonas,
+    // Nunca usar la distribucion agregada de la empresa como si fuera del usuario.
+    tension: [],
     kpis: {
       participacion: last.participacion,
       foco: last.foco,
@@ -238,6 +255,9 @@ const buildCompanyData = (
   return {
     evolucion,
     zonas,
+    // La tension ya llega filtrada por empresa y periodo desde useAdminStats.
+    // Debe conservarse al combinarla con el resto de los datos del informe.
+    tension: fallback.tension,
     kpis: {
       participacion: clamp(average(evolucion.map(point => point.participacion), last.participacion)),
       foco: clamp(average(evolucion.map(point => point.foco), last.foco)),
@@ -354,7 +374,7 @@ const DualLine: React.FC<{ data: ReportData }> = ({ data }) => {
   return (
     <div className="rg-chart-card rg-dual-chart">
       <div className="rg-chart-heading">
-        <h3>Evolucion semanal</h3>
+        <h3>Evolucion del periodo</h3>
         <div className="rg-chart-legend">
           {series.map(item => <span key={item.key}><i style={{ backgroundColor: item.color }} />{item.label}</span>)}
         </div>
@@ -429,19 +449,12 @@ const BodyMap: React.FC<{ zonas: { name: string; valor: number }[] }> = ({ zonas
 );
 
 const TensionBars: React.FC<{ tension: { name: string; valor: number }[] }> = ({ tension }) => {
-  const EMOJIS: Record<string, string> = {
-    'A la mañana': '🌅',
-    'Al mediodía': '☀️',
-    'A la tarde': '🌇',
-    'Al final de la jornada': '🌙',
-    'No sentí tensión': '😌',
-  };
   const max = Math.max(1, ...tension.map(t => t.valor));
   return (
     <div className="rg-tension-bars">
       {tension.map(t => (
         <div key={t.name} className="rg-tension-row">
-          <span className="rg-tension-emoji">{EMOJIS[t.name] ?? '⏰'}</span>
+          <span className="rg-tension-emoji"><Clock size={18} /></span>
           <span className="rg-tension-label">{t.name}</span>
           <div className="rg-tension-track">
             <div className="rg-tension-fill" style={{ width: `${(t.valor / max) * 100}%` }} />
@@ -489,12 +502,30 @@ const buildCompanyNarrative = (data: ReportData) => {
   const painTrend = getTrend(data.evolucion, 'dolor');
   const energyTrend = getTrend(data.evolucion, 'energiaPct');
   const { best, opportunity } = getMetricRanking(data);
+  const rankedTension = data.tension
+    ? [...data.tension].filter(item => item.valor > 0).sort((a, b) => b.valor - a.valor)
+    : [];
+  const topTension = rankedTension[0] ?? null;
+  const secondTension = rankedTension[1] ?? null;
+  const tensionInsight = topTension
+    ? `El momento de mayor tension reportada fue "${topTension.name}" (${topTension.valor}%)${secondTension ? `, seguido por "${secondTension.name}" (${secondTension.valor}%)` : ''}.`
+    : null;
+  const tensionRecomendacion = topTension?.name === 'Al final de la jornada'
+    ? 'Considerá adelantar la pausa de tarde para liberar tension acumulada antes del cierre de jornada.'
+    : topTension?.name === 'A la mañana'
+    ? 'Una pausa de activacion temprana puede ayudar a modular la tension desde el inicio de la jornada.'
+    : topTension?.name === 'A la tarde'
+    ? 'La pausa de tarde esta bien posicionada. Evaluá aumentar su frecuencia en dias de mayor carga.'
+    : topTension
+    ? `Reforzá las pausas alrededor de ${topTension.name.toLowerCase()} para anticipar el pico de tension.`
+    : null;
   const intro = `Durante el periodo, la participacion promedio fue de ${data.kpis.participacion}%. ${metricLabel[best.key]} fue el indicador mas favorable y ${metricLabel[opportunity.key].toLowerCase()} concentra el principal margen de mejora.`;
   const findings = [
     `La participacion ${trendText(participationTrend)} y cerro con ${data.evolucion.at(-1)?.participacion ?? data.kpis.participacion}%.`,
     `El foco ${trendText(focusTrend)} durante el periodo.`,
     `El impacto de las pausas ${trendText(impactTrend)} y promedio ${data.kpis.impacto}%.`,
     `El dolor ${trendText(painTrend, false)}, con un nivel actual de ${data.kpis.dolor}%.`,
+    ...(tensionInsight ? [tensionInsight] : []),
   ];
   const participationSummary = [
     `La participacion promedio fue de ${data.kpis.participacion}% y ${trendText(participationTrend)}.`,
@@ -518,6 +549,7 @@ const buildCompanyNarrative = (data: ReportData) => {
     `Foco en ${data.kpis.foco}% e impacto de pausa en ${data.kpis.impacto}%.`,
     `Dolor actual de ${data.kpis.dolor}%, que ${trendText(painTrend, false)}.`,
     `Energia en ${data.kpis.energia}%, que ${trendText(energyTrend)}.`,
+    ...(tensionInsight ? [tensionInsight] : []),
   ];
   const recommendations: string[] = [];
   if (data.kpis.participacion < 75) recommendations.push('Ajustar horarios y recordatorios para recuperar participacion.');
@@ -525,23 +557,9 @@ const buildCompanyNarrative = (data: ReportData) => {
   if (data.kpis.foco < 70) recommendations.push('Priorizar pausas de respiracion y recuperacion atencional.');
   if (data.kpis.dolor > 20) recommendations.push(`Reforzar movilidad de ${data.zonas[0]?.name ?? 'las zonas con molestias'}.`);
   if (data.kpis.impacto < 70) recommendations.push('Revisar duracion y tipo de pausas para elevar su impacto percibido.');
+  if (tensionRecomendacion) recommendations.unshift(tensionRecomendacion);
   if (recommendations.length < 3) recommendations.push('Sostener el seguimiento semanal de los indicadores.');
   if (recommendations.length < 4) recommendations.push('Mantener la frecuencia de pausas que mejor resultado produjo.');
-
-  // Tension insight
-  const topTension = data.tension && data.tension.length > 0 
-    ? [...data.tension].sort((a, b) => b.valor - a.valor)[0]
-    : null;
-  const tensionInsight = topTension && topTension.valor > 0
-    ? `El momento de mayor tension reportada fue "${topTension.name}" (${topTension.valor}% de los colaboradores).`
-    : null;
-  const tensionRecomendacion = topTension && topTension.valor > 0 && topTension.name === 'Al final de la jornada'
-    ? 'Considerá adelantar la pausa de tarde para liberar tension acumulada antes del cierre de jornada.'
-    : topTension?.name === 'A la mañana'
-    ? 'Una pausa de activacion temprana puede ayudar a modular la tension desde el inicio de la jornada.'
-    : topTension?.name === 'A la tarde'
-    ? 'La pausa de tarde esta bien posicionada. Evaluá aumentar su frecuencia en dias de mayor carga.'
-    : null;
 
   return {
     best,
@@ -561,6 +579,9 @@ const buildCompanyNarrative = (data: ReportData) => {
 const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: ReportData }> = ({ empresaName, periodo, data }) => {
   const narrative = buildCompanyNarrative(data);
   const names = data.evolucion.map(point => point.name);
+  const firstPeriodName = names[0] ?? 'inicio';
+  const lastPeriodName = names.at(-1) ?? 'cierre';
+  const hasTension = Boolean(data.tension?.some(item => item.valor > 0));
   return (
     <>
       <Page page="Pag. 1" className="rg-company-page rg-company-page-1">
@@ -593,7 +614,7 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
       </Page>
       <Page page="Pag. 3" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-3">
         <h1>Participacion y uso</h1>
-        <p className="rg-lead">Evolucion de la participacion y del impacto de las pausas durante las ultimas 4 semanas.</p>
+        <p className="rg-lead">Evolucion de la participacion y del impacto de las pausas en el periodo {periodo}.</p>
         <div className="rg-grid side">
           <div>
             <MiniBar title="Participacion" values={percentSeries(data.evolucion, 'participacion')} color={COLORS.teal} names={names} />
@@ -601,21 +622,21 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           </div>
           <div className="rg-stack">
             <Highlight title="Participacion promedio" label={`${data.kpis.participacion}%`} value="Participacion del periodo" icon={<Users size={44} />} />
-            <Highlight title="Impacto de la pausa" label={`${data.kpis.impacto}%`} value="Nivel alcanzado en Sem 4" color={COLORS.purple} icon={<HeartPulse size={44} />} />
+            <Highlight title="Impacto de la pausa" label={`${data.kpis.impacto}%`} value="Nivel alcanzado al cierre del periodo" color={COLORS.purple} icon={<HeartPulse size={44} />} />
           </div>
         </div>
         <InsightList title="En sintesis" items={narrative.participationSummary} />
       </Page>
       <Page page="Pag. 4" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-4">
         <h1>Foco y energia</h1>
-        <p className="rg-lead">Evolucion del foco y la energia durante las ultimas 4 semanas.</p>
+        <p className="rg-lead">Evolucion del foco y la energia en el periodo {periodo}.</p>
         <div className="rg-grid two compact"><KpiCard label="Foco" value={data.kpis.foco} color={COLORS.blue} /><KpiCard label="Energia" value={data.kpis.energia} color={COLORS.orange} /></div>
         <DualLine data={data} />
         <InsightList title="Interpretacion" items={narrative.focusInterpretation} icon={<LineChart size={34} />} />
       </Page>
       <Page page="Pag. 5" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-5">
         <h1>Dolor musculoesqueletico</h1>
-        <p className="rg-lead">Este indicador muestra la evolucion del dolor musculoesqueletico percibido durante las ultimas 4 semanas.</p>
+        <p className="rg-lead">Este indicador muestra la evolucion del dolor musculoesqueletico percibido en el periodo {periodo}.</p>
         <div className="rg-grid side">
           <div>
             <MiniLine title="Evolucion del dolor (%)" points={percentSeries(data.evolucion, 'dolor')} color={COLORS.red} fill="#ffd4dc" labels names={names} />
@@ -623,17 +644,17 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           </div>
           <div className="rg-stack">
             <Highlight title="Dolor actual" label={`${data.kpis.dolor}%`} value="Nivel de dolor actual" color={COLORS.red} icon={<HeartPulse size={44} />} />
-            <Highlight title="Tendencia" label={`${getTrend(data.evolucion, 'dolor')} pts`} value="Cambio de Sem 1 a Sem 4" color={COLORS.red} icon={<LineChart size={44} />} />
+            <Highlight title="Tendencia" label={`${getTrend(data.evolucion, 'dolor')} pts`} value={`Cambio de ${firstPeriodName} a ${lastPeriodName}`} color={COLORS.red} icon={<LineChart size={44} />} />
             <InsightList title="Hallazgos clave" items={narrative.painFindings} />
           </div>
         </div>
       </Page>
-      {data.tension && data.tension.length > 0 && (() => {
-        const topT = [...data.tension].sort((a, b) => b.valor - a.valor)[0];
-        return (
-          <Page page="Pag. 6" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-tension-page">
-            <h1>Momento de mayor tension</h1>
-            <p className="rg-lead">Distribucion de los momentos del dia en que los colaboradores reportaron sentir mas tension durante la jornada laboral.</p>
+      <Page page="Pag. 6" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-tension-page">
+        <h1>Momentos de mayor tension</h1>
+        <p className="rg-lead">Distribucion de los momentos del dia en que los colaboradores reportaron sentir mas tension durante la jornada laboral.</p>
+        {hasTension && data.tension ? (() => {
+          const topT = [...data.tension].sort((a, b) => b.valor - a.valor)[0];
+          return (
             <div className="rg-tension-full">
               <div className="rg-chart-card">
                 <h3>Distribucion de respuestas</h3>
@@ -658,10 +679,15 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
                 )}
               </div>
             </div>
-          </Page>
-        );
-      })()}
-      <Page page={data.tension && data.tension.length > 0 ? 'Pag. 7' : 'Pag. 6'} eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-6">
+          );
+        })() : (
+          <div className="rg-chart-card">
+            <h3>Sin respuestas registradas</h3>
+            <p className="rg-lead">Todavia no hay respuestas sobre momentos de tension para la empresa en el periodo {periodo}.</p>
+          </div>
+        )}
+      </Page>
+      <Page page="Pag. 7" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-6">
         <h1>Conclusiones y<br />recomendaciones</h1>
         <p className="rg-lead">Con base en los indicadores del periodo, presentamos las principales conclusiones y recomendaciones para seguir fortaleciendo el bienestar corporativo.</p>
         <div className="rg-grid two">
@@ -674,16 +700,32 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
   );
 };
 
-const UserReport: React.FC<{ userName: string; periodo: string; data: ReportData }> = ({ userName, periodo, data }) => (
+const UserReport: React.FC<{ userName: string; periodo: string; data: ReportData }> = ({ userName, periodo, data }) => {
+  const firstPeriodName = data.evolucion[0]?.name ?? 'inicio';
+  const lastPeriodName = data.evolucion.at(-1)?.name ?? 'cierre';
+  const tension = (data.tension ?? []).filter(item => item.valor > 0);
+  const tensionOrdenada = [...tension].sort((a, b) => b.valor - a.valor);
+  const tensionPrincipal = tensionOrdenada[0];
+  const tensionSecundaria = tensionOrdenada[1];
+  const hasTension = tension.length > 0;
+  const totalPages = 5;
+  const tensionRecommendation = tensionPrincipal?.name.toLowerCase().includes('final')
+    ? 'Programa una pausa breve antes del cierre de la jornada para anticiparte a ese aumento de tension.'
+    : tensionPrincipal?.name.toLowerCase().includes('mañana')
+      ? 'Empeza la jornada con movilidad y respiracion para reducir la tension desde las primeras horas.'
+      : tensionPrincipal?.name.toLowerCase().includes('tarde')
+        ? 'Realiza una pausa activa antes del tramo de la tarde en el que suele aumentar tu tension.'
+        : 'Usa este resultado para ubicar tus pausas antes del momento en que mas tension reportas.';
+  return (
   <>
-    <Page page="Pag. 1 de 4" eyebrow={`Informe Individual - ${periodo}`}>
-      <h1>Asi estuvo tu mes</h1>
+    <Page page={`Pag. 1 de ${totalPages}`} eyebrow={`Informe Individual - ${periodo}`}>
+      <h1>Asi estuvo tu periodo</h1>
       <div className="rg-meta user"><UserRound size={30} /><strong>{userName}</strong></div>
       <p className="rg-lead">Un resumen simple de tu evolucion, tus pausas y como te sentiste durante el periodo.</p>
       <KpiGrid data={data} personal />
       <div className="rg-grid two">
         <InsightList title="Lo mas importante" items={[
-          'Participaste en tus pausas durante las ultimas 4 semanas.',
+          `Participaste en tus pausas durante el periodo ${periodo}.`,
           'Tu foco mostro una mejora sostenida.',
           'El impacto de las pausas fue alto al cierre del periodo.',
           data.kpis.dolor < 15 ? 'El dolor bajo a un nivel minimo.' : 'Tus molestias quedaron identificadas para seguir trabajando.',
@@ -693,45 +735,80 @@ const UserReport: React.FC<{ userName: string; periodo: string; data: ReportData
     </Page>
     <Page page="Pag. 2" eyebrow={`Informe Individual - ${periodo}`}>
       <h1>Tu participacion y constancia</h1>
-      <p className="rg-lead">Evolucion de tu participacion y del impacto de las pausas durante las ultimas 4 semanas.</p>
+      <p className="rg-lead">Evolucion de tu participacion y del impacto de las pausas en el periodo {periodo}.</p>
       <div className="rg-grid side">
         <div>
-          <MiniBar title="Participacion" values={percentSeries(data.evolucion, 'participacion')} color={COLORS.teal} />
-          <MiniLine title="Impacto pausa" points={percentSeries(data.evolucion, 'impacto')} color={COLORS.purple} fill="#e7d4ff" labels />
+          <MiniBar title="Participacion" values={percentSeries(data.evolucion, 'participacion')} color={COLORS.teal} names={data.evolucion.map(point => point.name)} />
+          <MiniLine title="Impacto pausa" points={percentSeries(data.evolucion, 'impacto')} color={COLORS.purple} fill="#e7d4ff" labels names={data.evolucion.map(point => point.name)} />
         </div>
         <div className="rg-stack">
           <Highlight title="Participacion promedio" label={`${data.kpis.participacion}%`} value="Participacion completa" icon={<Users size={44} />} />
-          <Highlight title="Impacto de la pausa" label={`${data.kpis.impacto}%`} value="Nivel alcanzado en Sem 4" color={COLORS.purple} icon={<HeartPulse size={44} />} />
+          <Highlight title="Impacto de la pausa" label={`${data.kpis.impacto}%`} value="Nivel alcanzado al cierre del periodo" color={COLORS.purple} icon={<HeartPulse size={44} />} />
         </div>
       </div>
       <InsightList title="En sintesis" items={['Participacion completa durante todo el periodo.', 'El impacto de las pausas mostro una mejora sostenida.']} />
     </Page>
     <Page page="Pag. 3" eyebrow={`Informe Individual - ${periodo}`}>
       <h1>Tu foco y energia</h1>
-      <p className="rg-lead">Evolucion del foco y la energia durante las ultimas 4 semanas.</p>
+      <p className="rg-lead">Evolucion del foco y la energia en el periodo {periodo}.</p>
       <div className="rg-grid two compact"><KpiCard label="Foco" value={data.kpis.foco} color={COLORS.blue} /><KpiCard label="Energia" value={data.kpis.energia} color={COLORS.orange} /></div>
-      <MiniLine title="Evolucion semanal" points={percentSeries(data.evolucion, 'foco')} color={COLORS.blue} fill="#cfe0ff" labels />
+      <MiniLine title="Evolucion del periodo" points={percentSeries(data.evolucion, 'foco')} color={COLORS.blue} fill="#cfe0ff" labels names={data.evolucion.map(point => point.name)} />
       <InsightList title="Interpretacion" items={['Tu foco mostro una mejora progresiva durante el periodo.', 'La energia se mantuvo estable, con oportunidad para potenciarla.']} icon={<LineChart size={34} />} />
     </Page>
-    <Page page="Pag. 4" eyebrow={`Informe Individual - ${periodo}`}>
+    <Page page="Pag. 4" eyebrow={`Informe Individual - ${periodo}`} className="rg-tension-page">
+      <h1>Tus momentos de mayor tension</h1>
+      <p className="rg-lead">Distribucion de los momentos del dia en los que reportaste sentir mas tension durante el periodo {periodo}.</p>
+      {hasTension ? (
+        <div className="rg-tension-full">
+          <div className="rg-chart-card">
+            <h3>Distribucion de tus respuestas</h3>
+            <TensionBars tension={tension} />
+          </div>
+          <div className="rg-stack">
+            <Highlight
+              title="Momento predominante"
+              label={tensionPrincipal!.name}
+              value={`${tensionPrincipal!.valor}% de tus respuestas`}
+              color={COLORS.purple}
+              icon={<Zap size={44} />}
+            />
+            <InsightList
+              title="Interpretacion y proximo paso"
+              items={[
+                `Tu mayor nivel de tension se concentra en ${tensionPrincipal!.name.toLowerCase()}.`,
+                tensionSecundaria ? `${tensionSecundaria.name} aparece en segundo lugar, con ${tensionSecundaria.valor}% de tus respuestas.` : 'No se observa otro momento con una frecuencia comparable en este periodo.',
+                tensionRecommendation,
+              ]}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="rg-chart-card">
+          <h3>Sin respuestas registradas</h3>
+          <p className="rg-lead">Todavia no hay respuestas sobre momentos de tension para este usuario en el periodo {periodo}.</p>
+        </div>
+      )}
+    </Page>
+    <Page page="Pag. 5" eyebrow={`Informe Individual - ${periodo}`}>
       <h1>Tu dolor y<br />proximos pasos</h1>
       <p className="rg-lead">Este indicador muestra la evolucion de tus molestias corporales y algunas recomendaciones para seguir mejorando.</p>
       <div className="rg-grid side">
         <div>
-          <MiniLine title="Evolucion del dolor (%)" points={percentSeries(data.evolucion, 'dolor')} color={COLORS.red} fill="#ffd4dc" labels />
+          <MiniLine title="Evolucion del dolor (%)" points={percentSeries(data.evolucion, 'dolor')} color={COLORS.red} fill="#ffd4dc" labels names={data.evolucion.map(point => point.name)} />
           <div className="rg-chart-card"><h3>Zonas mas afectadas</h3><BodyMap zonas={data.zonas} /></div>
         </div>
         <div className="rg-stack">
           <Highlight title="Dolor actual" label={`${data.kpis.dolor}%`} value="Nivel de dolor actual" color={COLORS.red} icon={<HeartPulse size={44} />} />
-          <Highlight title="Tendencia" label={`${getTrend(data.evolucion, 'dolor')} pts`} value="Cambio de Sem 1 a Sem 4" color={COLORS.red} icon={<LineChart size={44} />} />
+          <Highlight title="Tendencia" label={`${getTrend(data.evolucion, 'dolor')} pts`} value={`Cambio de ${firstPeriodName} a ${lastPeriodName}`} color={COLORS.red} icon={<LineChart size={44} />} />
           <InsightList title="Sugerencias para seguir mejorando" items={['Mantener la frecuencia de pausas activas.', 'Reforzar movilidad cervical y lumbar.', 'Realizar pausas en momentos de mayor cansancio.', 'Sostener el seguimiento semanal.']} />
         </div>
       </div>
     </Page>
   </>
-);
+  );
+};
 
-export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLabel, periodoLabel, periodFrom, periodTo }) => {
+export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLabel, periodoLabel, periodFrom, periodTo, periodReady = true }) => {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<ReportKind>('empresa');
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -743,6 +820,7 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
   const [activePage, setActivePage] = useState(0);
   const [capturing, setCapturing] = useState(false);
   const [database, setDatabase] = useState<MockDB | null>(null);
+  const [individualSessions, setIndividualSessions] = useState<IndividualPauseSession[]>([]);
   const pagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -758,11 +836,75 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
   const selectedEmpresa = empresas.find(empresa => empresa.id.toString() === empresaId);
   const selectedUsuario = usuarios.find(usuario => usuario.id.toString() === usuarioId);
 
+  useEffect(() => {
+    if (kind !== 'usuario' || !selectedUsuario) {
+      setIndividualSessions([]);
+      return;
+    }
+
+    let mounted = true;
+    const mapRows = (rows: any[]): IndividualPauseSession[] => rows.map(row => ({
+      id: row.id,
+      profileId: row.profile_id ?? selectedUsuario.supabaseId,
+      dayLabel: row.day_label ?? row.dia,
+      block: row.block ?? row.bloque,
+      occurredAt: row.occurred_at ?? row.fecha ?? new Date().toISOString(),
+      energy: row.energy ?? row.energia ?? row.answers?.energia ?? row.respuestas?.energia ?? null,
+      feeling: row.feeling ?? row.answers?.feeling ?? row.respuestas?.feeling ?? null,
+      hasPain: row.has_pain ?? row.dolor ?? row.answers?.dolor ?? row.respuestas?.dolor ?? null,
+      painZone: row.pain_zone ?? row.zona ?? row.answers?.zona ?? row.respuestas?.zona ?? null,
+      answers: row.answers ?? row.respuestas ?? {},
+    }));
+    const readLocal = () => {
+      try {
+        const key = `reactiva_pausas:${selectedUsuario.email.trim().toLowerCase()}`;
+        const rows = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(rows) ? mapRows(rows) : [];
+      } catch {
+        return [];
+      }
+    };
+    const refresh = async () => {
+      if (!supabase || !selectedUsuario.supabaseId) {
+        if (mounted) setIndividualSessions(readLocal());
+        return;
+      }
+      const { data, error } = await supabase
+        .from('pause_sessions')
+        .select('id, profile_id, day_label, block, occurred_at, energy, feeling, has_pain, pain_zone, answers')
+        .eq('profile_id', selectedUsuario.supabaseId)
+        .order('occurred_at', { ascending: true });
+      if (mounted && !error && data) setIndividualSessions(mapRows(data));
+    };
+
+    void refresh();
+    window.addEventListener('focus', refresh);
+    window.addEventListener('reactiva-pausas-updated', refresh);
+    const channel = supabase && selectedUsuario.supabaseId
+      ? supabase
+          .channel(`report-individual-tension-${selectedUsuario.supabaseId}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'pause_sessions', filter: `profile_id=eq.${selectedUsuario.supabaseId}` }, refresh)
+          .subscribe()
+      : null;
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('reactiva-pausas-updated', refresh);
+      if (channel && supabase) void supabase.removeChannel(channel);
+    };
+  }, [kind, selectedUsuario]);
+
+  const individualAnalytics = useMemo(() => {
+    const analyticsPeriod: AnalyticsPeriod = periodFrom && periodTo ? 'personalizado' : 'mensual';
+    return calculateIndividualAnalytics(individualSessions, analyticsPeriod, periodFrom, periodTo);
+  }, [individualSessions, periodFrom, periodTo]);
+
   const reportData = useMemo(() => (
     kind === 'empresa'
       ? buildCompanyData(selectedEmpresa, currentData, database ?? getDB(), periodFrom, periodTo)
-      : buildUserData(selectedUsuario, currentData)
-  ), [currentData, database, kind, periodFrom, periodTo, selectedEmpresa, selectedUsuario]);
+      : buildUserData(selectedUsuario, currentData, individualAnalytics)
+  ), [currentData, database, individualAnalytics, kind, periodFrom, periodTo, selectedEmpresa, selectedUsuario]);
 
   const reportName = kind === 'empresa'
     ? selectedEmpresa?.nombre ?? currentEmpresaLabel
@@ -802,18 +944,19 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
     }
   };
 
-  const pageCount = kind === 'empresa' ? (reportData.tension && reportData.tension.length > 0 ? 7 : 6) : 4;
+  const pageCount = kind === 'empresa' ? 7 : 5;
 
   return (
     <>
       <button
         className="btn-primary"
         onClick={() => setOpen(true)}
-        disabled={generating}
+        disabled={generating || !periodReady}
+        title={periodReady ? 'Generar informe del periodo seleccionado' : 'Seleccioná una fecha desde y hasta válidas'}
         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap', padding: '0.45rem 0.85rem', fontSize: '0.85rem', minHeight: 'auto', borderRadius: '8px' }}
       >
         <Download size={15} />
-        {generating ? 'Generando...' : 'Generar informe'}
+        {generating ? 'Generando...' : periodReady ? 'Generar informe' : 'Elegí el periodo'}
       </button>
 
       {open && (
@@ -831,12 +974,12 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
               <button type="button" className={kind === 'empresa' ? 'active' : ''} onClick={() => setKind('empresa')}>
                 <Building2 size={24} />
                 <strong>Empresa</strong>
-                <span>Informe corporativo de 6 paginas.</span>
+                <span>Informe corporativo de {pageCount} paginas.</span>
               </button>
               <button type="button" className={kind === 'usuario' ? 'active' : ''} onClick={() => setKind('usuario')}>
                 <UserRound size={24} />
                 <strong>Usuario</strong>
-                <span>Informe individual de 4 paginas.</span>
+                <span>Informe individual de 5 paginas.</span>
               </button>
             </div>
 
@@ -857,6 +1000,12 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
                 </select>
               </label>
             )}
+
+            <div className="rg-field">
+              Periodo incluido
+              <div className="input-field" style={{ background: '#f8fafc', cursor: 'default' }}>{periodoLabel}</div>
+              <small style={{ color: '#64748b', fontWeight: 500 }}>Se toma del periodo seleccionado en Analiticas y queda identificado dentro del PDF.</small>
+            </div>
 
             <div className="rg-modal-actions">
               <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>Cancelar</button>

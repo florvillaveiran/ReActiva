@@ -363,6 +363,42 @@ const PERIODO_LABELS: Record<PeriodoKey, string> = {
   personalizado: 'Personalizado',
 };
 
+const formatReportDate = (value: string) => {
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+
+const resolveReportRange = (
+  periodo: PeriodoKey,
+  semanaSel: string,
+  mesSel: string,
+  anioSel: string,
+  fechaDesde: string,
+  fechaHasta: string,
+) => {
+  if (periodo === 'personalizado') return { from: fechaDesde, to: fechaHasta };
+  if (periodo === 'anual') return { from: `${anioSel}-01-01`, to: `${anioSel}-12-31` };
+  if (periodo === 'mensual') {
+    const months: Record<string, string> = {
+      Enero: '01', Febrero: '02', Marzo: '03', Abril: '04', Mayo: '05', Junio: '06',
+      Julio: '07', Agosto: '08', Septiembre: '09', Octubre: '10', Noviembre: '11', Diciembre: '12',
+    };
+    const [monthName, year] = mesSel.split(' ');
+    const month = months[monthName];
+    if (!month || !year) return { from: '', to: '' };
+    const lastDay = new Date(Number(year), Number(month), 0).getDate();
+    return { from: `${year}-${month}-01`, to: `${year}-${month}-${String(lastDay).padStart(2, '0')}` };
+  }
+  const weeklyRanges: Record<string, { from: string; to: string }> = {
+    'Semana del 7 al 13 de julio': { from: '2026-07-07', to: '2026-07-13' },
+    'Semana del 30 al 6 de julio': { from: '2026-06-30', to: '2026-07-06' },
+    'Semana del 23 al 29 de junio': { from: '2026-06-23', to: '2026-06-29' },
+  };
+  return weeklyRanges[semanaSel] ?? { from: '', to: '' };
+};
+
 const EMPTY_ANALYTICS = enrichSet({ zonas: [], tension: [], evolucion: [] });
 
 const normalizeZone = (name: string) => name.toLowerCase().replace('baja', 'baja').replace('alta', 'alta');
@@ -466,7 +502,11 @@ export const Analiticas: React.FC = () => {
   const statsCompanyId = effectiveFiltro === 'all'
     ? undefined
     : selectedEmpresa?.supabaseId ?? (isUuidFilter ? effectiveFiltro : undefined);
-  const stats = useAdminStats(statsCompanyId);
+  const reportRange = useMemo(
+    () => resolveReportRange(periodo, semanaSel, mesSel, anioSel, fechaDesde, fechaHasta),
+    [anioSel, fechaDesde, fechaHasta, mesSel, periodo, semanaSel],
+  );
+  const stats = useAdminStats(statsCompanyId, reportRange.from || undefined, reportRange.to || undefined);
 
   const data = useMemo<AnaliticaSet>(() => {
     if (stats.hayDatos) {
@@ -503,30 +543,8 @@ export const Analiticas: React.FC = () => {
       : periodo === 'anual'
         ? anioSel
         : fechaDesde && fechaHasta
-          ? `${fechaDesde} a ${fechaHasta}`
+          ? `Del ${formatReportDate(fechaDesde)} al ${formatReportDate(fechaHasta)}`
           : PERIODO_LABELS[periodo];
-
-  const reportRange = useMemo(() => {
-    if (periodo === 'personalizado') return { from: fechaDesde, to: fechaHasta };
-    if (periodo === 'anual') return { from: `${anioSel}-01-01`, to: `${anioSel}-12-31` };
-    if (periodo === 'mensual') {
-      const months: Record<string, string> = {
-        Enero: '01', Febrero: '02', Marzo: '03', Abril: '04', Mayo: '05', Junio: '06',
-        Julio: '07', Agosto: '08', Septiembre: '09', Octubre: '10', Noviembre: '11', Diciembre: '12',
-      };
-      const [monthName, year] = mesSel.split(' ');
-      const month = months[monthName];
-      if (!month || !year) return { from: '', to: '' };
-      const lastDay = new Date(Number(year), Number(month), 0).getDate();
-      return { from: `${year}-${month}-01`, to: `${year}-${month}-${String(lastDay).padStart(2, '0')}` };
-    }
-    const weeklyRanges: Record<string, { from: string; to: string }> = {
-      'Semana del 7 al 13 de julio': { from: '2026-07-07', to: '2026-07-13' },
-      'Semana del 30 al 6 de julio': { from: '2026-06-30', to: '2026-07-06' },
-      'Semana del 23 al 29 de junio': { from: '2026-06-23', to: '2026-06-29' },
-    };
-    return weeklyRanges[semanaSel] ?? { from: '', to: '' };
-  }, [anioSel, fechaDesde, fechaHasta, mesSel, periodo, semanaSel]);
 
   if (false && rrhhEmpresaKey) {
     const kpis = [
@@ -829,21 +847,24 @@ export const Analiticas: React.FC = () => {
 
           {periodo === 'personalizado' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input type="date" className="input-field" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
+              <input type="date" className="input-field" value={fechaDesde} max={fechaHasta || undefined} onChange={e => setFechaDesde(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
               <span style={{ color: 'var(--text-muted)' }}>-</span>
-              <input type="date" className="input-field" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
+              <input type="date" className="input-field" value={fechaHasta} min={fechaDesde || undefined} onChange={e => setFechaHasta(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
             </div>
           )}
 
           <div style={{ flexGrow: 1 }} />
 
-          <ReportGenerator
-            currentData={data}
-            currentEmpresaLabel={effectiveFiltro === 'all' ? 'Todas' : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa'}
-            periodoLabel={reportPeriodoLabel}
-            periodFrom={reportRange.from}
-            periodTo={reportRange.to}
-          />
+          {user?.role === 'admin' && (
+            <ReportGenerator
+              currentData={data}
+              currentEmpresaLabel={effectiveFiltro === 'all' ? 'Todas' : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa'}
+              periodoLabel={reportPeriodoLabel}
+              periodFrom={reportRange.from}
+              periodTo={reportRange.to}
+              periodReady={periodo !== 'personalizado' || (!!fechaDesde && !!fechaHasta && fechaDesde <= fechaHasta)}
+            />
+          )}
         </div>
       </div>
 
