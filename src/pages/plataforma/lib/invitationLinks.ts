@@ -21,4 +21,3 @@ export const invitationPath = (kind: InvitationLinkKind, code: string) => {
   const prefix = kind === 'company' ? 'e' : 'i';
   return `/plataforma/${prefix}/${encodeURIComponent(code)}`;
 };
-
