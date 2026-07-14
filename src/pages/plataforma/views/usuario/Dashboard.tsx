@@ -3,7 +3,7 @@ import { CheckCircle2, Lock, Play, Send, Clock, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
 import { fetchVideoUnlockSchedule, getCurrentProgramDay, getVideoUnlockStatus, loadVideoUnlockSchedule, VIDEO_UNLOCK_SCHEDULE_EVENT } from '../../lib/videoUnlockSchedule';
-import { fetchScheduledVideos, getScheduledVideoFor, getVideoThumbnail, getYouTubeIdFromUrl, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
+import { fetchScheduledVideos, getScheduledDateForProgramDay, getScheduledVideoFor, getVideoThumbnail, getYouTubeIdFromUrl, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
 
 // ─── Configuración ──────────────────────────────────────────────────────────
@@ -700,8 +700,8 @@ export const UsuarioDashboard: React.FC = () => {
 
   const activeInfo = activeBloque ? PAUSAS[activeBloque] : null;
   const activeStatusObj = activeBloque ? getStatus(today, activeBloque) : null;
-  const activeScheduledVideo = activeBloque ? getScheduledVideoFor(scheduledVideos, today, activeBloque) : null;
-  const openScheduledVideo = openVideo ? getScheduledVideoFor(scheduledVideos, openVideo.dia, openVideo.bloque) : null;
+  const activeScheduledVideo = activeBloque ? getScheduledVideoFor(scheduledVideos, today, activeBloque, undefined, getScheduledDateForProgramDay(today)) : null;
+  const openScheduledVideo = openVideo ? getScheduledVideoFor(scheduledVideos, openVideo.dia, openVideo.bloque, undefined, getScheduledDateForProgramDay(openVideo.dia)) : null;
   const contentLocked = activeStatusObj?.status === 'locked' || (activeStatusObj?.status === 'available' && !activeScheduledVideo);
   const allDoneToday = activeBloque === null;
 
@@ -955,7 +955,7 @@ export const UsuarioDashboard: React.FC = () => {
                 {(['morning', 'afternoon'] as const).map(bloque => {
                   const { status } = getStatus(dia, bloque);
                   const isActive = isCurrent && activeBloque === bloque;
-                  const scheduledVideo = getScheduledVideoFor(scheduledVideos, dia, bloque);
+                  const scheduledVideo = getScheduledVideoFor(scheduledVideos, dia, bloque, undefined, getScheduledDateForProgramDay(dia));
                   const scheduledTime = unlockSchedule.find(item => item.day === dia && item.block === bloque)?.time;
                   return (
                     <WeekPauseRow

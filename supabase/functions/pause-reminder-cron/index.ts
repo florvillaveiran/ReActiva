@@ -8,7 +8,13 @@ const corsHeaders = {
 };
 
 const appUrl = Deno.env.get('PUBLIC_APP_URL') ?? 'https://metodoreactiva.com/plataforma/login';
-const reminderLeadMinutes = Number(Deno.env.get('PAUSE_REMINDER_LEAD_MINUTES') ?? '15');
+const unlockLeadMinutes = Number(Deno.env.get('VIDEO_UNLOCK_LEAD_MINUTES') ?? '1');
+const reminderBeforeUnlockMinutes = Number(Deno.env.get('PAUSE_REMINDER_BEFORE_UNLOCK_MINUTES') ?? '5');
+const reminderLeadMinutes = unlockLeadMinutes + reminderBeforeUnlockMinutes;
+const fallbackTemplate = {
+  subject: 'Tu pausa activa estará disponible en {{minutos}} minutos',
+  body: 'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estará disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresá a ReActiva para comenzar.',
+};
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -25,12 +31,18 @@ const normalizeDay = (day: string) => {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 };
 
+const databaseDayLabels: Record<string, string> = {
+  lunes: 'Lunes',
+  miercoles: 'Miércoles',
+  viernes: 'Viernes',
+};
+
 const dayLabelForBuenosAires = (date: Date) => {
   const label = new Intl.DateTimeFormat('es-AR', {
     weekday: 'long',
     timeZone: 'America/Argentina/Buenos_Aires',
   }).format(date);
-  return normalizeDay(label);
+  return databaseDayLabels[normalizeDay(label)] ?? label;
 };
 
 const timeForBuenosAires = (date: Date) => new Intl.DateTimeFormat('en-GB', {
@@ -60,13 +72,27 @@ const sendEmail = async (payload: Record<string, unknown>) => {
   return data;
 };
 
-const renderHtml = (name: string, companyName: string, pauseTime: string) => `
+const renderTemplate = (template: string, values: Record<string, string>) => (
+  Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{{${key}}}`, value),
+    template,
+  )
+);
+
+const escapeHtml = (value: string) => value
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#039;');
+
+const renderHtml = (subject: string, body: string) => `
   <!doctype html>
   <html>
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Tu pausa activa comienza pronto</title>
+      <title>${escapeHtml(subject)}</title>
     </head>
     <body style="margin:0;padding:0;background:#f7fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7fafc;padding:32px 16px;">
@@ -80,8 +106,8 @@ const renderHtml = (name: string, companyName: string, pauseTime: string) => `
               </tr>
               <tr>
                 <td style="padding:18px 32px 8px;">
-                  <h1 style="font-size:24px;line-height:1.25;margin:0 0 14px;color:#0f172a;">Tu pausa activa empieza en 15 minutos</h1>
-                  <p style="font-size:16px;line-height:1.6;margin:0;color:#475569;">Hola ${name}, a las ${pauseTime} hs tenes una pausa activa programada para ${companyName}.</p>
+                  <h1 style="font-size:24px;line-height:1.25;margin:0 0 14px;color:#0f172a;">${escapeHtml(subject)}</h1>
+                  <p style="font-size:16px;line-height:1.6;margin:0;color:#475569;">${escapeHtml(body).replaceAll('\n', '<br />')}</p>
                 </td>
               </tr>
               <tr>
@@ -138,6 +164,13 @@ Deno.serve(async (req) => {
   if (scheduleError) return jsonResponse({ error: scheduleError.message }, 500);
   if (!schedules?.length) return jsonResponse({ ok: true, checked: `${targetDay} ${targetTime}`, sent: 0 });
 
+  const { data: savedTemplate, error: templateError } = await admin
+    .from('email_automation_templates')
+    .select('subject, body')
+    .eq('id', 'pause-reminder')
+    .maybeSingle();
+  const emailTemplate = templateError || !savedTemplate ? fallbackTemplate : savedTemplate;
+
   let sent = 0;
   const errors: string[] = [];
 
@@ -178,11 +211,19 @@ Deno.serve(async (req) => {
         if (existing?.length) continue;
 
         try {
+          const templateValues = {
+            nombre: profile.full_name || profile.email.split('@')[0],
+            empresa: company.name,
+            hora: targetTime,
+            minutos: String(reminderBeforeUnlockMinutes),
+          };
+          const subject = renderTemplate(emailTemplate.subject, templateValues);
+          const body = renderTemplate(emailTemplate.body, templateValues);
           const providerResponse = await sendEmail({
             from: Deno.env.get('EMAIL_FROM') ?? 'ReActiva <onboarding@metodoreactiva.com>',
             to: [profile.email],
-            subject: 'Tu pausa activa comienza en 15 minutos',
-            html: renderHtml(profile.full_name || profile.email.split('@')[0], company.name, targetTime),
+            subject,
+            html: renderHtml(subject, body),
           });
 
           await admin.from('email_events').insert({
@@ -195,6 +236,7 @@ Deno.serve(async (req) => {
               day: targetDay,
               block: schedule.block,
               time: targetTime,
+              reminderBeforeUnlockMinutes,
               provider: 'resend',
               providerResponse,
             },

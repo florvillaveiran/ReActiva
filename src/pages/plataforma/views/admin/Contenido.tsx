@@ -3,7 +3,7 @@ import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, Chevr
 import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, fetchAcademyCategories, fetchContentLibrary, getContentLibrary, isAcademyVideoReady, normalizeAcademyCategory, normalizeAcademyVideoUrl, removeAcademyCategory, removeContentItemFromSupabase, renameAcademyCategory, saveAcademyCategory, saveAcademyItem, saveCoachItem } from '../../data/contentLibrary';
 import { useEmpresas } from '../../context/EmpresasContext';
 import { fetchVideoUnlockSchedule, loadVideoUnlockSchedule, persistVideoUnlockSchedule, UNLOCK_LEAD_MINUTES, UnlockBlock, UnlockDay, VideoUnlockItem } from '../../lib/videoUnlockSchedule';
-import { fetchScheduledVideos, getYouTubeIdFromUrl, saveScheduledVideo, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
+import { fetchScheduledVideos, getScheduledDateForProgramDay, getYouTubeIdFromUrl, saveScheduledVideo, ScheduledVideo, SCHEDULED_VIDEOS_EVENT, toLocalDateKey } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
 import { uploadResumableStorageFile } from '../../lib/resumableStorageUpload';
 
@@ -1071,8 +1071,6 @@ const BASE_BLOQUES = [
   { dia: 'Viernes', bloques: [] },
 ];
 
-const EVENTOS_MES: Record<number, {horario:string; empresa:string}[]> = {};
-
 function getCalDays(year:number, month:number) {
   const fd = new Date(year, month, 1).getDay();
   const off = fd === 0 ? 6 : fd - 1;
@@ -1110,9 +1108,9 @@ export const Contenido: React.FC = () => {
   const [modal, setModal]          = useState(false);
   const [tipoLink, setTipoLink]    = useState<'link'|'upload'>('link');
   const [diaModal, setDiaModal]    = useState<number|null>(null);
+  const [modalScheduledDate, setModalScheduledDate] = useState(() => toLocalDateKey(hoy));
   const [offsetSem, setOffset]     = useState(0);
   const [empresa, setEmpresa]      = useState('Todas las empresas');
-  const [recordatorio, setRecordatorio] = useState('15 minutos antes');
   const [unlockSchedule, setUnlockSchedule] = useState<VideoUnlockItem[]>(() => loadVideoUnlockSchedule());
   const [modalDay, setModalDay] = useState<UnlockDay>('Lunes');
   const [modalBlock, setModalBlock] = useState<UnlockBlock>('morning');
@@ -1121,6 +1119,7 @@ export const Contenido: React.FC = () => {
   const [modalVideoUrl, setModalVideoUrl] = useState('');
   const [modalTitle, setModalTitle] = useState('Pausa activa');
   const [modalFile, setModalFile] = useState<File | null>(null);
+  const [editingScheduledId, setEditingScheduledId] = useState<string | null>(null);
   const [savingProgram, setSavingProgram] = useState(false);
   const [scheduledVideos, setScheduledVideos] = useState<ScheduledVideo[]>([]);
 
@@ -1168,8 +1167,9 @@ export const Contenido: React.FC = () => {
     const dayOffsets: Record<string, number> = { Lunes: 0, Miércoles: 2, Viernes: 4 };
     return BASE_BLOQUES.map((d) => {
       const fecha = new Date(lunes); fecha.setDate(lunes.getDate() + (dayOffsets[d.dia] ?? 0));
+      const scheduledDate = toLocalDateKey(fecha);
       const videosDelDia = scheduledVideos
-        .filter(video => video.day === d.dia)
+        .filter(video => video.scheduledDate === scheduledDate)
         .filter(video => empresa === 'Todas las empresas' || video.companyName === empresa || video.companyName === 'Global' || empresa === 'Global')
         .map(video => {
           const unlock = unlockSchedule.find(item => item.day === video.day && item.block === video.block);
@@ -1183,11 +1183,27 @@ export const Contenido: React.FC = () => {
             url: video.url,
           };
         });
-      return { ...d, fecha: fmt(fecha), bloques: videosDelDia };
+      return { ...d, fecha: fmt(fecha), scheduledDate, bloques: videosDelDia };
     });
   }, [empresa, lunes, scheduledVideos, unlockSchedule]);
 
   const calDays = getCalDays(anio, mes);
+
+  const eventosMes = useMemo(() => {
+    const result: Record<number, { horario: string; empresa: string; title: string }[]> = {};
+    scheduledVideos.forEach((video) => {
+      const [year, month, day] = video.scheduledDate.split('-').map(Number);
+      if (year !== anio || month !== mes + 1 || !day) return;
+      if (empresa !== 'Todas las empresas' && video.companyName !== empresa && video.companyName !== 'Global' && empresa !== 'Global') return;
+      const unlock = unlockSchedule.find(item => item.day === video.day && item.block === video.block);
+      (result[day] ??= []).push({
+        horario: unlock?.time ?? video.time,
+        empresa: video.companyName ?? 'Global',
+        title: video.title,
+      });
+    });
+    return result;
+  }, [anio, empresa, mes, scheduledVideos, unlockSchedule]);
 
   const navMes = (dir:1|-1) => {
     if (dir===1 && mes===11) { setMes(0); setAnio(a=>a+1); }
@@ -1204,15 +1220,32 @@ export const Contenido: React.FC = () => {
     return 'Lunes';
   };
 
-  const abrirModal = (dia?:number) => {
-    const nextDay = dayFromModalDate(dia);
-    const existing = unlockSchedule.find(item => item.day === nextDay && item.block === modalBlock);
+  const dayFromDateKey = (dateKey: string): UnlockDay | null => {
+    const selected = new Date(`${dateKey}T12:00:00`);
+    if (selected.getDay() === 1) return 'Lunes';
+    if (selected.getDay() === 3) return 'Miércoles';
+    if (selected.getDay() === 5) return 'Viernes';
+    return null;
+  };
+
+  const abrirModal = (dia?:number, video?: ScheduledVideo) => {
+    const nextDay = (video?.day as UnlockDay | undefined) ?? dayFromModalDate(dia);
+    const nextDate = video?.scheduledDate ?? (dia
+      ? toLocalDateKey(new Date(anio, mes, dia))
+      : getScheduledDateForProgramDay(nextDay, lunes));
+    const nextBlock = video?.block ?? modalBlock;
+    const existing = unlockSchedule.find(item => item.day === nextDay && item.block === nextBlock);
     setDiaModal(dia??null);
+    setModalScheduledDate(nextDate);
     setModalDay(nextDay);
-    setModalTime(existing?.time ?? (modalBlock === 'morning' ? '08:00' : '15:00'));
-    setModalVideoUrl('');
+    setModalBlock(nextBlock);
+    setModalTime(video?.time ?? existing?.time ?? (nextBlock === 'morning' ? '08:00' : '15:00'));
+    setModalCompany(video?.companyName ?? 'Global');
+    setModalVideoUrl(video?.url ?? '');
     setModalFile(null);
-    setModalTitle('Pausa activa');
+    setModalTitle(video?.title ?? 'Pausa activa');
+    setEditingScheduledId(video?.id ?? null);
+    setTipoLink('link');
     setModal(true);
   };
 
@@ -1236,14 +1269,20 @@ export const Contenido: React.FC = () => {
       window.alert('Agregá un link o subí un video antes de guardar.');
       return;
     }
+    const exactDay = dayFromDateKey(modalScheduledDate);
+    if (!exactDay) {
+      window.alert('Elegí una fecha que sea lunes, miércoles o viernes.');
+      return;
+    }
 
     setSavingProgram(true);
     try {
       const finalUrl = await uploadScheduledFile();
       const title = modalTitle.trim() || `Pausa ${modalBlock === 'morning' ? 'mañana' : 'tarde'}`;
       const result = await saveScheduledVideo({
-        id: `local-${Date.now()}`,
-        day: modalDay,
+        id: editingScheduledId ?? `local-${Date.now()}`,
+        day: exactDay,
+        scheduledDate: modalScheduledDate,
         block: modalBlock,
         time: modalTime,
         title,
@@ -1257,7 +1296,7 @@ export const Contenido: React.FC = () => {
         return;
       }
 
-      updateUnlockSchedule(modalDay, modalBlock, { enabled: true, time: modalTime });
+      updateUnlockSchedule(exactDay, modalBlock, { enabled: true, time: modalTime });
       setModal(false);
     } catch (error: any) {
       window.alert(error?.message ?? 'No pudimos subir o guardar el video.');
@@ -1442,7 +1481,7 @@ export const Contenido: React.FC = () => {
                               <Eye size={12}/> Ver video
                             </button>
                           )}
-                          <button onClick={()=>abrirModal()} style={{background:'none',border:'none',color:'#0d9488',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem'}}>
+                          <button onClick={()=>abrirModal(undefined, scheduledVideos.find(video => video.id === bloque.id))} style={{background:'none',border:'none',color:'#0d9488',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem'}}>
                             <Video size={12}/> Editar
                           </button>
                         </div>
@@ -1473,8 +1512,7 @@ export const Contenido: React.FC = () => {
 
           <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'3px'}}>
             {calDays.map((day, idx)=>{
-              const eventos = day ? EVENTOS_MES[day] : undefined;
-              const filtrados = eventos?.filter(e=>empresa==='Todas las empresas'||e.empresa===empresa||e.empresa==='Global');
+              const filtrados = day ? eventosMes[day] : undefined;
               const tieneContenido = !!filtrados?.length;
               const esHoy = day===hoy.getDate() && mes===hoy.getMonth() && anio===hoy.getFullYear();
               return (
@@ -1584,10 +1622,13 @@ export const Contenido: React.FC = () => {
 
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.65rem',marginBottom:'1.25rem'}}>
               <div>
-                <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Día</label>
-                <select className="input-field" value={modalDay} onChange={e => setModalDay(e.target.value as UnlockDay)} style={{fontSize:'0.875rem'}}>
-                  {(['Lunes', 'Miércoles', 'Viernes'] as UnlockDay[]).map(day => <option key={day} value={day}>{day}</option>)}
-                </select>
+                <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Fecha</label>
+                <input type="date" className="input-field" value={modalScheduledDate} onChange={e => {
+                  const nextDate = e.target.value;
+                  setModalScheduledDate(nextDate);
+                  const nextDay = dayFromDateKey(nextDate);
+                  if (nextDay) setModalDay(nextDay);
+                }} style={{fontSize:'0.875rem'}} />
               </div>
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Turno</label>
@@ -1607,24 +1648,9 @@ export const Contenido: React.FC = () => {
               </div>
             </div>
 
-            <div style={{marginBottom:'1.25rem'}}>
-              <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Enviar recordatorio (Email Automático)</label>
-              <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
-                <select className="input-field" value={recordatorio} onChange={e=>setRecordatorio(e.target.value)} style={{fontSize:'0.875rem',flex:1,minWidth:'150px'}}>
-                  <option value="Sin recordatorio">Sin recordatorio</option>
-                  <option value="15 minutos antes">15 minutos antes</option>
-                  <option value="30 minutos antes">30 minutos antes</option>
-                  <option value="1 hora antes">1 hora antes</option>
-                  <option value="2 horas antes">2 horas antes</option>
-                  <option value="Personalizado">Personalizado...</option>
-                </select>
-                {recordatorio === 'Personalizado' && (
-                  <div style={{display:'flex',alignItems:'center',gap:'0.4rem',flex:1,minWidth:'120px'}}>
-                    <input type="number" className="input-field" placeholder="Minutos" style={{fontSize:'0.875rem',width:'80px'}}/>
-                    <span style={{fontSize:'0.8rem',color:'#64748b'}}>min. antes</span>
-                  </div>
-                )}
-              </div>
+            <div style={{marginBottom:'1.25rem',padding:'0.75rem 0.85rem',border:'1px solid #ccfbf1',borderRadius:10,background:'#f0fdfa'}}>
+              <span style={{fontSize:'0.72rem',fontWeight:800,color:'#0f766e',display:'block',marginBottom:'0.25rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Recordatorio automático</span>
+              <p style={{margin:0,fontSize:'0.82rem',lineHeight:1.4,color:'#475569'}}>Se enviará a los usuarios activos 5 minutos antes de que el video se desbloquee.</p>
             </div>
 
             <div style={{display:'flex',gap:'0.65rem'}}>

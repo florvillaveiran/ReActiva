@@ -96,10 +96,10 @@ const AUTOMATION_DEFINITIONS: AutomationDefinition[] = [
     description: 'Avisa antes de cada pausa usando la programación de contenido vigente.',
     condition: 'Antes de una pausa programada',
     icon: <PauseCircle size={20} />,
-    defaultSubject: 'Tu pausa activa comienza pronto',
-    defaultBody: 'Hola {{nombre}},\n\nEn unos minutos comienza la pausa activa de {{empresa}}.',
+    defaultSubject: 'Tu pausa activa estará disponible en {{minutos}} minutos',
+    defaultBody: 'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estará disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresá a ReActiva para comenzar.',
     defaultSegment: 'active',
-    defaultOffset: 15,
+    defaultOffset: 5,
     defaultTime: '09:00',
   },
   {
@@ -205,7 +205,10 @@ const buildDefaults = (): EmailAutomation[] => AUTOMATION_DEFINITIONS.map((defin
 
 const mergeAutomations = (saved: EmailAutomation[]) => {
   const byId = new Map(saved.map(item => [item.id, item]));
-  return buildDefaults().map(item => ({ ...item, ...byId.get(item.id) }));
+  return buildDefaults().map(item => {
+    const merged = { ...item, ...byId.get(item.id) };
+    return item.id === 'pause-reminder' ? { ...merged, active: true, offsetMinutes: 5 } : merged;
+  });
 };
 
 const getSegmentUsers = (users: Usuario[], segment: string) => users.filter(user => {
@@ -250,6 +253,7 @@ export const Emails: React.FC = () => {
   const [draft, setDraft] = useState<EmailAutomation | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [savingTemplate, setSavingTemplate] = useState(false);
   
   // Wizard State
   const [showWizard, setShowWizard] = useState(false);
@@ -274,6 +278,49 @@ export const Emails: React.FC = () => {
       const storedCustom = JSON.parse(localStorage.getItem('reactiva_custom_automations') || '[]');
       setCustomAutomations(storedCustom);
     } catch (e) {}
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    const applyPauseTemplate = (template: { subject: string; body: string }) => {
+      setAutomations(current => current.map(item => (
+        item.id === 'pause-reminder'
+          ? { ...item, subject: template.subject, body: template.body }
+          : item
+      )));
+      setDraft(current => current?.id === 'pause-reminder'
+        ? { ...current, subject: template.subject, body: template.body }
+        : current);
+    };
+
+    const loadPauseTemplate = async () => {
+      const { data, error } = await supabase
+        .from('email_automation_templates')
+        .select('subject, body')
+        .eq('id', 'pause-reminder')
+        .maybeSingle();
+
+      if (error) {
+        console.error('No se pudo cargar la plantilla compartida del recordatorio', error);
+        return;
+      }
+      if (data) applyPauseTemplate(data);
+    };
+
+    void loadPauseTemplate();
+    const channel = supabase
+      .channel('pause-reminder-template-admin')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'email_automation_templates', filter: 'id=eq.pause-reminder' },
+        () => void loadPauseTemplate(),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, []);
 
   const { empresas: companies } = useEmpresas();
@@ -417,8 +464,34 @@ export const Emails: React.FC = () => {
     setDraft({ ...automation });
   };
 
-  const saveDraft = () => {
+  const saveDraft = async () => {
     if (!draft) return;
+
+    if (draft.id === 'pause-reminder') {
+      if (!draft.subject.trim() || !draft.body.trim()) {
+        window.alert('Completa el asunto y el mensaje antes de guardar.');
+        return;
+      }
+      if (!supabase) {
+        window.alert('No pudimos conectar con Supabase para guardar la plantilla.');
+        return;
+      }
+
+      setSavingTemplate(true);
+      const { error } = await supabase.rpc('save_email_automation_template', {
+        template_id: 'pause-reminder',
+        template_subject: draft.subject.trim(),
+        template_body: draft.body.trim(),
+      });
+      setSavingTemplate(false);
+
+      if (error) {
+        console.error('No se pudo guardar la plantilla compartida del recordatorio', error);
+        window.alert(`No pudimos guardar la plantilla: ${error.message}`);
+        return;
+      }
+    }
+
     persistAutomations(automations.map(item => item.id === draft.id ? draft : item));
     setSavedNotice(true);
     window.setTimeout(() => setSavedNotice(false), 1800);
@@ -501,8 +574,15 @@ export const Emails: React.FC = () => {
     const errors: string[] = [];
 
     for (const recipient of recipients) {
-      const subject = renderTemplate(automation.subject, recipient);
-      const body = renderTemplate(automation.body, recipient);
+      const templateValues = {
+        nombre: recipient.nombre,
+        empresa: recipient.empresa,
+        responsable: recipient.responsable,
+        hora: automation.id === 'pause-reminder' ? (nextVideo?.hora ?? automation.scheduleTime) : automation.scheduleTime,
+        minutos: String(automation.id === 'pause-reminder' ? 5 : automation.offsetMinutes),
+      };
+      const subject = renderTemplate(automation.subject, templateValues);
+      const body = renderTemplate(automation.body, templateValues);
       const result = await sendTransactionalEmail({
         type: 'automation_email',
         to: recipient.email,
@@ -951,15 +1031,17 @@ export const Emails: React.FC = () => {
                 >
                   <div className="automation-card-top">
                     <div className="automation-icon">{definition.icon}</div>
-                    <label className="automation-toggle" onClick={event => event.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={automation.active}
-                        onChange={() => toggleAutomation(definition.id)}
-                        aria-label={`${automation.active ? 'Desactivar' : 'Activar'} ${definition.name}`}
-                      />
-                      <span />
-                    </label>
+                    {definition.id === 'pause-reminder'
+                      ? <span style={{ color: '#0f766e', background: '#ccfbf1', borderRadius: 999, padding: '0.28rem 0.55rem', fontSize: '0.68rem', fontWeight: 800 }}>CONECTADA</span>
+                      : <label className="automation-toggle" onClick={event => event.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={automation.active}
+                            onChange={() => toggleAutomation(definition.id)}
+                            aria-label={`${automation.active ? 'Desactivar' : 'Activar'} ${definition.name}`}
+                          />
+                          <span />
+                        </label>}
                   </div>
                   <div className="automation-card-copy">
                     <div className="automation-title-row">
@@ -1105,10 +1187,12 @@ export const Emails: React.FC = () => {
                   <strong>Automatización activa</strong>
                   <span>El sistema podrá ejecutar esta regla automáticamente.</span>
                 </div>
-                <label className="automation-toggle">
-                  <input type="checkbox" checked={draft.active} onChange={() => setDraft({ ...draft, active: !draft.active })} />
-                  <span />
-                </label>
+                {editingDefinition.id === 'pause-reminder'
+                  ? <span style={{ color: '#0f766e', background: '#ccfbf1', borderRadius: 999, padding: '0.38rem 0.65rem', fontSize: '0.72rem', fontWeight: 800 }}>Conectada a Contenidos</span>
+                  : <label className="automation-toggle">
+                      <input type="checkbox" checked={draft.active} onChange={() => setDraft({ ...draft, active: !draft.active })} />
+                      <span />
+                    </label>}
               </div>
 
               <div className="automation-form-grid">
@@ -1125,17 +1209,19 @@ export const Emails: React.FC = () => {
                     {SEGMENTS.map(segment => <option key={segment.value} value={segment.value}>{segment.label}</option>)}
                   </select>
                 </label>
-                <label>
-                  Horario de envío
-                  <input type="time" value={draft.scheduleTime} onChange={event => setDraft({ ...draft, scheduleTime: event.target.value })} />
-                </label>
-                <label>
-                  Tiempo previo o posterior
-                  <div className="automation-number-field">
-                    <input type="number" min="0" value={draft.offsetMinutes} onChange={event => setDraft({ ...draft, offsetMinutes: Number(event.target.value) })} />
-                    <span>minutos</span>
-                  </div>
-                </label>
+                {editingDefinition.id !== 'pause-reminder' && <>
+                  <label>
+                    Horario de envío
+                    <input type="time" value={draft.scheduleTime} onChange={event => setDraft({ ...draft, scheduleTime: event.target.value })} />
+                  </label>
+                  <label>
+                    Tiempo previo o posterior
+                    <div className="automation-number-field">
+                      <input type="number" min="0" value={draft.offsetMinutes} onChange={event => setDraft({ ...draft, offsetMinutes: Number(event.target.value) })} />
+                      <span>minutos</span>
+                    </div>
+                  </label>
+                </>}
               </div>
 
               {editingDefinition.id === 'pause-reminder' && (
@@ -1144,9 +1230,7 @@ export const Emails: React.FC = () => {
                   <div>
                     <strong>Programación de contenido conectada</strong>
                     <p>
-                      {getNextScheduledVideo(videos, draft.companyId)
-                        ? `Próxima pausa: ${getNextScheduledVideo(videos, draft.companyId)?.dia} a las ${getNextScheduledVideo(videos, draft.companyId)?.hora}.`
-                        : 'No hay una pausa programada para esta selección.'}
+                      El horario y los bloques de mañana y tarde se administran desde Contenidos. El recordatorio automático se envía 5 minutos antes del desbloqueo.
                     </p>
                   </div>
                 </div>
@@ -1167,6 +1251,9 @@ export const Emails: React.FC = () => {
               <label className="automation-full-field">
                 Mensaje
                 <textarea value={draft.body} onChange={event => setDraft({ ...draft, body: event.target.value })} rows={6} />
+                {editingDefinition.id === 'pause-reminder' && (
+                  <small>Podés usar: {'{{nombre}}'}, {'{{empresa}}'}, {'{{hora}}'} y {'{{minutos}}'}.</small>
+                )}
               </label>
 
               {editingDefinition.report && (
@@ -1204,7 +1291,9 @@ export const Emails: React.FC = () => {
               <button className="btn-secondary" disabled={sendingId === draft.id} onClick={() => void sendAutomationNow(draft)}>
                 <Send size={16} /> {sendingId === draft.id ? 'Enviando...' : 'Enviar ahora'}
               </button>
-              <button className="btn-primary" onClick={saveDraft}><Save size={16} /> Guardar cambios</button>
+              <button className="btn-primary" disabled={savingTemplate} onClick={() => void saveDraft()}>
+                <Save size={16} /> {savingTemplate ? 'Guardando...' : editingDefinition.id === 'pause-reminder' ? 'Guardar plantilla' : 'Guardar cambios'}
+              </button>
             </div>
           </aside>
         </div>

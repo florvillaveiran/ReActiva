@@ -52,6 +52,14 @@ alter table public.content_items add column if not exists metadata jsonb default
 alter table public.content_items add column if not exists created_at timestamptz default now();
 alter table public.content_items add column if not exists updated_at timestamptz default now();
 
+-- Algunas instalaciones anteriores crearon kind con el enum public.content_kind.
+-- La aplicacion y la RPC actuales trabajan con texto; normalizamos la columna para
+-- evitar errores al guardar contenido nuevo o tipos agregados en el futuro.
+alter table public.content_items
+  alter column kind drop default;
+alter table public.content_items
+  alter column kind type text using kind::text;
+
 create index if not exists content_items_kind_active_idx
   on public.content_items (kind, active, sort_order, created_at);
 
@@ -92,6 +100,15 @@ create table if not exists public.user_content_progress (
   primary key (profile_id, content_key)
 );
 
+create table if not exists public.email_automation_templates (
+  id text primary key,
+  subject text not null,
+  body text not null,
+  updated_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create unique index if not exists video_unlock_schedule_scope_idx
   on public.video_unlock_schedule (coalesce(company_id, '00000000-0000-0000-0000-000000000000'::uuid), day_label, block);
 
@@ -120,6 +137,30 @@ drop trigger if exists video_unlock_schedule_touch_updated_at on public.video_un
 create trigger video_unlock_schedule_touch_updated_at
 before update on public.video_unlock_schedule
 for each row execute function public.touch_updated_at();
+
+drop trigger if exists email_automation_templates_touch_updated_at on public.email_automation_templates;
+create trigger email_automation_templates_touch_updated_at
+before update on public.email_automation_templates
+for each row execute function public.touch_updated_at();
+
+-- Elimina versiones antiguas de esta RPC cuyo segundo parametro usaba un enum
+-- (por ejemplo public.content_kind). PostgREST no puede elegir entre ese overload
+-- y la version text cuando recibe los argumentos como JSON.
+do $$
+declare
+  legacy_function record;
+begin
+  for legacy_function in
+    select p.oid::regprocedure as signature
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'save_content_item'
+      and coalesce(p.proargtypes[1], 0::oid) <> 'text'::regtype
+  loop
+    execute format('drop function if exists %s', legacy_function.signature);
+  end loop;
+end $$;
 
 create or replace function public.save_content_item(
   item_id uuid,
@@ -330,11 +371,42 @@ begin
 end;
 $$;
 
+create or replace function public.save_email_automation_template(
+  template_id text,
+  template_subject text,
+  template_body text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if auth.uid() is null or not public.is_platform_admin(auth.uid()) then
+    raise exception 'No tenes permisos para administrar plantillas de email.';
+  end if;
+  if template_id <> 'pause-reminder' then
+    raise exception 'La plantilla indicada no puede modificarse desde este panel.';
+  end if;
+  if nullif(trim(template_subject), '') is null or nullif(trim(template_body), '') is null then
+    raise exception 'Completa el asunto y el cuerpo del email.';
+  end if;
+
+  insert into public.email_automation_templates (id, subject, body, updated_by)
+  values (template_id, trim(template_subject), trim(template_body), auth.uid())
+  on conflict (id) do update set
+    subject = excluded.subject,
+    body = excluded.body,
+    updated_by = excluded.updated_by;
+end;
+$$;
+
 alter table public.content_items enable row level security;
 alter table public.content_item_tombstones enable row level security;
 alter table public.content_categories enable row level security;
 alter table public.video_unlock_schedule enable row level security;
 alter table public.user_content_progress enable row level security;
+alter table public.email_automation_templates enable row level security;
 
 drop policy if exists content_items_read_authenticated on public.content_items;
 create policy content_items_read_authenticated on public.content_items
@@ -356,12 +428,17 @@ drop policy if exists user_content_progress_read_own on public.user_content_prog
 create policy user_content_progress_read_own on public.user_content_progress
 for select to authenticated using (profile_id = auth.uid() or public.is_platform_admin(auth.uid()));
 
+drop policy if exists email_automation_templates_read_authenticated on public.email_automation_templates;
+create policy email_automation_templates_read_authenticated on public.email_automation_templates
+for select to authenticated using (true);
+
 revoke all on public.content_items from anon;
 revoke all on public.content_item_tombstones from anon;
 revoke all on public.content_categories from anon;
 revoke all on public.video_unlock_schedule from anon;
 revoke all on public.user_content_progress from anon;
-grant select on public.content_items, public.content_item_tombstones, public.content_categories, public.video_unlock_schedule, public.user_content_progress to authenticated;
+revoke all on public.email_automation_templates from anon;
+grant select on public.content_items, public.content_item_tombstones, public.content_categories, public.video_unlock_schedule, public.user_content_progress, public.email_automation_templates to authenticated;
 
 revoke all on function public.save_content_item(uuid, text, text, text, text, text[], text, text, boolean, boolean, integer, jsonb) from public;
 revoke all on function public.delete_content_item(uuid) from public;
@@ -370,6 +447,7 @@ revoke all on function public.rename_content_category(text, text) from public;
 revoke all on function public.delete_content_category(text, text) from public;
 revoke all on function public.save_video_unlock_schedule(jsonb) from public;
 revoke all on function public.record_content_view(text) from public;
+revoke all on function public.save_email_automation_template(text, text, text) from public;
 grant execute on function public.save_content_item(uuid, text, text, text, text, text[], text, text, boolean, boolean, integer, jsonb) to authenticated;
 grant execute on function public.delete_content_item(uuid) to authenticated;
 grant execute on function public.save_content_category(text) to authenticated;
@@ -377,6 +455,49 @@ grant execute on function public.rename_content_category(text, text) to authenti
 grant execute on function public.delete_content_category(text, text) to authenticated;
 grant execute on function public.save_video_unlock_schedule(jsonb) to authenticated;
 grant execute on function public.record_content_view(text) to authenticated;
+grant execute on function public.save_email_automation_template(text, text, text) to authenticated;
+
+create or replace function public.update_company_details(
+  target_company_id uuid,
+  company_name text,
+  company_location text,
+  contact_name text,
+  rrhh_email text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if auth.uid() is null or not public.is_platform_admin(auth.uid()) then
+    raise exception 'No tenes permisos para editar empresas.';
+  end if;
+  if target_company_id is null then
+    raise exception 'La empresa es obligatoria.';
+  end if;
+  if nullif(trim(company_name), '') is null
+    or nullif(trim(company_location), '') is null
+    or nullif(trim(contact_name), '') is null
+    or nullif(trim(rrhh_email), '') is null then
+    raise exception 'Completa todos los datos de la empresa.';
+  end if;
+
+  update public.companies
+  set name = trim(company_name),
+      location = trim(company_location),
+      contact_name = trim(contact_name),
+      rrhh_email = lower(trim(rrhh_email))
+  where id = target_company_id;
+
+  if not found then
+    raise exception 'No encontramos la empresa seleccionada.';
+  end if;
+end;
+$$;
+
+revoke all on function public.update_company_details(uuid, text, text, text, text) from public;
+grant execute on function public.update_company_details(uuid, text, text, text, text) to authenticated;
 
 drop function if exists public.delete_platform_user(uuid, uuid);
 create function public.delete_platform_user(
@@ -416,6 +537,14 @@ $$;
 
 revoke all on function public.delete_platform_user(uuid, uuid) from public;
 grant execute on function public.delete_platform_user(uuid, uuid) to authenticated;
+
+insert into public.email_automation_templates (id, subject, body)
+values (
+  'pause-reminder',
+  'Tu pausa activa estará disponible en {{minutos}} minutos',
+  E'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estará disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresá a ReActiva para comenzar.'
+)
+on conflict (id) do nothing;
 
 insert into public.content_categories (kind, name, sort_order)
 select 'academy', category_name, row_number() over ()
@@ -463,6 +592,12 @@ do $$
 begin
   if not exists (
     select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'companies'
+  ) then
+    alter publication supabase_realtime add table public.companies;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'content_items'
   ) then
     alter publication supabase_realtime add table public.content_items;
@@ -484,6 +619,12 @@ begin
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'user_content_progress'
   ) then
     alter publication supabase_realtime add table public.user_content_progress;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'email_automation_templates'
+  ) then
+    alter publication supabase_realtime add table public.email_automation_templates;
   end if;
   if exists (
     select 1 from information_schema.tables

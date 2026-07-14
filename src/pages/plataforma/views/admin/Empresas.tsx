@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Users, Building, Plus, Mail, User, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, AlertCircle, Target, Clock, Briefcase, TrendingUp, Zap, Trash2 } from 'lucide-react';
+import { Search, MapPin, Users, Building, Plus, Mail, User, Link as LinkIcon, Copy, CheckCircle2, ChevronLeft, AlertCircle, Target, Clock, Briefcase, TrendingUp, Zap, Trash2, Pencil } from 'lucide-react';
 import { getDB, setDB, addEmpresa, Empresa } from '../../mock/data';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -201,6 +201,12 @@ export const Empresas: React.FC = () => {
   const [newEmail, setNewEmail] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [editingEmpresa, setEditingEmpresa] = useState<Empresa | null>(null);
+  const [editNombre, setEditNombre] = useState('');
+  const [editUbicacion, setEditUbicacion] = useState('');
+  const [editResponsable, setEditResponsable] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadEmpresas = async () => {
     if (!supabase) {
@@ -323,6 +329,66 @@ export const Empresas: React.FC = () => {
     setIsModalOpen(false); setNewNombre(''); setNewUbicacion(''); setNewResponsable(''); setNewEmail(''); setGeneratedLink('');
   };
 
+  const openEditCompany = (event: React.MouseEvent<HTMLButtonElement>, empresa: Empresa) => {
+    event.stopPropagation();
+    setEditingEmpresa(empresa);
+    setEditNombre(empresa.nombre);
+    setEditUbicacion(empresa.ubicacion ?? '');
+    setEditResponsable(empresa.contactoNombre ?? '');
+    setEditEmail(empresa.rrhhEmail ?? '');
+  };
+
+  const closeEditCompany = () => {
+    if (savingEdit) return;
+    setEditingEmpresa(null);
+  };
+
+  const saveCompanyChanges = async () => {
+    if (!editingEmpresa) return;
+    const nombre = editNombre.trim();
+    const ubicacion = editUbicacion.trim();
+    const responsable = editResponsable.trim();
+    const email = editEmail.trim().toLowerCase();
+
+    if (!nombre || !ubicacion || !responsable || !email) {
+      window.alert('Completá todos los campos de la empresa.');
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      window.alert('Ingresá un email válido.');
+      return;
+    }
+
+    setSavingEdit(true);
+    try {
+      if (supabase) {
+        if (!editingEmpresa.supabaseId) throw new Error('No encontramos el identificador de la empresa.');
+        const { error } = await supabase.rpc('update_company_details', {
+          target_company_id: editingEmpresa.supabaseId,
+          company_name: nombre,
+          company_location: ubicacion,
+          contact_name: responsable,
+          rrhh_email: email,
+        });
+        if (error) throw error;
+      } else {
+        const db = getDB();
+        db.empresas = db.empresas.map((empresa) => empresa.id === editingEmpresa.id
+          ? { ...empresa, nombre, ubicacion, contactoNombre: responsable, rrhhEmail: email }
+          : empresa);
+        setDB(db);
+      }
+
+      setEditingEmpresa(null);
+      await loadEmpresas();
+      window.dispatchEvent(new Event('reactiva-companies-updated'));
+    } catch (error: any) {
+      window.alert(error?.message ?? 'No pudimos actualizar la empresa.');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const handleEliminarEmpresa = async (event: React.MouseEvent<HTMLButtonElement>, id: number, nombre: string) => {
     event.stopPropagation();
     const confirmar = window.confirm(`Eliminar ${nombre} por completo?`);
@@ -404,29 +470,26 @@ export const Empresas: React.FC = () => {
                     <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: s.dot }} />
                     {est}
                   </div>
-                  {!rrhhEmpresaId && <button
-                    type="button"
-                    onClick={(event) => handleEliminarEmpresa(event, empresa.id, empresa.nombre)}
-                    aria-label={`Eliminar ${empresa.nombre}`}
-                    title={`Eliminar ${empresa.nombre}`}
-                    style={{
-                      border: 'none',
-                      backgroundColor: '#fef2f2',
-                      color: '#dc2626',
-                      borderRadius: '999px',
-                      padding: '0.38rem 0.75rem',
-                      fontFamily: 'var(--font)',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                    }}
-                  >
-                    <Trash2 size={14} />
-                    Eliminar
-                  </button>}
+                  {!rrhhEmpresaId && <div style={{ display: 'flex', gap: '0.45rem' }}>
+                    <button
+                      type="button"
+                      onClick={(event) => openEditCompany(event, empresa)}
+                      aria-label={`Editar ${empresa.nombre}`}
+                      title={`Editar ${empresa.nombre}`}
+                      style={{ border: 'none', backgroundColor: '#ecfdf5', color: '#0f766e', borderRadius: '999px', padding: '0.38rem 0.75rem', fontFamily: 'var(--font)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      <Pencil size={14} /> Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => handleEliminarEmpresa(event, empresa.id, empresa.nombre)}
+                      aria-label={`Eliminar ${empresa.nombre}`}
+                      title={`Eliminar ${empresa.nombre}`}
+                      style={{ border: 'none', backgroundColor: '#fef2f2', color: '#dc2626', borderRadius: '999px', padding: '0.38rem 0.75rem', fontFamily: 'var(--font)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      <Trash2 size={14} /> Eliminar
+                    </button>
+                  </div>}
                 </div>
               </div>
               <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.85rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem 2rem' }}>
@@ -441,6 +504,47 @@ export const Empresas: React.FC = () => {
           );
         })}
       </div>
+
+      {editingEmpresa && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15,23,42,0.42)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, backdropFilter: 'blur(3px)', padding: '1rem' }} onClick={closeEditCompany}>
+          <div style={{ backgroundColor: 'white', borderRadius: 20, padding: '1.6rem', width: '100%', maxWidth: 520, boxShadow: '0 25px 60px rgba(15,23,42,0.22)' }} onClick={(event) => event.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '1.4rem' }}>
+              <div style={{ width: 46, height: 46, borderRadius: 13, background: '#ecfdf5', color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Building size={23} /></div>
+              <div>
+                <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.25rem' }}>Editar empresa</h2>
+                <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.86rem' }}>Los cambios se reflejarán en toda la plataforma.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: '0.9rem' }}>
+              <div>
+                <label className="form-label">Nombre de la empresa</label>
+                <input className="input-field" value={editNombre} onChange={(event) => setEditNombre(event.target.value)} placeholder="Nombre de la empresa" />
+              </div>
+              <div>
+                <label className="form-label">Ubicación</label>
+                <input className="input-field" value={editUbicacion} onChange={(event) => setEditUbicacion(event.target.value)} placeholder="Ciudad, provincia o país" />
+              </div>
+              <div>
+                <label className="form-label">Persona responsable</label>
+                <input className="input-field" value={editResponsable} onChange={(event) => setEditResponsable(event.target.value)} placeholder="Nombre y apellido" />
+              </div>
+              <div>
+                <label className="form-label">Email del responsable</label>
+                <input type="email" className="input-field" value={editEmail} onChange={(event) => setEditEmail(event.target.value)} placeholder="responsable@empresa.com" />
+                <p style={{ margin: '0.35rem 0 0', color: '#94a3b8', fontSize: '0.75rem' }}>Este será el email utilizado para las comunicaciones de la empresa.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.7rem', marginTop: '1.4rem' }}>
+              <button type="button" className="btn-secondary" onClick={closeEditCompany} disabled={savingEdit}>Cancelar</button>
+              <button type="button" className="btn-primary" onClick={() => void saveCompanyChanges()} disabled={savingEdit} style={{ opacity: savingEdit ? 0.7 : 1 }}>
+                {savingEdit ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (

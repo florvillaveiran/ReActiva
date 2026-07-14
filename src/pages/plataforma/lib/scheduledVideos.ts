@@ -5,6 +5,7 @@ export type ScheduledVideoBlock = 'morning' | 'afternoon';
 export interface ScheduledVideo {
   id: string;
   day: string;
+  scheduledDate: string;
   block: ScheduledVideoBlock;
   time: string;
   title: string;
@@ -21,9 +22,37 @@ const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 
 const normalizeTime = (time: string) => (time || '08:00').slice(0, 5);
 
+const PROGRAM_DAY_OFFSETS: Record<string, number> = {
+  Lunes: 0,
+  Miércoles: 2,
+  Viernes: 4,
+};
+
+export const toLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const getScheduledDateForProgramDay = (day: string, referenceDate = new Date()) => {
+  const monday = new Date(referenceDate);
+  const weekday = monday.getDay();
+  monday.setHours(12, 0, 0, 0);
+  monday.setDate(monday.getDate() + (weekday === 0 ? -6 : 1 - weekday));
+  monday.setDate(monday.getDate() + (PROGRAM_DAY_OFFSETS[day] ?? 0));
+  return toLocalDateKey(monday);
+};
+
+const normalizeStoredVideo = (video: ScheduledVideo): ScheduledVideo => ({
+  ...video,
+  scheduledDate: video.scheduledDate || getScheduledDateForProgramDay(video.day, new Date(video.createdAt || Date.now())),
+});
+
 const readStoredVideos = (): ScheduledVideo[] => {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as ScheduledVideo[];
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as ScheduledVideo[];
+    return stored.map(normalizeStoredVideo);
   } catch {
     return [];
   }
@@ -40,10 +69,12 @@ export const getScheduledVideoFor = (
   videos: ScheduledVideo[],
   day: string,
   block: ScheduledVideoBlock,
-  companyName?: string
+  companyName?: string,
+  scheduledDate?: string,
 ) => {
   const matches = videos
     .filter(video => video.day === day && video.block === block)
+    .filter(video => !scheduledDate || video.scheduledDate === scheduledDate)
     .filter(video => !video.companyName || video.companyName === 'Global' || !companyName || video.companyName === companyName);
 
   return matches[matches.length - 1] ?? null;
@@ -55,6 +86,7 @@ const rowToScheduledVideo = (row: any): ScheduledVideo | null => {
   return {
     id: row.id,
     day: metadata.day,
+    scheduledDate: metadata.scheduledDate || getScheduledDateForProgramDay(metadata.day, new Date(row.created_at ?? Date.now())),
     block: metadata.block,
     time: normalizeTime(metadata.time),
     title: row.title ?? 'Pausa activa',
@@ -80,7 +112,7 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
   const remote = data.map(rowToScheduledVideo).filter(Boolean) as ScheduledVideo[];
   const merged = new Map<string, ScheduledVideo>();
   remote.forEach((video) => {
-    const key = `${video.day}__${video.block}__${video.companyName ?? 'Global'}`;
+    const key = `${video.scheduledDate}__${video.block}__${video.companyName ?? 'Global'}`;
     merged.set(key, video);
   });
   const videos = Array.from(merged.values());
@@ -91,7 +123,7 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
 export const saveScheduledVideo = async (video: ScheduledVideo) => {
   if (!supabase) {
     const current = readStoredVideos();
-    const withoutSameSlot = current.filter(item => !(item.day === video.day && item.block === video.block && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')));
+    const withoutSameSlot = current.filter(item => !(item.scheduledDate === video.scheduledDate && item.block === video.block && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')));
     saveScheduledVideosLocal([...withoutSameSlot, video]);
     return { ok: true };
   }
@@ -102,7 +134,7 @@ export const saveScheduledVideo = async (video: ScheduledVideo) => {
     item_title: video.title,
     item_description: 'Video programado de pausa activa',
     item_category: 'Microentrenamientos',
-    item_tags: ['microentrenamiento', video.day, video.block],
+    item_tags: ['microentrenamiento', video.day, video.scheduledDate, video.block],
     item_url: video.url,
     item_thumbnail_url: video.thumbnailUrl ?? null,
     item_active: true,
@@ -110,6 +142,7 @@ export const saveScheduledVideo = async (video: ScheduledVideo) => {
     item_sort_order: 0,
     item_metadata: {
       day: video.day,
+      scheduledDate: video.scheduledDate,
       block: video.block,
       time: video.time,
       companyName: video.companyName ?? 'Global',

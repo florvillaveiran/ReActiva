@@ -86,10 +86,20 @@ export const EmpresasProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('reactiva_db_update', handleLocalUpdate);
+    window.addEventListener('reactiva-companies-updated', handleLocalUpdate);
+
+    const channel = supabase
+      ? supabase
+          .channel('platform-companies')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'companies' }, handleLocalUpdate)
+          .subscribe()
+      : null;
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('reactiva_db_update', handleLocalUpdate);
+      window.removeEventListener('reactiva-companies-updated', handleLocalUpdate);
+      if (channel && supabase) void supabase.removeChannel(channel);
     };
   }, []);
 

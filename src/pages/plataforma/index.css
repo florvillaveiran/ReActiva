@@ -1707,16 +1707,23 @@
 #plataforma-root .automation-drawer-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.7rem;
-  padding: 1rem 1.4rem;
+  gap: 0.5rem;
+  padding: 0.8rem 1.1rem;
   border-top: 1px solid #e2e8f0;
   background-color: #ffffff;
 }
 
-#plataforma-root .automation-drawer-actions .btn-primary {
+#plataforma-root .automation-drawer-actions .btn-primary,
+#plataforma-root .automation-drawer-actions .btn-secondary {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: center;
+  gap: 0.32rem;
+  min-width: 0;
+  padding: 0.52rem 0.72rem;
+  font-size: 0.76rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 #plataforma-root .email-saved-notice {
