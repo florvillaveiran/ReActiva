@@ -65,8 +65,8 @@ export const AdminDashboard: React.FC = () => {
     : 'Sin registros';
 
   return (
-    <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+    <div className="admin-dashboard-page" style={{ animation: 'fadeIn 0.4s ease-out' }}>
+      <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>Dashboard General</h2>
         <select 
           className="input-field" 
@@ -81,7 +81,7 @@ export const AdminDashboard: React.FC = () => {
         </select>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
+      <div className="admin-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
         
         {/* Adherencia Semanal */}
         <div className="card" style={{ padding: '1.5rem', margin: 0, borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>

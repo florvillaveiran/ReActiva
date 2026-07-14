@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { Role, useAuth } from '../context/AuthContext';
 import { Sidebar } from './Sidebar';
 
@@ -11,6 +11,7 @@ const homeForRole = (role: Role) => {
 
 export const Layout: React.FC<{ allowedRole?: Role }> = ({ allowedRole }) => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>;
@@ -24,10 +25,12 @@ export const Layout: React.FC<{ allowedRole?: Role }> = ({ allowedRole }) => {
     return <Navigate to={homeForRole(user.role)} />;
   }
 
+  const section = location.pathname.split('/').filter(Boolean).at(-1) ?? 'inicio';
+
   return (
     <div className="app-container">
       <Sidebar />
-      <main className="main-content">
+      <main className={`main-content role-${user.role} view-${section}`}>
         <Outlet />
       </main>
     </div>

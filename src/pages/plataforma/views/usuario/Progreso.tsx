@@ -163,7 +163,7 @@ export const UsuarioProgreso: React.FC = () => {
   }
 
   return (
-    <div style={{
+    <div className="user-progress-page" style={{
       animation: 'fadeIn 0.3s ease-out',
       display: 'flex', flexDirection: 'column', gap: '1.25rem',
       minHeight: 'calc(100vh - 3rem)',

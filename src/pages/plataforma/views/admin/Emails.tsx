@@ -739,7 +739,7 @@ export const Emails: React.FC = () => {
             <h3>Condiciones (opcionales)</h3>
             <p>Agregá reglas para refinar exactamente cuándo se envía.</p>
             
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div className="wizard-conditions" style={{ marginBottom: '1.5rem' }}>
               {wizardData.conditions.map((cond, idx) => (
                 <div key={idx} className="wizard-condition-row">
                   <select 
@@ -822,11 +822,11 @@ export const Emails: React.FC = () => {
               </select>
             </label>
 
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div className="wizard-timing-days" style={{ marginBottom: '1.5rem' }}>
               <strong style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px' }}>Días permitidos</strong>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="wizard-day-grid" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].map(day => (
-                  <label key={day} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '20px', cursor: 'pointer', backgroundColor: wizardData.timing.days.includes(day) ? 'var(--primary-light)' : 'white', borderColor: wizardData.timing.days.includes(day) ? 'var(--primary-color)' : 'var(--border-color)' }}>
+                  <label className="wizard-day-option" key={day} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '20px', cursor: 'pointer', backgroundColor: wizardData.timing.days.includes(day) ? 'var(--primary-light)' : 'white', borderColor: wizardData.timing.days.includes(day) ? 'var(--primary-color)' : 'var(--border-color)' }}>
                     <input 
                       type="checkbox" 
                       style={{ display: 'none' }}
@@ -844,7 +844,7 @@ export const Emails: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="wizard-timing-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <label className="automation-full-field">
                 Horario Desde
                 <input type="time" className="input-field" value={wizardData.timing.timeFrom} onChange={e => setWizardData({...wizardData, timing: {...wizardData.timing, timeFrom: e.target.value}})} />
@@ -932,7 +932,7 @@ export const Emails: React.FC = () => {
           <h2 className="header-title">Correos automáticos</h2>
           <p>Configurá qué mensajes se envían, a quiénes y en qué momento.</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="email-header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <div className="email-view-switch" role="tablist">
             <button className={view === 'automatizaciones' ? 'active' : ''} onClick={() => setView('automatizaciones')}>
               <Bell size={16} /> Automatizaciones
@@ -960,7 +960,7 @@ export const Emails: React.FC = () => {
             </div>
             <div>
               <span>Próximo envío programado</span>
-              <strong>{nextVideo ? `${nextVideo.dia} ${nextVideo.hora}` : 'Sin contenido próximo'}</strong>
+              <strong>{nextVideo ? `${nextVideo.dia} ${nextVideo.hora}` : 'Sin contenido'}</strong>
             </div>
             <div>
               <span>Reglas personalizadas</span>

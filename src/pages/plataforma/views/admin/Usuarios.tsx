@@ -12,7 +12,7 @@ import { sendTransactionalEmail } from '../../lib/emailSender';
 
 // Section
 const Badge: React.FC<{ label: string; bg: string; color: string }> = ({ label, bg, color }) => (
-  <span style={{ display: 'inline-block', padding: '0.3rem 0.85rem', borderRadius: '999px', backgroundColor: bg, color, fontSize: '0.8rem', fontWeight: 600 }}>
+  <span className="user-status-badge" style={{ display: 'inline-block', padding: '0.3rem 0.85rem', borderRadius: '999px', backgroundColor: bg, color, fontSize: '0.8rem', fontWeight: 600 }}>
     {label}
   </span>
 );
@@ -225,23 +225,23 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
   };
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+    <div className="user-detail-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
       {/* Header Info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div className="user-detail-back" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
         <button onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', border: 'none', padding: '0.5rem 0', background: 'none' }}>
           <ChevronLeft size={20} /> Volver
         </button>
       </div>
 
-      <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+      <div className="card user-detail-hero" style={{ padding: '2rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+        <div className="user-detail-primary">
+          <div className="user-detail-title" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{usuario.nombre}</h2>
             <Badge label={usuario.estado || 'Activo'} bg={usuario.estado === 'Activo' || !usuario.estado ? '#ecfdf5' : '#f1f5f9'} color={usuario.estado === 'Activo' || !usuario.estado ? '#059669' : '#64748b'} />
           </div>
           <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>{usuario.email}</p>
         </div>
-        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+        <div className="user-detail-meta" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
           <div>
             <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Empresa</p>
             <p style={{ fontWeight: 600, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Building size={16} color="#10b981" /> {empresa?.nombre || '—'}</p>
@@ -254,7 +254,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
       </div>
 
       {/* TABS */}
-      <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+      <div className="user-detail-tabs" style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid #e2e8f0', marginBottom: '2rem' }}>
         <button
           onClick={() => setActiveTab('resumen')}
           style={{ padding: '0.75rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'resumen' ? '2px solid var(--primary-color)' : '2px solid transparent', color: activeTab === 'resumen' ? 'var(--primary-color)' : 'var(--text-muted)', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -327,7 +327,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
           {/* TAB ANALITICAS */}
           {activeTab === 'analiticas' && (
             <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div className="user-detail-analytics-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   <Calendar size={18} color="var(--text-muted)" />
                   <select className="input-field" value={periodo} onChange={(e) => setPeriodo(e.target.value as AnalyticsPeriod)} style={{ width: '180px', backgroundColor: 'white' }}>
@@ -384,7 +384,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
                 </div>
 
                 {/* Section */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+                <div className="user-detail-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
                   {[
                     { label: 'Participación', value: analiticasData.kpis.participacion, color: 'var(--primary-color)', bg: '#f0fdfa' },
                     { label: 'Foco',          value: analiticasData.kpis.foco,          color: '#3b82f6',              bg: '#eff6ff' },
@@ -404,7 +404,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
 
                 {/* Section */}
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>Evolución desde el ingreso</h3>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+                <div className="user-detail-evolution-grid" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
                   <MetricCard icon={<Activity size={18} />} label="Actividad Física" inicial={data.actividadFisica || 'Sin datos'} actual={analyticsLoading ? 'Actualizando...' : analiticasData.current.actividadFisica} />
                   <MetricCard icon={<Zap size={18} />} label="Energía Percibida" inicial={data.energia || 'Sin datos'} actual={analyticsLoading ? 'Actualizando...' : analiticasData.current.energia} />
                   <MetricCard icon={<BatteryCharging size={18} />} label="Fatiga" inicial={data.fatiga || 'Sin datos'} actual={analyticsLoading ? 'Actualizando...' : analiticasData.current.fatiga} />
@@ -842,30 +842,30 @@ export const Usuarios: React.FC = () => {
   };
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+    <div className="users-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+      <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>Usuarios</h2>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="users-toolbar-actions" style={{ display: 'flex', gap: '1rem' }}>
           {!isRrhh && (
             <select className="input-field" style={{ width: '220px', backgroundColor: 'var(--bg-color)' }} value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
               <option value="all">Todas las empresas</option>
               {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
           )}
-          <button className="btn-primary" onClick={() => { setIsModalOpen(true); setGeneratedLink(''); setInviteError(''); }}>
+          <button className="btn-primary users-invite-button" onClick={() => { setIsModalOpen(true); setGeneratedLink(''); setInviteError(''); }}>
             {isRrhh ? 'Invitar empleados' : 'Invitar Usuarios'}
           </button>
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: '2rem', padding: '1rem', display: 'flex', gap: '1rem' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
+      <div className="card users-search-card" style={{ marginBottom: '2rem', padding: '1rem', display: 'flex', gap: '1rem' }}>
+        <div className="users-search-wrap" style={{ position: 'relative', flex: 1 }}>
           <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)' }} />
-          <input type="text" className="input-field" placeholder="Buscar por nombre..." style={{ paddingLeft: '3rem', border: 'none', backgroundColor: 'var(--bg-secondary-color)' }} value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input type="text" className="input-field users-search-input" placeholder="Buscar por nombre..." style={{ paddingLeft: '3rem', border: 'none', backgroundColor: 'var(--bg-secondary-color)' }} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="card responsive-table-card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead style={{ backgroundColor: 'var(--bg-secondary-color)', borderBottom: '1px solid var(--border-color)' }}>
             <tr>
@@ -890,9 +890,9 @@ export const Usuarios: React.FC = () => {
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = '#f8fafc'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'}
               >
-                <td style={{ padding: '1.25rem 1.5rem', fontWeight: 600, color: '#0f172a' }}>{usuario.nombre}</td>
-                <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)' }}>{getEmpresaName(usuario.empresa_id)}</td>
-                <td style={{ padding: '1.25rem 1.5rem' }}>
+              <td data-label="Nombre" style={{ padding: '1.25rem 1.5rem', fontWeight: 600, color: '#0f172a' }}>{usuario.nombre}</td>
+                <td data-label="Empresa" style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)' }}>{getEmpresaName(usuario.empresa_id)}</td>
+                <td data-label="Participación" style={{ padding: '1.25rem 1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-secondary-color)', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ width: `${usuario.participacion}%`, height: '100%', backgroundColor: usuario.participacion > 70 ? 'var(--primary-color)' : '#f59e0b', borderRadius: '3px' }}></div>
@@ -900,12 +900,12 @@ export const Usuarios: React.FC = () => {
                     <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{usuario.participacion}%</span>
                   </div>
                 </td>
-                <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.ultima_interaccion || usuario.fechaIngreso)}</td>
-                <td style={{ padding: '1.25rem 1.5rem' }}>
+                <td data-label="Última interacción" style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.ultima_interaccion || usuario.fechaIngreso)}</td>
+                <td data-label="Dolor" style={{ padding: '1.25rem 1.5rem' }}>
                   {usuario.dolor ? <span className="badge badge-warning" style={{ gap: '0.25rem' }}><AlertCircle size={14} /> Sí</span> : <span className="text-muted">No</span>}
                 </td>
-                <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.fechaIngreso || usuario.ultima_interaccion)}</td>
-                <td style={{ padding: '1.25rem 1.5rem' }}>
+                <td data-label="Ingreso" style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.fechaIngreso || usuario.ultima_interaccion)}</td>
+                <td data-label="Estado" style={{ padding: '1.25rem 1.5rem' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
                     <Badge
                       label={usuario.estado || 'Activo'}
@@ -945,10 +945,10 @@ export const Usuarios: React.FC = () => {
 
       {/* Modal Invitar Usuarios */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(3px)' }} onClick={() => { setIsModalOpen(false); setGeneratedLink(''); setInviteError(''); }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '24px', padding: '2.5rem', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', animation: 'fadeIn 0.2s ease-out' }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{ width: '56px', height: '56px', backgroundColor: '#e0e7ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#4f46e5' }}>
+        <div className="compact-modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(3px)' }} onClick={() => { setIsModalOpen(false); setGeneratedLink(''); setInviteError(''); }}>
+          <div className="compact-modal invite-user-modal" style={{ backgroundColor: 'white', borderRadius: '24px', padding: '2.5rem', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', animation: 'fadeIn 0.2s ease-out' }} onClick={e => e.stopPropagation()}>
+            <div className="compact-modal-intro" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div className="compact-modal-icon" style={{ width: '56px', height: '56px', backgroundColor: '#e0e7ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#4f46e5' }}>
                 <Mail size={28} />
               </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>{isRrhh ? 'Invitar empleados' : 'Invitar Usuarios'}</h2>
@@ -960,7 +960,7 @@ export const Usuarios: React.FC = () => {
             </div>
 
             {!generatedLink ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="compact-modal-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {isRrhh ? (
                   <div style={{ padding: '1rem', borderRadius: '14px', border: '1px solid #ccfbf1', backgroundColor: '#f0fdfa' }}>
                     <p style={{ margin: 0, fontSize: '0.78rem', color: '#0f766e', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Empresa asociada</p>
@@ -991,7 +991,7 @@ export const Usuarios: React.FC = () => {
                     {inviteError}
                   </div>
                 )}
-                <div style={{ display: 'grid', gridTemplateColumns: isRrhh ? '1fr' : '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                <div className="compact-modal-actions" style={{ display: 'grid', gridTemplateColumns: isRrhh ? '1fr' : '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
                   <button type="button" disabled={inviteLoading} onClick={() => void handleGenerateLink()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
                     <LinkIcon size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{inviteLoading ? 'Creando...' : isRrhh ? 'Generar link para empleados' : 'Generar enlace'}</span>
                   </button>

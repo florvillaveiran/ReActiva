@@ -13,6 +13,7 @@ import {
   Target,
   Users,
   UserRound,
+  X,
   Zap,
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -949,7 +950,7 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
   return (
     <>
       <button
-        className="btn-primary"
+        className="btn-primary rg-trigger"
         onClick={() => setOpen(true)}
         disabled={generating || !periodReady}
         title={periodReady ? 'Generar informe del periodo seleccionado' : 'Seleccioná una fecha desde y hasta válidas'}
@@ -968,6 +969,7 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
                 <h2>Generar informe</h2>
                 <p>Selecciona si queres crear un informe para una empresa o para un usuario especifico.</p>
               </div>
+              <button type="button" className="rg-modal-close" onClick={() => setOpen(false)} aria-label="Cerrar generador de informes"><X size={18} /></button>
             </div>
 
             <div className="rg-kind-grid">

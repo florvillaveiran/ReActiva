@@ -57,15 +57,20 @@ const MiniForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void;
   const [energia, setEnergia] = useState(0);
   const [dolor, setDolor] = useState<boolean | null>(null);
   const [zona, setZona] = useState('');
+  const [zonaDetalle, setZonaDetalle] = useState('');
   const [feeling, setFeeling] = useState('');
   const [done, setDone] = useState(false);
-  const canSubmit = energia > 0 && dolor !== null && feeling !== '';
-  const submit = () => { setDone(true); setTimeout(() => onSubmit({ bloque, energia, dolor: dolor!, zona, feeling, tipo: 'diario' }), 1200); };
+  const canSubmit = energia > 0 && dolor !== null && feeling !== '' && (!dolor || (zona !== '' && (zona !== 'Otro' || zonaDetalle.trim() !== '')));
+  const submit = () => {
+    const zonaFinal = zona === 'Otro' ? `Otro: ${zonaDetalle.trim()}` : zona;
+    setDone(true);
+    setTimeout(() => onSubmit({ bloque, energia, dolor: dolor!, zona: zonaFinal, feeling, tipo: 'diario' }), 1200);
+  };
   const emojis = [{ val: 'Mal', icon: '😟' }, { val: 'Regular', icon: '😐' }, { val: 'Bien', icon: '🙂' }, { val: 'Muy bien', icon: '😊' }, { val: 'Genial', icon: '🤩' }];
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s' }}>
-      <div style={{ background: 'white', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+    <div className="pause-form-backdrop" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s' }}>
+      <div className="pause-form-modal pause-form-daily" style={{ background: 'white', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         {done ? (
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
             <CheckCircle2 size={52} color="var(--primary-color)" style={{ margin: '0 auto 1rem', display: 'block' }} />
@@ -107,7 +112,7 @@ const MiniForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void;
                     <button key={z} type="button" onClick={() => setZona(z)} style={{ padding: '0.3rem 0.7rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 500, border: `1.5px solid ${zona === z ? '#f43f5e' : 'var(--border-color)'}`, backgroundColor: zona === z ? '#fff1f2' : 'transparent', color: zona === z ? '#e11d48' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>{z}</button>
                   ))}
                 </div>
-                {zona === 'Otro' && <input type="text" placeholder="Describí dónde..." className="input-field" onChange={e => setZona('Otro: ' + e.target.value)} style={{ fontSize: '0.82rem' }} />}
+                {zona === 'Otro' && <input type="text" placeholder="Describí dónde..." className="input-field" value={zonaDetalle} onChange={e => setZonaDetalle(e.target.value)} style={{ fontSize: '0.82rem' }} />}
               </div>
             )}
             <button onClick={submit} disabled={!canSubmit} className="btn-primary" style={{ width: '100%', padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: canSubmit ? 1 : 0.4 }}>
@@ -130,6 +135,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
   const [energia, setEnergia] = useState(0);
   const [dolor, setDolor] = useState<boolean | null>(null);
   const [zona, setZona] = useState('');
+  const [zonaDetalle, setZonaDetalle] = useState('');
 
   // Parte 2: preguntas semanales
   const [tension, setTension] = useState('');
@@ -137,7 +143,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
   const [ayuda, setAyuda] = useState('');
   const [comentario, setComentario] = useState('');
 
-  const canNext1 = feeling !== '' && energia > 0 && dolor !== null && (!dolor || zona !== '');
+  const canNext1 = feeling !== '' && energia > 0 && dolor !== null && (!dolor || (zona !== '' && (zona !== 'Otro' || zonaDetalle.trim() !== '')));
   const canNext2 = tension !== '' && trabajo !== '';
   const canSubmit = canNext1 && canNext2 && ayuda !== '';
 
@@ -145,7 +151,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
     setDone(true);
     setTimeout(() => onSubmit({
       bloque,
-      respuestas: { feeling, energia, dolor, zona, tension, trabajo, ayuda, comentario },
+      respuestas: { feeling, energia, dolor, zona: zona === 'Otro' ? `Otro: ${zonaDetalle.trim()}` : zona, tension, trabajo, ayuda, comentario },
       tipo: 'semanal-completo',
     }), 1200);
   };
@@ -159,8 +165,8 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
   ];
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s' }}>
-      <div style={{ background: 'white', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '540px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '92vh', overflowY: 'auto' }}>
+    <div className="pause-form-backdrop" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s' }}>
+      <div className="pause-form-modal pause-form-weekly" style={{ background: 'white', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '540px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '92vh', overflowY: 'auto' }}>
         {done ? (
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
             <CheckCircle2 size={52} color="var(--primary-color)" style={{ margin: '0 auto 1rem', display: 'block' }} />
@@ -215,7 +221,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
                         <button key={z} type="button" onClick={() => setZona(z)} style={{ padding: '0.3rem 0.7rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 500, border: `1.5px solid ${zona === z ? '#f43f5e' : 'var(--border-color)'}`, backgroundColor: zona === z ? '#fff1f2' : 'transparent', color: zona === z ? '#e11d48' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>{z}</button>
                       ))}
                     </div>
-                    {zona === 'Otro' && <input type="text" placeholder="Describí dónde..." className="input-field" onChange={e => setZona('Otro: ' + e.target.value)} style={{ fontSize: '0.82rem' }} />}
+                    {zona === 'Otro' && <input type="text" placeholder="Describí dónde..." className="input-field" value={zonaDetalle} onChange={e => setZonaDetalle(e.target.value)} style={{ fontSize: '0.82rem' }} />}
                   </div>
                 )}
 
@@ -227,7 +233,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
               <div style={{ animation: 'fadeIn 0.3s' }}>
                 {/* P4: ¿En qué momento sentiste más tensión? */}
                 <p className="form-label">¿En qué momento sentiste más tensión?</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem', marginBottom: '2rem' }}>
+                <div className="weekly-option-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem', marginBottom: '2rem' }}>
                   {['A la mañana', 'Al mediodía', 'A la tarde', 'Al final de la jornada', 'No sentí tensión'].map(opt => (
                     <button key={opt} onClick={() => setTension(opt)} className={`option-btn ${tension === opt ? 'active' : ''}`}>{opt}</button>
                   ))}
@@ -235,7 +241,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
 
                 {/* P5: ¿Cómo te sentiste trabajando esta semana? */}
                 <p className="form-label">¿Cómo te sentiste trabajando esta semana?</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.85rem', marginBottom: '1.75rem' }}>
+                <div className="weekly-option-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.85rem', marginBottom: '1.75rem' }}>
                   {['Disperso', 'Normal', 'Enfocado'].map(opt => (
                     <button key={opt} onClick={() => setTrabajo(opt)} className={`option-btn ${trabajo === opt ? 'active' : ''}`}>{opt}</button>
                   ))}
@@ -252,7 +258,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
               <div style={{ animation: 'fadeIn 0.3s' }}>
                 {/* P6: ¿Las pausas activas te ayudaron esta semana? */}
                 <p className="form-label">¿Las pausas activas te ayudaron esta semana?</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.85rem', marginBottom: '2rem' }}>
+                <div className="weekly-option-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.85rem', marginBottom: '2rem' }}>
                   {['Sí, mucho', 'Sí, un poco', 'No'].map(opt => (
                     <button key={opt} onClick={() => setAyuda(opt)} className={`option-btn ${ayuda === opt ? 'active' : ''}`}>{opt}</button>
                   ))}
@@ -312,6 +318,7 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
 
   return (
     <div
+      className="video-viewer-backdrop"
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
@@ -321,6 +328,7 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
       }}
     >
       <div
+        className="video-viewer-modal"
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: '960px',
@@ -392,7 +400,7 @@ const WeekPauseRow: React.FC<{
   const info = { ...PAUSAS[bloque], hora: time ? `${time} hs` : PAUSAS[bloque].hora };
   const showActive = isActive && status === 'available';
   return (
-    <div style={{
+    <div className="user-week-pause-row" style={{
       display: 'flex',
       alignItems: 'center',
       gap: '0.75rem',
@@ -715,21 +723,21 @@ export const UsuarioDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '1.5rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 360px', gap: '1.25rem', alignItems: 'stretch' }}>
+    <div className="user-dashboard-page" style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '1.5rem' }}>
+      <div className="user-program-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 360px', gap: '1.25rem', alignItems: 'stretch' }}>
 
         {/* ── COLUMNA IZQUIERDA ─────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minHeight: 0 }}>
 
           {/* Header banner */}
-          <div style={{
+          <div className="user-program-header" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             gap: '1.5rem', padding: '1.1rem 1.5rem',
             background: 'linear-gradient(135deg, #f0fdf9 0%, #ffffff 100%)',
             border: '1px solid #d1fae5', borderRadius: '18px',
           }}>
             {/* Saludo */}
-            <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center', minWidth: 0 }}>
+            <div className="user-program-greeting" style={{ display: 'flex', gap: '0.85rem', alignItems: 'center', minWidth: 0 }}>
               <div style={{
                 width: 46, height: 46, borderRadius: '50%',
                 backgroundColor: '#ecfdf5', display: 'flex',
@@ -746,13 +754,13 @@ export const UsuarioDashboard: React.FC = () => {
             </div>
 
             {/* Progreso % */}
-            <div style={{ textAlign: 'center', flexShrink: 0 }}>
+            <div className="user-program-progress" style={{ textAlign: 'center', flexShrink: 0 }}>
               <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2px' }}>Progreso</p>
               <p style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary-color)', lineHeight: 1 }}>{pct}%</p>
             </div>
 
             {/* Días L M V */}
-            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+            <div className="user-program-days" style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
               {DAYS.map(d => {
                 const isCurrent = d === today;
                 const dayDone = isDone(d, 'morning') && isDone(d, 'afternoon');
@@ -782,9 +790,9 @@ export const UsuarioDashboard: React.FC = () => {
           </div>
 
           {/* Tarjeta principal de pausa activa */}
-          <div style={{ borderRadius: '20px', overflow: 'hidden', backgroundColor: 'white', border: '1px solid #eef0f3', boxShadow: '0 4px 24px rgba(0,0,0,0.04)', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div className="user-pause-card" style={{ borderRadius: '20px', overflow: 'hidden', backgroundColor: 'white', border: '1px solid #eef0f3', boxShadow: '0 4px 24px rgba(0,0,0,0.04)', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             {/* Imagen con play */}
-            <div style={{
+            <div className="user-pause-media" style={{
               position: 'relative',
               flex: 1,
               minHeight: 420,
@@ -796,7 +804,7 @@ export const UsuarioDashboard: React.FC = () => {
             }}>
               <div style={{ position: 'absolute', inset: 0, background: contentLocked ? 'linear-gradient(135deg, #f8fafc 0%, #eefdf8 100%)' : 'linear-gradient(to bottom, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.45) 100%)' }} />
               {contentLocked && (
-                <div style={{
+                <div className="user-pause-lock" style={{
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
@@ -837,7 +845,7 @@ export const UsuarioDashboard: React.FC = () => {
               )}
 
               {/* Tag inferior izquierda */}
-              <div style={{ position: 'absolute', left: '1.5rem', bottom: '1.5rem', right: '1.5rem' }}>
+              <div className="user-pause-copy" style={{ position: 'absolute', left: '1.5rem', bottom: '1.5rem', right: '1.5rem' }}>
                 {allDoneToday ? (
                   <>
                     <span style={{
@@ -892,7 +900,7 @@ export const UsuarioDashboard: React.FC = () => {
               else prompt = '¿Ya realizaste esta pausa?';
 
               return (
-                <div style={{
+                <div className="user-pause-action" style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   gap: '1rem', padding: '1.1rem 1.5rem',
                 }}>
@@ -930,7 +938,7 @@ export const UsuarioDashboard: React.FC = () => {
         </div>
 
         {/* ── COLUMNA DERECHA: Tu semana ───────────────────────────────── */}
-        <div style={{
+        <div className="user-week-card" style={{
           backgroundColor: 'white', borderRadius: '20px',
           border: '1px solid #eef0f3', padding: '1.5rem',
           boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
@@ -944,8 +952,8 @@ export const UsuarioDashboard: React.FC = () => {
           {DAYS.map(dia => {
             const isCurrent = dia === today;
             return (
-              <div key={dia} style={{ marginBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+              <div className="user-week-day" key={dia} style={{ marginBottom: '0.5rem' }}>
+                <div className="user-week-day-head" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
                   <p style={{
                     fontWeight: 700, fontSize: '0.95rem',
                     color: isCurrent ? 'var(--primary-color)' : 'var(--text-color)',

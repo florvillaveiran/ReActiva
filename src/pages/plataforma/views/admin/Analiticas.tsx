@@ -574,10 +574,10 @@ export const Analiticas: React.FC = () => {
     ];
 
     return (
-      <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.35rem' }}>
+      <div className="analytics-page analytics-rrhh-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+        <div className="analytics-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.35rem' }}>
           <h2 className="header-title" style={{ marginBottom: 0 }}>Analiticas RRHH</h2>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="analytics-filters" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="input-field" style={{ width: 160, display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'white' }}>
               <Filter size={15} /> 
               {effectiveFiltro === 'all' ? 'Todas' : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa'}
@@ -592,14 +592,14 @@ export const Analiticas: React.FC = () => {
               <option value="Junio 2026">Junio 2026</option>
               <option value="Mayo 2026">Mayo 2026</option>
             </select>}
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#334155', fontSize: '0.88rem' }}>
+            <label className="analytics-compare" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#334155', fontSize: '0.88rem' }}>
               <input type="checkbox" checked={comparar} onChange={(event) => setComparar(event.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
               Comparar con mes anterior
             </label>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+        <div className="analytics-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
           {kpis.map(kpi => (
             <div key={kpi.label} className="card" style={{ padding: '1.1rem 1.25rem', margin: 0 }}>
               <p style={{ margin: '0 0 0.5rem', color: '#64748b', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase' }}>{kpi.label}</p>
@@ -752,13 +752,13 @@ export const Analiticas: React.FC = () => {
   }
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+    <div className="analytics-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+      <div className="analytics-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas Detalladas</h2>
         
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="analytics-filters" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Empresa */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div className="analytics-control" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Filter size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
@@ -775,7 +775,7 @@ export const Analiticas: React.FC = () => {
           </div>
 
           {/* Período (Principal) */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div className="analytics-control" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
@@ -794,7 +794,7 @@ export const Analiticas: React.FC = () => {
 
           {/* Selectores Secundarios */}
           {periodo === 'semanal' && (
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <div className="analytics-control analytics-control-wide" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <select
                 className="input-field"
                 style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '220px', backgroundColor: 'var(--bg-color)' }}
@@ -809,7 +809,7 @@ export const Analiticas: React.FC = () => {
           )}
 
           {periodo === 'mensual' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="analytics-period-group" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <select
                 className="input-field"
                 style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '150px', backgroundColor: 'var(--bg-color)' }}
@@ -820,7 +820,7 @@ export const Analiticas: React.FC = () => {
                 <option value="Junio 2026">Junio 2026</option>
                 <option value="Mayo 2026">Mayo 2026</option>
               </select>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
+              <label className="analytics-compare" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
                 Comparar con mes anterior
               </label>
@@ -828,7 +828,7 @@ export const Analiticas: React.FC = () => {
           )}
 
           {periodo === 'anual' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="analytics-period-group" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <select
                 className="input-field"
                 style={{ paddingLeft: '1rem', paddingRight: '0.75rem', width: '100px', backgroundColor: 'var(--bg-color)' }}
@@ -838,7 +838,7 @@ export const Analiticas: React.FC = () => {
                 <option value="2026">2026</option>
                 <option value="2025">2025</option>
               </select>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
+              <label className="analytics-compare" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
                 Comparar con año anterior
               </label>
@@ -846,14 +846,14 @@ export const Analiticas: React.FC = () => {
           )}
 
           {periodo === 'personalizado' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="analytics-period-group analytics-custom-range" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <input type="date" className="input-field" value={fechaDesde} max={fechaHasta || undefined} onChange={e => setFechaDesde(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
               <span style={{ color: 'var(--text-muted)' }}>-</span>
               <input type="date" className="input-field" value={fechaHasta} min={fechaDesde || undefined} onChange={e => setFechaHasta(e.target.value)} style={{ width: '130px', padding: '0.5rem' }} />
             </div>
           )}
 
-          <div style={{ flexGrow: 1 }} />
+          <div className="analytics-spacer" style={{ flexGrow: 1 }} />
 
           {user?.role === 'admin' && (
             <ReportGenerator
@@ -871,7 +871,7 @@ export const Analiticas: React.FC = () => {
       <div>
 
         {/* ─── KPIs (5 mini cards) ─────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
+        <div className="analytics-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
           {[
             { label: 'Participación', value: data.kpis.participacion, color: 'var(--primary-color)', bg: '#f0fdfa' },
             { label: 'Foco',          value: data.kpis.foco,          color: '#3b82f6',              bg: '#eff6ff' },

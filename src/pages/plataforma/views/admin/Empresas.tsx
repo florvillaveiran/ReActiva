@@ -34,7 +34,7 @@ const Badge: React.FC<{ label: string; color?: string; bg?: string }> = ({ label
 );
 
 const InfoCard: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: string }> = ({ icon, label, value, accent = '#10b981' }) => (
-  <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0', flex: 1, minWidth: '140px' }}>
+  <div className="company-info-card" style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0', flex: 1, minWidth: '140px' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
       <span style={{ color: accent }}>{icon}</span>
       <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
@@ -65,31 +65,31 @@ const EmpresaDetalle: React.FC<{ empresa: Empresa; onBack: () => void }> = ({ em
   const fechaFmt = empresa.fechaOnboarding ? new Date(empresa.fechaOnboarding).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : null;
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+    <div className="company-detail-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+      <div className="company-detail-back" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <button onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', border: 'none', padding: '0.5rem 0', background: 'none' }}>
           <ChevronLeft size={20} /> Volver
         </button>
       </div>
 
       {/* Empresa Header Card */}
-      <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '14px', backgroundColor: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="card company-detail-hero" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
+        <div className="company-detail-hero-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div className="company-detail-identity" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            <div className="company-detail-icon" style={{ width: '56px', height: '56px', borderRadius: '14px', backgroundColor: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Building size={28} color="#10b981" />
             </div>
-            <div>
+            <div className="company-detail-copy">
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>{empresa.nombre}</h2>
-              <div style={{ display: 'flex', gap: '1rem', color: '#64748b', fontSize: '0.85rem', flexWrap: 'wrap' }}>
+              <div className="company-detail-meta" style={{ display: 'flex', gap: '1rem', color: '#64748b', fontSize: '0.85rem', flexWrap: 'wrap' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><MapPin size={13} /> {empresa.ubicacion || 'Por definir'}</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><User size={13} /> {empresa.contactoNombre || '—'}</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Mail size={13} /> {empresa.rrhhEmail || '—'}</span>
               </div>
             </div>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1.1rem', borderRadius: '999px', backgroundColor: estilo.bg, color: estilo.color, fontSize: '0.85rem', fontWeight: 700 }}>
+          <div className="company-detail-status" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1.1rem', borderRadius: '999px', backgroundColor: estilo.bg, color: estilo.color, fontSize: '0.85rem', fontWeight: 700 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: estilo.dot }} />
             {estado}
           </div>
@@ -113,7 +113,7 @@ const EmpresaDetalle: React.FC<{ empresa: Empresa; onBack: () => void }> = ({ em
       {estado === 'Activa' && data && (
         <>
           {/* KPI Row */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+          <div className="company-detail-kpis" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
             <InfoCard icon={<Users size={16} />} label="Empleados" value={`${empresa.empleados.length}`} />
             <InfoCard icon={<Clock size={16} />} label="Onboarding" value={fechaFmt || '—'} />
             <InfoCard icon={<Briefcase size={16} />} label="Modalidad" value={data.modalidad || '—'} />
@@ -421,8 +421,8 @@ export const Empresas: React.FC = () => {
   };
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+    <div className="companies-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+      <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h2 className="header-title" style={{ marginBottom: 0 }}>{rrhhEmpresaId ? 'Empresa' : 'Empresas Registradas'}</h2>
         {!rrhhEmpresaId && <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
           <Plus size={18} /> Nueva Empresa
@@ -446,32 +446,33 @@ export const Empresas: React.FC = () => {
           return (
             <div
               key={empresa.id}
-              className="card"
+              className="card company-list-card"
               style={{ padding: '1.5rem', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }}
               onClick={() => setSelected(empresa)}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 30px rgba(16,185,129,0.12)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-secondary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div className="company-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div className="company-card-main" style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+                  <div className="company-card-icon" style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-secondary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Building size={24} color="var(--primary-color)" />
                   </div>
-                  <div>
+                  <div className="company-card-copy">
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.2rem' }}>{empresa.nombre}</h3>
-                    <div style={{ display: 'flex', gap: '1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><MapPin size={14} /> {empresa.ubicacion || 'Por definir'}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Users size={14} /> {empresa.empleados.length} empleados</span>
+                    <div className="company-card-meta" style={{ display: 'flex', gap: '1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                      <span className="company-location" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><MapPin size={14} /> {empresa.ubicacion || 'Por definir'}</span>
+                      <span className="company-employees" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Users size={14} /> {empresa.empleados.length} empleados</span>
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.6rem', flexShrink: 0 }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem', borderRadius: '999px', backgroundColor: s.bg, color: s.color, fontSize: '0.82rem', fontWeight: 600 }}>
+                <div className="company-card-controls" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.6rem', flexShrink: 0 }}>
+                  <div className="company-status" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem', borderRadius: '999px', backgroundColor: s.bg, color: s.color, fontSize: '0.82rem', fontWeight: 600 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: s.dot }} />
                     {est}
                   </div>
-                  {!rrhhEmpresaId && <div style={{ display: 'flex', gap: '0.45rem' }}>
+                  {!rrhhEmpresaId && <div className="company-card-actions" style={{ display: 'flex', gap: '0.45rem' }}>
                     <button
+                      className="company-action company-action-edit"
                       type="button"
                       onClick={(event) => openEditCompany(event, empresa)}
                       aria-label={`Editar ${empresa.nombre}`}
@@ -481,6 +482,7 @@ export const Empresas: React.FC = () => {
                       <Pencil size={14} /> Editar
                     </button>
                     <button
+                      className="company-action company-action-delete"
                       type="button"
                       onClick={(event) => handleEliminarEmpresa(event, empresa.id, empresa.nombre)}
                       aria-label={`Eliminar ${empresa.nombre}`}
@@ -492,7 +494,7 @@ export const Empresas: React.FC = () => {
                   </div>}
                 </div>
               </div>
-              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.85rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem 2rem' }}>
+              <div className="company-card-contact" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.85rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem 2rem' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 }}>
                   <User size={14} color="var(--primary-color)" /> {empresa.contactoNombre || 'N/A'}
                 </span>
@@ -548,10 +550,10 @@ export const Empresas: React.FC = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(3px)' }} onClick={handleCloseModal}>
-          <div style={{ backgroundColor: 'white', borderRadius: '24px', padding: '2.5rem', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', animation: 'fadeIn 0.2s ease-out' }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{ width: '56px', height: '56px', backgroundColor: '#ecfdf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#10b981' }}>
+        <div className="compact-modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(3px)' }} onClick={handleCloseModal}>
+          <div className="compact-modal new-company-modal" style={{ backgroundColor: 'white', borderRadius: '24px', padding: '2.5rem', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', animation: 'fadeIn 0.2s ease-out' }} onClick={e => e.stopPropagation()}>
+            <div className="compact-modal-intro" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div className="compact-modal-icon" style={{ width: '56px', height: '56px', backgroundColor: '#ecfdf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#10b981' }}>
                 <Building size={28} />
               </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0B1B3D', marginBottom: '0.5rem' }}>Incorporar nueva empresa</h2>
@@ -559,7 +561,7 @@ export const Empresas: React.FC = () => {
             </div>
 
             {!generatedLink ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="compact-modal-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nombre de la empresa <span style={{color: '#dc2626'}}>*</span></label>
                   <input type="text" className="input-field" placeholder="Ej: TechCorp" value={newNombre} onChange={e => setNewNombre(e.target.value)} />
@@ -576,7 +578,7 @@ export const Empresas: React.FC = () => {
                   <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email del responsable <span style={{color: '#dc2626'}}>*</span></label>
                   <input type="email" className="input-field" placeholder="correo@empresa.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                <div className="compact-modal-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
                   <button onClick={() => void handleGenerateLink()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
                     <LinkIcon size={24} /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Generar enlace</span>
                   </button>

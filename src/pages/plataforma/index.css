@@ -76,6 +76,88 @@
   z-index: 100;
 }
 
+#plataforma-root .sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+#plataforma-root .sidebar-brand img {
+  height: 40px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+#plataforma-root .sidebar-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+#plataforma-root .sidebar-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+}
+
+#plataforma-root .sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+#plataforma-root .sidebar-link.active {
+  color: var(--primary-color);
+  background-color: rgba(0, 194, 168, 0.1);
+  font-weight: 600;
+}
+
+#plataforma-root .sidebar-account {
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+#plataforma-root .sidebar-user {
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+}
+
+#plataforma-root .sidebar-logout {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #ef4444;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#plataforma-root .sidebar-logout:hover {
+  background-color: #fef2f2;
+}
+
+#plataforma-root .mobile-menu-toggle,
+#plataforma-root .mobile-nav-overlay {
+  display: none;
+}
+
 /* ---- Main Content ---- */
 #plataforma-root .main-content {
   flex: 1;
@@ -205,6 +287,21 @@
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+#plataforma-root .rg-modal-close {
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 #plataforma-root .rg-modal-head h2 {
@@ -2731,5 +2828,3756 @@
 
   #plataforma-root .tips-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================================
+   EXPERIENCIA MÓVIL
+   Reglas aisladas: no modifican la vista desktop.
+   ============================================== */
+@media (max-width: 760px) {
+  #plataforma-root {
+    min-width: 0;
+    overflow-x: hidden;
+    background-color: #f8fafc;
+  }
+
+  #plataforma-root .app-container {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  #plataforma-root .sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    z-index: 220;
+    width: 100%;
+    height: 68px;
+    min-height: 68px;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.92);
+    background-color: #ffffff;
+    box-shadow: 0 5px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  #plataforma-root .sidebar-brand {
+    height: 68px;
+    justify-content: space-between;
+    padding: 0 1rem 0 max(1rem, env(safe-area-inset-left));
+    border-bottom: 0;
+  }
+
+  #plataforma-root .sidebar-brand img {
+    width: auto;
+    height: 31px;
+    max-width: 155px;
+  }
+
+  #plataforma-root .mobile-menu-toggle {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background-color: #ffffff;
+    color: #0f172a;
+    cursor: pointer;
+  }
+
+  #plataforma-root .sidebar-panel {
+    position: fixed;
+    top: 68px;
+    bottom: 0;
+    left: 0;
+    z-index: 230;
+    width: min(86vw, 330px);
+    min-height: 0;
+    border-top: 1px solid #eef2f7;
+    background-color: #ffffff;
+    box-shadow: 18px 16px 40px rgba(15, 23, 42, 0.13);
+    transform: translateX(-105%);
+    transition: transform 0.22s ease;
+  }
+
+  #plataforma-root .sidebar-nav {
+    position: static;
+    min-height: 0;
+    padding: 1rem;
+    overflow-y: auto;
+    box-shadow: none;
+    transform: none;
+  }
+
+  #plataforma-root .sidebar-link {
+    min-height: 48px;
+    padding: 0.78rem 0.9rem;
+    border-radius: 13px;
+  }
+
+  #plataforma-root .sidebar-account {
+    position: static;
+    width: 100%;
+    min-height: auto;
+    padding: 0.85rem 1rem max(0.85rem, env(safe-area-inset-bottom));
+    border-top: 1px solid #eef2f7;
+    background-color: #ffffff;
+    box-shadow: none;
+    transform: none;
+  }
+
+  #plataforma-root .sidebar-user {
+    margin-bottom: 0.4rem;
+    padding: 0 0.85rem;
+  }
+
+  #plataforma-root .sidebar-logout {
+    min-height: 44px;
+    padding: 0.65rem 0.85rem;
+  }
+
+  #plataforma-root .sidebar.is-mobile-open .sidebar-panel {
+    transform: translateX(0);
+  }
+
+  #plataforma-root .mobile-nav-overlay {
+    position: fixed;
+    inset: 68px 0 0;
+    z-index: 210;
+    display: block;
+    width: 100%;
+    border: 0;
+    background-color: rgba(15, 23, 42, 0.38);
+    backdrop-filter: blur(2px);
+  }
+
+  #plataforma-root .main-content {
+    width: 100%;
+    min-width: 0;
+    min-height: 100dvh;
+    margin-left: 0;
+    padding: calc(68px + 1rem) max(0.9rem, env(safe-area-inset-right)) max(1.4rem, env(safe-area-inset-bottom)) max(0.9rem, env(safe-area-inset-left));
+    overflow-x: hidden;
+  }
+
+  #plataforma-root .header-title {
+    margin-bottom: 1rem;
+    font-size: 1.35rem;
+    line-height: 1.2;
+  }
+
+  #plataforma-root .page-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  #plataforma-root .page-toolbar > *,
+  #plataforma-root .page-toolbar .input-field,
+  #plataforma-root .users-page .page-toolbar > div,
+  #plataforma-root .users-page .page-toolbar select {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #plataforma-root .btn-primary,
+  #plataforma-root .btn-secondary,
+  #plataforma-root .input-field,
+  #plataforma-root input,
+  #plataforma-root select,
+  #plataforma-root textarea {
+    min-height: 44px;
+  }
+
+  #plataforma-root .input-field,
+  #plataforma-root input,
+  #plataforma-root select,
+  #plataforma-root textarea {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  #plataforma-root .card {
+    max-width: 100%;
+    border-radius: 14px;
+  }
+
+  #plataforma-root .content-section-tabs {
+    margin-right: -0.9rem;
+    margin-left: -0.9rem;
+    padding: 0 0.9rem 0.35rem;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  #plataforma-root .content-section-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  #plataforma-root .content-section-tabs button {
+    flex: 0 0 auto;
+    min-height: 42px;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  #plataforma-root .main-content [style*="grid-template-columns: repeat(5"],
+  #plataforma-root .main-content [style*="grid-template-columns: repeat(4"],
+  #plataforma-root .main-content [style*="grid-template-columns: repeat(3"],
+  #plataforma-root .main-content [style*="grid-template-columns: repeat(2"],
+  #plataforma-root .main-content [style*="grid-template-columns: 1fr 1fr"],
+  #plataforma-root .main-content [style*="grid-template-columns: 1fr 1.15fr"],
+  #plataforma-root .main-content [style*="grid-template-columns: minmax(0, 1fr) 360px"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #plataforma-root .user-program-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #plataforma-root .user-program-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "greeting progress"
+      "days days";
+    gap: 0.9rem 0.75rem !important;
+    padding: 1rem !important;
+    border-radius: 16px !important;
+  }
+
+  #plataforma-root .user-program-greeting {
+    grid-area: greeting;
+    align-items: center !important;
+  }
+
+  #plataforma-root .user-program-greeting > div:first-child {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  #plataforma-root .user-program-greeting p:first-child {
+    font-size: 1.02rem !important;
+    line-height: 1.2;
+  }
+
+  #plataforma-root .user-program-greeting p:last-child {
+    margin-top: 0.18rem;
+    line-height: 1.35;
+  }
+
+  #plataforma-root .user-program-progress {
+    grid-area: progress;
+    min-width: 58px;
+    align-self: center;
+  }
+
+  #plataforma-root .user-program-progress p:last-child {
+    font-size: 1.35rem !important;
+  }
+
+  #plataforma-root .user-program-days {
+    grid-area: days;
+    justify-content: center;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(16, 185, 129, 0.12);
+  }
+
+  #plataforma-root .user-program-days button {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  #plataforma-root .user-pause-card {
+    border-radius: 18px !important;
+  }
+
+  #plataforma-root .user-pause-media {
+    min-height: 330px !important;
+  }
+
+  #plataforma-root .user-pause-lock {
+    top: 27% !important;
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  #plataforma-root .user-pause-lock svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  #plataforma-root .user-pause-copy {
+    right: 1rem !important;
+    bottom: 1rem !important;
+    left: 1rem !important;
+  }
+
+  #plataforma-root .user-pause-copy > span {
+    margin-bottom: 0.65rem !important;
+    font-size: 0.64rem !important;
+  }
+
+  #plataforma-root .user-pause-copy h2 {
+    margin-bottom: 0.45rem !important;
+    font-size: 1.42rem !important;
+    line-height: 1.16;
+  }
+
+  #plataforma-root .user-pause-copy p {
+    align-items: flex-start !important;
+    font-size: 0.86rem !important;
+    line-height: 1.45;
+  }
+
+  #plataforma-root .user-pause-copy p svg {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  #plataforma-root .user-pause-action {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.8rem !important;
+    padding: 1rem !important;
+  }
+
+  #plataforma-root .user-pause-action p {
+    font-size: 0.86rem !important;
+    line-height: 1.4;
+  }
+
+  #plataforma-root .user-pause-action button {
+    width: 100%;
+    min-height: 46px;
+    padding: 0.75rem 1rem !important;
+  }
+
+  #plataforma-root .user-week-card {
+    padding: 1rem !important;
+    border-radius: 18px !important;
+  }
+
+  #plataforma-root .admin-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.8rem !important;
+  }
+
+  #plataforma-root .admin-kpi-grid > .card {
+    min-width: 0;
+    padding: 1rem !important;
+  }
+
+  #plataforma-root .admin-kpi-grid > .card h3 {
+    font-size: 0.92rem !important;
+    line-height: 1.25;
+  }
+
+  #plataforma-root .admin-kpi-grid > .card [style*="font-size: 2.5rem"] {
+    font-size: 2rem !important;
+  }
+
+  #plataforma-root .user-academy-page header > div:last-child {
+    min-width: 0 !important;
+  }
+
+  #plataforma-root .user-academy-page section {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #plataforma-root .companies-page .company-list-card {
+    padding: 1rem !important;
+    border-radius: 18px !important;
+    border-color: #e8edf2 !important;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.045) !important;
+  }
+
+  #plataforma-root .companies-page .company-card-head {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 0.85rem !important;
+    margin-bottom: 0.9rem !important;
+  }
+
+  #plataforma-root .companies-page .company-card-main {
+    width: 100%;
+    min-width: 0;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  #plataforma-root .companies-page .company-card-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .companies-page .company-card-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  #plataforma-root .companies-page .company-card-copy {
+    min-width: 0;
+    flex: 1;
+  }
+
+  #plataforma-root .companies-page .company-card-copy h3 {
+    margin: 0 0 0.4rem !important;
+    font-size: 1rem !important;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .companies-page .company-card-meta {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.6rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  #plataforma-root .companies-page .company-location,
+  #plataforma-root .companies-page .company-employees {
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  #plataforma-root .companies-page .company-location {
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .companies-page .company-employees {
+    flex: 0 0 auto;
+    padding: 0.28rem 0.48rem;
+    border: 1px solid #e8edf2;
+    border-radius: 9px;
+    background: #f8fafc;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .companies-page .company-card-controls {
+    width: 100%;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between;
+    gap: 0.6rem !important;
+  }
+
+  #plataforma-root .companies-page .company-status {
+    min-height: auto !important;
+    padding: 0.34rem 0.58rem !important;
+    gap: 0.38rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  #plataforma-root .companies-page .company-status span {
+    width: 7px !important;
+    height: 7px !important;
+  }
+
+  #plataforma-root .companies-page .company-card-actions {
+    gap: 0.35rem !important;
+  }
+
+  #plataforma-root .companies-page .company-action {
+    min-height: 36px !important;
+    padding: 0.4rem 0.55rem !important;
+    border: 1px solid #e8edf2 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    font-size: 0.74rem !important;
+    box-shadow: none !important;
+  }
+
+  #plataforma-root .companies-page .company-action-edit {
+    color: #0f766e !important;
+  }
+
+  #plataforma-root .companies-page .company-action-delete {
+    color: #dc2626 !important;
+  }
+
+  #plataforma-root .companies-page .company-card-contact {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem !important;
+    padding-top: 0.8rem !important;
+  }
+
+  #plataforma-root .companies-page .company-card-contact > span {
+    min-width: 0;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .analytics-page .analytics-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-header .header-title {
+    width: 100%;
+    margin: 0 !important;
+    font-size: 1.35rem !important;
+    line-height: 1.2;
+  }
+
+  #plataforma-root .analytics-page .analytics-filters {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+    width: 100%;
+  }
+
+  #plataforma-root .analytics-page .analytics-control,
+  #plataforma-root .analytics-page .analytics-control select {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  #plataforma-root .analytics-page .analytics-control select,
+  #plataforma-root .analytics-page .analytics-period-group select,
+  #plataforma-root .analytics-page .analytics-period-group input[type="date"] {
+    min-height: 44px !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-control-wide,
+  #plataforma-root .analytics-page .analytics-period-group,
+  #plataforma-root .analytics-page .analytics-filters > .rg-trigger {
+    grid-column: 1 / -1;
+  }
+
+  #plataforma-root .analytics-page .analytics-period-group {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+    width: 100%;
+  }
+
+  #plataforma-root .analytics-page .analytics-period-group select,
+  #plataforma-root .analytics-page .analytics-period-group input[type="date"] {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  #plataforma-root .analytics-page .analytics-compare {
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    font-size: 0.78rem !important;
+    line-height: 1.25;
+  }
+
+  #plataforma-root .analytics-page .analytics-compare input[type="checkbox"] {
+    width: 18px !important;
+    min-width: 18px;
+    height: 18px !important;
+    min-height: 18px !important;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  #plataforma-root .analytics-page .analytics-custom-range {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  #plataforma-root .analytics-page .analytics-spacer {
+    display: none;
+  }
+
+  #plataforma-root .analytics-page .analytics-filters > .rg-trigger {
+    width: 100%;
+    min-height: 44px !important;
+    justify-content: center;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .analytics-rrhh-page .analytics-filters > * {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  #plataforma-root .analytics-rrhh-page .analytics-filters > :nth-child(n + 3) {
+    grid-column: 1 / -1;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card {
+    min-width: 0;
+    min-height: 92px;
+    padding: 0.72rem !important;
+    border-radius: 14px !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card p {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card strong {
+    font-size: 1.65rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  #plataforma-root .users-page .page-toolbar {
+    align-items: stretch !important;
+    gap: 0.8rem !important;
+    margin-bottom: 1.1rem !important;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.55rem !important;
+    width: 100%;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions select {
+    width: 100% !important;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0.55rem 0.7rem !important;
+    border-radius: 12px !important;
+    text-overflow: ellipsis;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions .btn-primary {
+    min-height: 42px !important;
+    padding: 0.55rem 0.8rem !important;
+    border-radius: 12px !important;
+    font-size: 0.78rem !important;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .users-page > .card[style*="margin-bottom: 2rem"] {
+    margin-bottom: 1rem !important;
+    padding: 0.65rem !important;
+    border-radius: 16px !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card {
+    overflow: visible !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card table,
+  #plataforma-root .users-page .responsive-table-card tbody,
+  #plataforma-root .users-page .responsive-table-card tr,
+  #plataforma-root .users-page .responsive-table-card td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  #plataforma-root .users-page .responsive-table-card table {
+    min-width: 0;
+  }
+
+  #plataforma-root .users-page .responsive-table-card thead {
+    display: none;
+  }
+
+  #plataforma-root .users-page .responsive-table-card tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  #plataforma-root .users-page .responsive-table-card tr {
+    padding: 0.8rem 0.9rem;
+    border: 1px solid #e5eaf0 !important;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+  }
+
+  #plataforma-root .users-page .responsive-table-card td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.42rem 0 !important;
+    white-space: normal;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    color: #94a3b8;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td:first-child {
+    padding-bottom: 0.65rem !important;
+    border-bottom: 1px solid #eef2f7;
+    font-size: 0.95rem;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td > div {
+    max-width: 58%;
+  }
+
+  #plataforma-root .compact-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.5rem !important;
+    overflow: hidden;
+  }
+
+  #plataforma-root .compact-modal {
+    box-sizing: border-box;
+    width: min(100%, 480px) !important;
+    max-width: calc(100vw - 1rem) !important;
+    max-height: calc(100dvh - 1rem);
+    margin: auto !important;
+    padding: 1rem !important;
+    border-radius: 20px 20px 14px 14px !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #plataforma-root .compact-modal-intro {
+    margin-bottom: 1rem !important;
+    text-align: left !important;
+  }
+
+  #plataforma-root .compact-modal-icon {
+    width: 38px !important;
+    height: 38px !important;
+    margin: 0 0 0.65rem !important;
+  }
+
+  #plataforma-root .compact-modal-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  #plataforma-root .compact-modal-intro h2 {
+    margin-bottom: 0.3rem !important;
+    font-size: 1.18rem !important;
+    line-height: 1.25;
+  }
+
+  #plataforma-root .compact-modal-intro p {
+    margin: 0;
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  #plataforma-root .compact-modal-form {
+    gap: 0.7rem !important;
+  }
+
+  #plataforma-root .compact-modal-form .form-group {
+    gap: 0.3rem;
+  }
+
+  #plataforma-root .compact-modal-form .form-label {
+    margin-bottom: 0.3rem;
+    font-size: 0.76rem !important;
+  }
+
+  #plataforma-root .user-detail-back {
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .user-detail-back button {
+    min-height: 34px !important;
+    padding: 0.35rem 0 !important;
+    font-size: 0.78rem !important;
+  }
+
+  #plataforma-root .user-detail-page .card {
+    padding: 0.82rem !important;
+    border-radius: 15px !important;
+  }
+
+  #plataforma-root .user-detail-hero {
+    gap: 0.7rem !important;
+    margin-bottom: 0.7rem !important;
+  }
+
+  #plataforma-root .user-detail-primary {
+    min-width: 0;
+    width: 100%;
+  }
+
+  #plataforma-root .user-detail-title {
+    gap: 0.45rem !important;
+    margin-bottom: 0.25rem !important;
+    flex-wrap: wrap;
+  }
+
+  #plataforma-root .user-detail-title h2 {
+    max-width: 100%;
+    font-size: 1.05rem !important;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .user-detail-title span {
+    padding: 0.2rem 0.48rem !important;
+    font-size: 0.65rem !important;
+  }
+
+  #plataforma-root .user-detail-primary > p {
+    font-size: 0.76rem !important;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .user-detail-meta {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem !important;
+    width: 100%;
+  }
+
+  #plataforma-root .user-detail-meta p:first-child {
+    font-size: 0.62rem !important;
+  }
+
+  #plataforma-root .user-detail-meta p:last-child {
+    font-size: 0.75rem !important;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .user-detail-tabs {
+    gap: 0.35rem !important;
+    margin-bottom: 0.8rem !important;
+    overflow-x: auto;
+  }
+
+  #plataforma-root .user-detail-tabs button {
+    flex: 1;
+    min-width: max-content;
+    padding: 0.5rem 0.35rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  #plataforma-root .user-detail-page .card h3 {
+    margin-bottom: 0.62rem !important;
+    font-size: 0.86rem !important;
+  }
+
+  #plataforma-root .user-detail-page [style*="min-width: 300px"] {
+    min-width: 0 !important;
+  }
+
+  #plataforma-root .user-detail-analytics-toolbar {
+    align-items: stretch !important;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-bottom: 0.75rem !important;
+  }
+
+  #plataforma-root .user-detail-analytics-toolbar > div {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.45rem !important;
+  }
+
+  #plataforma-root .user-detail-analytics-toolbar select,
+  #plataforma-root .user-detail-analytics-toolbar button {
+    width: 100% !important;
+    min-height: 38px !important;
+    font-size: 0.76rem !important;
+  }
+
+  #plataforma-root .user-detail-analytics-toolbar > div > div {
+    grid-column: 1 / -1;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  #plataforma-root .user-detail-analytics-toolbar input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  #plataforma-root .user-detail-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.55rem !important;
+    margin-bottom: 0.9rem !important;
+  }
+
+  #plataforma-root .user-detail-kpi-grid .card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  #plataforma-root .user-detail-kpi-grid p:first-child {
+    font-size: 0.62rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+
+  #plataforma-root .user-detail-kpi-grid p:nth-child(2) {
+    font-size: 1.05rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+
+  #plataforma-root .user-detail-evolution-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem !important;
+    margin-bottom: 0.9rem !important;
+  }
+
+  #plataforma-root .user-detail-evolution-grid > div {
+    min-width: 0;
+    padding: 0.65rem !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .user-detail-evolution-grid > div > div:first-child {
+    margin-bottom: 0.45rem !important;
+  }
+
+  #plataforma-root .user-detail-evolution-grid span {
+    font-size: 0.6rem !important;
+  }
+
+  #plataforma-root .user-detail-evolution-grid p {
+    font-size: 0.68rem !important;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .video-viewer-backdrop {
+    padding: 0.45rem !important;
+  }
+
+  #plataforma-root .video-viewer-modal {
+    border-radius: 13px !important;
+  }
+
+  #plataforma-root .video-viewer-modal > div:first-child {
+    padding: 0.6rem 0.7rem !important;
+  }
+
+  #plataforma-root .video-viewer-modal > div:first-child p {
+    max-width: calc(100% - 42px);
+    font-size: 0.78rem !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .compact-modal-form .input-field {
+    min-height: 43px;
+    padding: 0.58rem 0.75rem !important;
+    border-radius: 11px !important;
+    font-size: 0.86rem !important;
+  }
+
+  #plataforma-root .compact-modal-actions {
+    gap: 0.5rem !important;
+    margin-top: 0.15rem !important;
+  }
+
+  #plataforma-root .compact-modal-actions button {
+    min-height: 44px;
+    padding: 0.55rem 0.65rem !important;
+    flex-direction: row !important;
+    justify-content: center;
+    gap: 0.4rem !important;
+    border-radius: 11px !important;
+  }
+
+  #plataforma-root .compact-modal-actions button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  #plataforma-root .company-detail-back {
+    margin-bottom: 0.7rem !important;
+  }
+
+  #plataforma-root .company-detail-hero {
+    padding: 1rem !important;
+    margin-bottom: 0.8rem !important;
+    border-radius: 18px !important;
+  }
+
+  #plataforma-root .company-detail-hero-row,
+  #plataforma-root .company-detail-identity {
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  #plataforma-root .company-detail-identity {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #plataforma-root .company-detail-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    flex-shrink: 0;
+  }
+
+  #plataforma-root .company-detail-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  #plataforma-root .company-detail-copy {
+    min-width: 0;
+    flex: 1;
+  }
+
+  #plataforma-root .company-detail-copy h2 {
+    margin: 0 0 0.45rem !important;
+    font-size: 1.08rem !important;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .company-detail-meta {
+    display: grid !important;
+    gap: 0.4rem !important;
+    font-size: 0.76rem !important;
+  }
+
+  #plataforma-root .company-detail-meta span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .company-detail-status {
+    margin-left: 3.55rem;
+    min-height: auto !important;
+    padding: 0.32rem 0.58rem !important;
+    font-size: 0.74rem !important;
+  }
+
+  #plataforma-root .company-detail-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem !important;
+    margin-bottom: 0.8rem !important;
+  }
+
+  #plataforma-root .company-detail-page > .card {
+    margin-bottom: 0.75rem !important;
+    padding: 0.9rem !important;
+    border-radius: 16px !important;
+  }
+
+  #plataforma-root .company-detail-page > .card h3 {
+    margin-bottom: 0.65rem !important;
+    font-size: 0.92rem !important;
+  }
+
+  #plataforma-root .company-detail-page > .card p {
+    line-height: 1.4 !important;
+  }
+
+  #plataforma-root .company-info-card {
+    min-width: 0 !important;
+    padding: 0.75rem !important;
+    border-radius: 14px !important;
+  }
+
+  #plataforma-root .company-info-card > div {
+    align-items: flex-start !important;
+    margin-bottom: 0.35rem !important;
+  }
+
+  #plataforma-root .company-info-card p {
+    font-size: 0.85rem !important;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .content-month-calendar {
+    padding: 0.75rem !important;
+    border-radius: 16px !important;
+  }
+
+  #plataforma-root .content-calendar-head {
+    margin-bottom: 0.65rem !important;
+  }
+
+  #plataforma-root .content-calendar-head h3 {
+    font-size: 0.98rem !important;
+  }
+
+  #plataforma-root .content-calendar-weekdays,
+  #plataforma-root .content-calendar-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 2px !important;
+    width: 100%;
+  }
+
+  #plataforma-root .content-calendar-grid > * {
+    min-width: 0;
+  }
+
+  #plataforma-root .content-calendar-day {
+    min-width: 0;
+    min-height: 58px !important;
+    padding: 0.22rem !important;
+    border-radius: 7px !important;
+  }
+
+  #plataforma-root .content-calendar-event {
+    width: 100%;
+    max-width: 100%;
+    padding: 1px 2px !important;
+    font-size: 0.54rem !important;
+    text-align: center;
+  }
+
+  #plataforma-root .content-calendar-event-company {
+    display: none;
+  }
+
+  #plataforma-root .content-calendar-legend {
+    gap: 0.55rem 0.85rem !important;
+    margin-top: 0.65rem !important;
+    padding-top: 0.65rem !important;
+  }
+
+  #plataforma-root .content-calendar-legend > span {
+    width: 100%;
+    margin-left: 0 !important;
+    font-size: 0.68rem !important;
+  }
+
+  #plataforma-root .video-schedule-backdrop {
+    align-items: flex-end !important;
+    padding: 0.4rem;
+  }
+
+  #plataforma-root .video-schedule-modal {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 0.8rem);
+    padding: 1rem !important;
+    border-radius: 18px 18px 12px 12px !important;
+    overflow-y: auto;
+  }
+
+  #plataforma-root .video-schedule-head {
+    margin-bottom: 0.8rem !important;
+  }
+
+  #plataforma-root .video-schedule-modal .input-field {
+    min-height: 42px;
+    padding: 0.55rem 0.7rem !important;
+  }
+
+  #plataforma-root .video-schedule-grid {
+    gap: 0.5rem !important;
+  }
+
+  #plataforma-root .video-schedule-grid-three {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #plataforma-root .video-schedule-grid-three > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  #plataforma-root .video-schedule-actions {
+    justify-content: flex-end;
+    gap: 0.45rem !important;
+    position: sticky;
+    bottom: -1rem;
+    margin: 0 -1rem -1rem;
+    padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+    border-top: 1px solid #eef2f7;
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  #plataforma-root .video-schedule-actions button {
+    flex: 0 1 auto !important;
+    min-height: 40px !important;
+    padding: 0.55rem 0.8rem !important;
+    border-radius: 10px !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .wizard-backdrop {
+    align-items: flex-end;
+    padding: 0.4rem;
+  }
+
+  #plataforma-root .wizard-modal {
+    height: min(94dvh, 760px);
+    border-radius: 20px 20px 12px 12px;
+  }
+
+  #plataforma-root .wizard-head {
+    min-height: 58px;
+    padding: 0.8rem 1rem;
+  }
+
+  #plataforma-root .wizard-head h2 {
+    font-size: 1.05rem;
+  }
+
+  #plataforma-root .wizard-body {
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  #plataforma-root .wizard-steps {
+    width: 100%;
+    min-height: 54px;
+    padding: 0.35rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-color);
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    overflow-x: hidden;
+    overflow-y: hidden;
+  }
+
+  #plataforma-root .wizard-steps::-webkit-scrollbar {
+    display: none;
+  }
+
+  #plataforma-root .wizard-step {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0.45rem 0.2rem;
+    justify-content: center;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 9px;
+    gap: 0.4rem;
+    font-size: 0.74rem;
+  }
+
+  #plataforma-root .wizard-step span {
+    display: none;
+  }
+
+  #plataforma-root .wizard-step svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  #plataforma-root .wizard-step.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--primary-color);
+  }
+
+  #plataforma-root .wizard-content {
+    width: 100%;
+    min-width: 0;
+    padding: 1rem;
+  }
+
+  #plataforma-root .wizard-content h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.35rem;
+  }
+
+  #plataforma-root .wizard-content p {
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  #plataforma-root .wizard-content .automation-full-field {
+    margin-bottom: 0.9rem !important;
+    font-size: 0.78rem;
+  }
+
+  #plataforma-root .wizard-content .input-field {
+    min-height: 42px;
+    padding: 0.55rem 0.7rem !important;
+  }
+
+  #plataforma-root .wizard-trigger-grid,
+  #plataforma-root .wizard-audience-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  #plataforma-root .wizard-trigger-card,
+  #plataforma-root .wizard-audience-option {
+    min-height: 48px;
+    padding: 0.62rem 0.7rem;
+    border-radius: 10px;
+  }
+
+  #plataforma-root .wizard-trigger-card h4 {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.25;
+  }
+
+  #plataforma-root .wizard-trigger-card h4 svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+  }
+
+  #plataforma-root .wizard-condition-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 0.45rem;
+  }
+
+  #plataforma-root .wizard-condition-row input {
+    grid-column: 1 / 3;
+  }
+
+  #plataforma-root .wizard-condition-row button {
+    grid-column: 3;
+    grid-row: 1 / 3;
+  }
+
+  #plataforma-root .wizard-preview-row {
+    padding: 0.7rem;
+    gap: 0.5rem;
+  }
+
+  #plataforma-root .wizard-preview-label {
+    width: 34%;
+    font-size: 0.72rem;
+  }
+
+  #plataforma-root .wizard-preview-value {
+    min-width: 0;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .wizard-footer {
+    padding: 0.7rem 0.85rem max(0.7rem, env(safe-area-inset-bottom));
+    overflow: visible;
+  }
+
+  #plataforma-root .wizard-footer button {
+    min-height: 40px;
+    padding: 0.5rem 0.7rem !important;
+    font-size: 0.76rem !important;
+  }
+
+  #plataforma-root .pause-form-backdrop {
+    align-items: flex-end !important;
+    padding: 0.4rem !important;
+  }
+
+  #plataforma-root .pause-form-modal {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 0.8rem) !important;
+    padding: 1rem !important;
+    border-radius: 20px 20px 12px 12px !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #plataforma-root .pause-form-modal h3 {
+    font-size: 1.05rem !important;
+  }
+
+  #plataforma-root .pause-form-modal .form-label,
+  #plataforma-root .pause-form-modal p[style*="text-transform: uppercase"] {
+    margin-bottom: 0.45rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .pause-form-modal .option-btn {
+    min-height: 42px;
+    padding: 0.55rem !important;
+    font-size: 0.76rem;
+  }
+
+  #plataforma-root .pause-form-weekly .weekly-option-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  #plataforma-root .onboarding-page {
+    padding: max(1rem, env(safe-area-inset-top)) 0.75rem max(1rem, env(safe-area-inset-bottom)) !important;
+  }
+
+  #plataforma-root .onboarding-progress {
+    margin-bottom: 0.8rem !important;
+  }
+
+  #plataforma-root .onboarding-progress > div:first-child {
+    margin-bottom: 0.85rem !important;
+  }
+
+  #plataforma-root .onboarding-card {
+    padding: 1rem !important;
+    border-radius: 18px !important;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.055) !important;
+  }
+
+  #plataforma-root .onboarding-card h2 {
+    font-size: 1.12rem !important;
+    line-height: 1.3;
+  }
+
+  #plataforma-root .onboarding-card p {
+    margin-bottom: 1rem !important;
+    font-size: 0.82rem !important;
+    line-height: 1.45 !important;
+  }
+
+  #plataforma-root .onboarding-option {
+    gap: 0.65rem !important;
+    min-height: 48px;
+    padding: 0.7rem !important;
+    border-width: 1.5px !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .onboarding-option input {
+    width: 18px !important;
+    min-width: 18px;
+    height: 18px !important;
+    min-height: 18px !important;
+  }
+
+  #plataforma-root .onboarding-option span {
+    font-size: 0.82rem !important;
+    line-height: 1.35;
+  }
+
+  #plataforma-root .user-onboarding-page .onboarding-card [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.55rem !important;
+  }
+
+  #plataforma-root .onboarding-navigation {
+    gap: 0.5rem;
+    margin-top: 1.1rem !important;
+    padding-top: 0.8rem !important;
+  }
+
+  #plataforma-root .onboarding-navigation button {
+    min-height: 42px;
+    padding: 0.55rem 0.7rem !important;
+    border-radius: 11px !important;
+    font-size: 0.78rem !important;
+  }
+
+  #plataforma-root .user-tips-page {
+    padding-bottom: 1rem !important;
+  }
+
+  #plataforma-root .user-tips-header {
+    margin-bottom: 0.7rem !important;
+  }
+
+  #plataforma-root .user-tips-header h1 {
+    font-size: 1.25rem !important;
+  }
+
+  #plataforma-root .user-tips-header p {
+    font-size: 0.78rem !important;
+    line-height: 1.35;
+  }
+
+  #plataforma-root .user-tips-header > div:last-child {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 11px !important;
+    flex-shrink: 0;
+  }
+
+  #plataforma-root .user-tips-today {
+    margin-bottom: 0.75rem !important;
+    padding: 0.7rem 0.8rem !important;
+    border-radius: 14px !important;
+  }
+
+  #plataforma-root .user-tips-today p {
+    font-size: 0.82rem !important;
+    line-height: 1.35 !important;
+  }
+
+  #plataforma-root .user-tips-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.65rem !important;
+  }
+
+  #plataforma-root .user-tip-card {
+    padding: 0.78rem !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  #plataforma-root .user-tip-new {
+    top: 0.55rem !important;
+    right: 0.55rem !important;
+    padding: 0.22rem 0.48rem !important;
+    font-size: 0.58rem !important;
+    box-shadow: none !important;
+  }
+
+  #plataforma-root .user-tip-heading {
+    gap: 0.6rem !important;
+    margin-bottom: 0.55rem !important;
+    padding-right: 3.2rem;
+  }
+
+  #plataforma-root .user-tip-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    flex-shrink: 0;
+  }
+
+  #plataforma-root .user-tip-heading h2 {
+    font-size: 0.94rem !important;
+    line-height: 1.2;
+  }
+
+  #plataforma-root .user-tip-description {
+    min-height: 0 !important;
+    margin-bottom: 0.55rem !important;
+    font-size: 0.78rem !important;
+    line-height: 1.35 !important;
+  }
+
+  #plataforma-root .user-tip-recommendation {
+    margin-bottom: 0.6rem !important;
+    padding: 0.6rem 0.65rem !important;
+    border-radius: 11px !important;
+  }
+
+  #plataforma-root .user-tip-recommendation p:first-child {
+    margin-bottom: 0.2rem !important;
+    font-size: 0.63rem !important;
+  }
+
+  #plataforma-root .user-tip-recommendation p:last-child {
+    font-size: 0.78rem !important;
+    line-height: 1.32 !important;
+  }
+
+  #plataforma-root .user-tip-action {
+    min-height: 36px !important;
+    padding: 0.42rem 0.7rem !important;
+    border-radius: 10px !important;
+    font-size: 0.74rem !important;
+  }
+
+  #plataforma-root .rg-modal-backdrop {
+    align-items: center;
+    padding: 0.5rem;
+  }
+
+  #plataforma-root .rg-modal {
+    box-sizing: border-box;
+    width: min(100%, 480px);
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    padding: 1rem;
+    border-radius: 18px;
+    overflow-y: auto;
+  }
+
+  #plataforma-root .rg-modal-head {
+    gap: 0.65rem;
+    margin-bottom: 0.8rem;
+  }
+
+  #plataforma-root .rg-modal-head .rg-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  #plataforma-root .rg-modal-head .rg-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  #plataforma-root .rg-modal-head h2 {
+    font-size: 1.08rem;
+  }
+
+  #plataforma-root .rg-modal-close {
+    width: 34px;
+    height: 34px;
+  }
+
+  #plataforma-root .rg-modal-head p {
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  #plataforma-root .rg-kind-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+    margin-bottom: 0.8rem;
+  }
+
+  #plataforma-root .rg-kind-grid button {
+    min-height: 76px;
+    gap: 0.2rem;
+    padding: 0.65rem;
+    border-radius: 11px;
+  }
+
+  #plataforma-root .rg-kind-grid button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  #plataforma-root .rg-kind-grid strong {
+    font-size: 0.82rem;
+  }
+
+  #plataforma-root .rg-kind-grid span {
+    font-size: 0.67rem;
+    line-height: 1.25;
+  }
+
+  #plataforma-root .rg-field {
+    gap: 0.28rem;
+    margin-bottom: 0.55rem;
+    font-size: 0.76rem;
+  }
+
+  #plataforma-root .rg-field .input-field {
+    min-height: 42px;
+    padding: 0.55rem 0.7rem !important;
+    border-radius: 10px !important;
+    font-size: 0.84rem;
+  }
+
+  #plataforma-root .rg-field small {
+    font-size: 0.68rem;
+    line-height: 1.3;
+  }
+
+  #plataforma-root .rg-modal-actions {
+    flex-direction: row;
+    gap: 0.45rem;
+    margin-top: 0.8rem;
+  }
+
+  #plataforma-root .rg-modal-actions button {
+    width: auto;
+    flex: 1;
+    min-height: 40px;
+    padding: 0.5rem 0.65rem !important;
+    font-size: 0.76rem !important;
+  }
+
+  #plataforma-root .responsive-table-card {
+    max-width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #plataforma-root .responsive-table-card table {
+    min-width: 780px;
+  }
+
+  #plataforma-root .responsive-table-card th,
+  #plataforma-root .responsive-table-card td {
+    padding: 1rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .automation-drawer,
+  #plataforma-root .wizard-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100dvh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  #plataforma-root .automation-drawer-actions,
+  #plataforma-root .wizard-footer {
+    gap: 0.5rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    overflow-x: auto;
+  }
+
+  #plataforma-root .automation-drawer-actions button,
+  #plataforma-root .wizard-footer button {
+    flex: 1 0 auto;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .rg-modal {
+    max-height: calc(100dvh - 1rem);
+    padding: 1.25rem;
+    overflow-y: auto;
+  }
+
+  #plataforma-root .rg-preview-scroll {
+    padding: 0.75rem;
+  }
+
+  #plataforma-root .email-center-header h2,
+  #plataforma-root .email-performance-head h2 {
+    font-size: 1.35rem;
+  }
+
+  #plataforma-root .email-view-switch {
+    overflow-x: auto;
+  }
+
+  #plataforma-root .login-page {
+    min-height: 100dvh;
+    padding: max(1rem, env(safe-area-inset-top)) max(0.9rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(0.9rem, env(safe-area-inset-left)) !important;
+  }
+
+  #plataforma-root .login-shell {
+    max-width: 390px !important;
+  }
+
+  #plataforma-root .login-card {
+    padding: 1.25rem !important;
+    border-radius: 18px;
+  }
+
+  /* Densidad móvil transversal: controles breves, acciones en una línea. */
+  #plataforma-root .main-content {
+    padding-top: calc(68px + 0.7rem);
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+  }
+
+  #plataforma-root .btn-primary,
+  #plataforma-root .btn-secondary {
+    min-height: 38px;
+    padding: 0.5rem 0.72rem;
+    font-size: 0.76rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  #plataforma-root input[type="checkbox"],
+  #plataforma-root input[type="radio"] {
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    padding: 0 !important;
+  }
+
+  #plataforma-root .companies-page > .page-toolbar,
+  #plataforma-root .users-page > .page-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.55rem !important;
+    margin-bottom: 0.8rem !important;
+  }
+
+  #plataforma-root .companies-page > .page-toolbar .header-title,
+  #plataforma-root .users-page > .page-toolbar .header-title {
+    min-width: 0;
+    margin: 0 !important;
+    flex: 1;
+    font-size: 1.18rem !important;
+  }
+
+  #plataforma-root .companies-page > .page-toolbar .btn-primary,
+  #plataforma-root .users-page > .page-toolbar .btn-primary {
+    width: auto !important;
+    min-height: 36px !important;
+    padding: 0.45rem 0.65rem !important;
+    border-radius: 10px !important;
+    font-size: 0.72rem !important;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions {
+    width: auto !important;
+    margin-left: auto;
+    grid-template-columns: auto !important;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions:has(select) {
+    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    flex-basis: 100%;
+  }
+
+  #plataforma-root .users-page > .page-toolbar:has(select) {
+    flex-wrap: wrap;
+  }
+
+  #plataforma-root .users-page > .card[style*="margin-bottom: 2rem"],
+  #plataforma-root .companies-page > .card[style*="margin-bottom: 2rem"] {
+    margin-bottom: 0.7rem !important;
+    padding: 0.5rem !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card tbody {
+    gap: 0.55rem;
+  }
+
+  #plataforma-root .users-page .responsive-table-card tr {
+    padding: 0.55rem 0.7rem;
+    border-radius: 13px;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td {
+    padding: 0.28rem 0 !important;
+    font-size: 0.76rem;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td:first-child {
+    padding-bottom: 0.42rem !important;
+    font-size: 0.86rem;
+  }
+
+  /* Dashboard administrativo y empresarial. */
+  #plataforma-root .admin-dashboard-page > .page-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(135px, 0.72fr);
+    align-items: center !important;
+    gap: 0.55rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page > .page-toolbar .header-title {
+    margin: 0 !important;
+    font-size: 1.15rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page > .page-toolbar select {
+    width: 100% !important;
+    min-height: 38px !important;
+    padding: 0.45rem 0.6rem !important;
+    font-size: 0.76rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid {
+    gap: 0.55rem !important;
+    margin-bottom: 0.65rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid > .card {
+    min-height: 0;
+    padding: 0.68rem !important;
+    border-radius: 13px !important;
+  }
+
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid > .card > div:first-child {
+    gap: 0.45rem !important;
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid > .card > div:first-child > div {
+    padding: 0.34rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid > .card h3 {
+    font-size: 0.76rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid > .card [style*="font-size: 2.5rem"],
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid > .card [style*="font-size: 2.35rem"] {
+    font-size: 1.35rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid > .card > div:nth-child(2) {
+    margin-bottom: 0.5rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page .admin-kpi-grid > .card > div:last-child {
+    padding-top: 0.5rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page > div:last-child {
+    gap: 0.55rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page > div:last-child > .card {
+    padding: 0.75rem !important;
+    border-radius: 13px !important;
+  }
+
+  #plataforma-root .admin-dashboard-page > div:last-child > .card > div:first-child {
+    margin-bottom: 0.7rem !important;
+  }
+
+  #plataforma-root .admin-dashboard-page [style*="height: 6px"] {
+    height: 3px !important;
+  }
+
+  /* Emails: resumen, tarjetas y asistente realmente compactos. */
+  #plataforma-root .email-center-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
+  }
+
+  #plataforma-root .email-center-header .header-title {
+    margin-bottom: 0.15rem;
+    font-size: 1.18rem !important;
+  }
+
+  #plataforma-root .email-center-header p {
+    font-size: 0.76rem;
+    line-height: 1.35;
+  }
+
+  #plataforma-root .email-header-actions {
+    display: contents !important;
+  }
+
+  #plataforma-root .email-header-actions > .btn-primary {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto !important;
+    align-self: start;
+    min-height: 36px;
+    padding: 0.45rem 0.58rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+  }
+
+  #plataforma-root .email-view-switch {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    padding: 3px;
+  }
+
+  #plataforma-root .email-view-switch button {
+    min-width: 0;
+    min-height: 34px;
+    padding: 0.38rem 0.45rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .email-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin-bottom: 0.7rem;
+    padding: 0.35rem;
+    border-radius: 13px;
+  }
+
+  #plataforma-root .email-summary > div {
+    min-height: 68px;
+    padding: 0.55rem !important;
+    border-right: 0;
+    border-bottom: 1px solid #eef2f7;
+  }
+
+  #plataforma-root .email-summary > div:nth-child(odd) {
+    border-right: 1px solid #eef2f7;
+  }
+
+  #plataforma-root .email-summary > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  #plataforma-root .email-summary span {
+    margin-bottom: 0.18rem;
+    font-size: 0.59rem;
+    line-height: 1.2;
+  }
+
+  #plataforma-root .email-summary strong {
+    font-size: 0.92rem;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .automation-grid {
+    gap: 0.55rem;
+  }
+
+  #plataforma-root .automation-card {
+    min-height: 0;
+    padding: 0.7rem;
+    border-radius: 13px;
+  }
+
+  #plataforma-root .automation-card.is-active {
+    padding-top: calc(0.7rem - 2px);
+  }
+
+  #plataforma-root .automation-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  #plataforma-root .automation-card-copy,
+  #plataforma-root .automation-condition {
+    margin-top: 0.55rem;
+  }
+
+  #plataforma-root .automation-title-row h3 {
+    font-size: 0.82rem;
+  }
+
+  #plataforma-root .automation-card-copy p {
+    margin-top: 0.3rem;
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  #plataforma-root .automation-condition {
+    padding: 0.45rem 0.55rem;
+    font-size: 0.68rem;
+  }
+
+  #plataforma-root .automation-card-footer {
+    margin-top: 0.55rem;
+    padding-top: 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  #plataforma-root .wizard-backdrop {
+    align-items: center;
+    padding: 0.4rem;
+  }
+
+  #plataforma-root .wizard-modal {
+    width: calc(100vw - 0.8rem);
+    height: auto;
+    max-height: calc(100dvh - 0.8rem);
+    border-radius: 17px;
+  }
+
+  #plataforma-root .wizard-head {
+    padding: 0.7rem 0.8rem;
+  }
+
+  #plataforma-root .wizard-head h2 {
+    font-size: 0.98rem;
+  }
+
+  #plataforma-root .wizard-body {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  #plataforma-root .wizard-steps {
+    padding: 0.3rem 0.45rem;
+  }
+
+  #plataforma-root .wizard-content {
+    max-height: 62dvh;
+    padding: 0.75rem;
+  }
+
+  #plataforma-root .wizard-content h3 {
+    font-size: 0.95rem;
+  }
+
+  #plataforma-root .wizard-content p {
+    margin-bottom: 0.65rem;
+    font-size: 0.73rem;
+  }
+
+  #plataforma-root .wizard-trigger-grid,
+  #plataforma-root .wizard-audience-grid {
+    gap: 0.38rem;
+  }
+
+  #plataforma-root .wizard-trigger-card,
+  #plataforma-root .wizard-audience-option {
+    min-height: 42px;
+    padding: 0.42rem 0.55rem;
+    gap: 0.5rem;
+  }
+
+  #plataforma-root .wizard-audience-option span {
+    font-size: 0.76rem;
+  }
+
+  #plataforma-root .wizard-footer {
+    padding: 0.55rem 0.7rem max(0.55rem, env(safe-area-inset-bottom));
+  }
+
+  #plataforma-root .wizard-footer button {
+    min-height: 36px;
+    padding: 0.42rem 0.55rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* ReActiva Tips: listado y detalle sin bloques vacíos. */
+  #plataforma-root .tips-page {
+    gap: 0.6rem;
+  }
+
+  #plataforma-root .tips-header,
+  #plataforma-root .user-tips-header {
+    gap: 0.55rem !important;
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .tips-header h1,
+  #plataforma-root .user-tips-header h1 {
+    font-size: 1.15rem !important;
+  }
+
+  #plataforma-root .tips-header p,
+  #plataforma-root .user-tips-header p {
+    margin-top: 0.18rem !important;
+    font-size: 0.74rem !important;
+    line-height: 1.3;
+  }
+
+  #plataforma-root .tips-header-icon,
+  #plataforma-root .user-tips-header > div:last-child {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+
+  #plataforma-root .tips-highlight-card,
+  #plataforma-root .tips-daily-card,
+  #plataforma-root .user-tips-today {
+    padding: 0.65rem 0.72rem !important;
+    border-radius: 13px !important;
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .tips-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.55rem !important;
+  }
+
+  #plataforma-root .tips-card {
+    min-height: 0;
+    gap: 0.5rem;
+    padding: 0.7rem;
+    border-radius: 13px;
+  }
+
+  #plataforma-root .tips-card-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  #plataforma-root .tips-card h2 {
+    font-size: 0.86rem;
+  }
+
+  #plataforma-root .tips-card-description {
+    font-size: 0.73rem;
+    line-height: 1.35;
+  }
+
+  #plataforma-root .tips-recommendation {
+    margin-top: 0;
+    padding: 0.55rem;
+    border-radius: 10px;
+  }
+
+  #plataforma-root .tips-recommendation p {
+    font-size: 0.74rem;
+    line-height: 1.3;
+  }
+
+  #plataforma-root .tips-card-button,
+  #plataforma-root .tips-apply-button {
+    min-height: 34px;
+    padding: 0.42rem 0.65rem;
+    font-size: 0.7rem;
+  }
+
+  #plataforma-root .tips-detail-grid,
+  #plataforma-root .tips-full-grid,
+  #plataforma-root .user-tip-detail-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  #plataforma-root .tips-detail-block,
+  #plataforma-root .tips-full-card,
+  #plataforma-root .user-tip-detail-grid > article {
+    min-height: 0 !important;
+    padding: 0.62rem !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .user-tip-detail-page > header {
+    padding: 0.7rem !important;
+    border-radius: 13px !important;
+  }
+
+  #plataforma-root .user-tip-detail-page > header + div {
+    gap: 0.35rem !important;
+    margin-bottom: 0.6rem !important;
+  }
+
+  #plataforma-root .user-tip-detail-page > header + div span {
+    padding: 0.3rem 0.48rem !important;
+    font-size: 0.68rem !important;
+  }
+
+  #plataforma-root .user-tip-detail-page > div:last-child {
+    margin-top: 0.55rem !important;
+    padding: 0.65rem !important;
+    border-radius: 12px !important;
+    font-size: 0.76rem !important;
+  }
+
+  /* Academia en administrador y usuario. */
+  #plataforma-root .admin-academy-header {
+    gap: 0.55rem;
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .admin-academy-header .header-title {
+    font-size: 1.15rem;
+  }
+
+  #plataforma-root .admin-academy-header > div:last-child {
+    min-width: 105px !important;
+  }
+
+  #plataforma-root .admin-academy-toolbar {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem !important;
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .admin-academy-toolbar > div:first-child {
+    grid-column: 1 / -1;
+    width: 100% !important;
+  }
+
+  #plataforma-root .admin-academy-toolbar button {
+    width: 100%;
+    min-height: 36px !important;
+    padding: 0.4rem 0.45rem !important;
+    justify-content: center;
+    font-size: 0.7rem;
+  }
+
+  #plataforma-root .admin-academy-categories,
+  #plataforma-root .user-academy-categories {
+    flex-wrap: nowrap !important;
+    gap: 0.35rem !important;
+    margin-right: -0.75rem;
+    margin-bottom: 0.6rem !important;
+    margin-left: -0.75rem;
+    padding: 0 0.75rem 0.2rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  #plataforma-root .admin-academy-categories button,
+  #plataforma-root .user-academy-categories button {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 0.3rem 0.55rem !important;
+    font-size: 0.68rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .admin-academy-grid,
+  #plataforma-root .user-academy-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.6rem !important;
+  }
+
+  #plataforma-root .admin-academy-card,
+  #plataforma-root .user-academy-card {
+    border-radius: 13px !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.045) !important;
+  }
+
+  #plataforma-root .admin-academy-card {
+    padding: 0 0.72rem 0.72rem !important;
+  }
+
+  #plataforma-root .admin-academy-media {
+    height: 92px !important;
+    margin: 0 -0.72rem !important;
+  }
+
+  #plataforma-root .admin-academy-status {
+    margin: 0.55rem 0 0.15rem !important;
+  }
+
+  #plataforma-root .admin-academy-card h3 {
+    margin: 0.55rem 0 0.25rem !important;
+    font-size: 0.86rem !important;
+  }
+
+  #plataforma-root .admin-academy-card > p {
+    margin-bottom: 0.42rem !important;
+    font-size: 0.72rem !important;
+    line-height: 1.3 !important;
+  }
+
+  #plataforma-root .admin-academy-card-actions {
+    padding-top: 0.5rem !important;
+  }
+
+  #plataforma-root .admin-academy-card-actions button {
+    min-height: 34px !important;
+    padding: 0.4rem 0.55rem !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .user-academy-page .page-toolbar {
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .user-academy-page .page-toolbar h1 {
+    font-size: 1.15rem !important;
+  }
+
+  #plataforma-root .user-academy-page .page-toolbar p {
+    font-size: 0.74rem !important;
+    line-height: 1.3;
+  }
+
+  #plataforma-root .user-academy-search {
+    margin-bottom: 0.5rem !important;
+  }
+
+  #plataforma-root .user-academy-media {
+    height: 92px !important;
+  }
+
+  #plataforma-root .user-academy-card-body {
+    padding: 0.68rem !important;
+  }
+
+  #plataforma-root .user-academy-card-body h2 {
+    margin-bottom: 0.25rem !important;
+    font-size: 0.88rem !important;
+  }
+
+  #plataforma-root .user-academy-card-body > p {
+    min-height: 0 !important;
+    margin-bottom: 0.45rem !important;
+    font-size: 0.72rem !important;
+    line-height: 1.3 !important;
+  }
+
+  #plataforma-root .user-academy-card-body > div {
+    margin-bottom: 0.45rem !important;
+    font-size: 0.68rem !important;
+  }
+
+  #plataforma-root .user-academy-card-body button {
+    width: auto !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0.4rem 0.65rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .academy-editor-backdrop {
+    align-items: flex-end !important;
+    padding: 0.35rem !important;
+  }
+
+  #plataforma-root .academy-editor-modal {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 0.7rem) !important;
+    padding: 0.8rem !important;
+    border-radius: 17px 17px 10px 10px !important;
+  }
+
+  #plataforma-root .academy-editor-modal h3 {
+    margin-bottom: 0.55rem;
+    font-size: 0.98rem;
+  }
+
+  #plataforma-root .academy-editor-modal label {
+    margin-bottom: 0.2rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .academy-editor-modal .input-field {
+    min-height: 38px !important;
+    margin-bottom: 0.45rem !important;
+    padding: 0.45rem 0.58rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  #plataforma-root .academy-editor-modal textarea.input-field {
+    min-height: 62px !important;
+  }
+
+  #plataforma-root .academy-editor-actions {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem !important;
+  }
+
+  #plataforma-root .academy-editor-actions > div {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem !important;
+  }
+
+  #plataforma-root .academy-editor-actions button {
+    min-height: 36px !important;
+    padding: 0.42rem 0.55rem !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap;
+  }
+
+  /* Indicadores: barras visuales más finas. */
+  #plataforma-root .analytics-kpi-grid [style*="height: 4px"],
+  #plataforma-root .user-detail-kpi-grid [style*="height: 4px"],
+  #plataforma-root .rg-progress {
+    height: 2px !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card {
+    min-height: 76px;
+    padding: 0.58rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card strong {
+    font-size: 1.15rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-grid,
+  #plataforma-root .user-dashboard-page .user-program-grid > div:first-child {
+    gap: 0.6rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-header {
+    gap: 0.55rem !important;
+    padding: 0.68rem !important;
+    border-radius: 13px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-greeting {
+    gap: 0.5rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-greeting > div:first-child {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-greeting p:first-child {
+    font-size: 0.88rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-greeting p:last-child {
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-progress p:last-child {
+    font-size: 1.05rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-days {
+    gap: 0.35rem !important;
+    padding-top: 0.55rem;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-days button {
+    width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    font-size: 0.78rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-card {
+    border-radius: 14px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-media {
+    min-height: 245px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-lock {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-copy {
+    right: 0.7rem !important;
+    bottom: 0.7rem !important;
+    left: 0.7rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-copy h2 {
+    margin-bottom: 0.3rem !important;
+    font-size: 1.08rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-copy p {
+    font-size: 0.74rem !important;
+    line-height: 1.3;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-action {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.65rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-action p {
+    min-width: 0;
+    flex: 1;
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-action button {
+    width: auto !important;
+    min-height: 36px;
+    padding: 0.45rem 0.65rem !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-card {
+    padding: 0.7rem !important;
+    border-radius: 13px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-card h3 {
+    font-size: 0.86rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  #plataforma-root .main-content {
+    padding-right: 0.7rem;
+    padding-left: 0.7rem;
+  }
+
+  #plataforma-root .sidebar-brand {
+    padding-right: 0.7rem;
+    padding-left: 0.7rem;
+  }
+
+  #plataforma-root .header-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Ajuste móvil final: densidad consistente sin alterar la vista de escritorio. */
+@media (max-width: 768px) {
+  /* Usuarios: acción pequeña, buscador fino y fichas de dos columnas. */
+  #plataforma-root .users-page > .page-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.45rem !important;
+    align-items: center !important;
+    margin-bottom: 0.6rem !important;
+  }
+
+  #plataforma-root .users-page > .page-toolbar .header-title {
+    display: block !important;
+    min-width: 0;
+    margin: 0 !important;
+    font-size: 1.15rem !important;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions {
+    display: flex !important;
+    width: auto !important;
+    min-width: 0 !important;
+    gap: 0.4rem !important;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions:not(:has(select)) {
+    grid-column: 2;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions:has(select) {
+    grid-column: 1 / -1;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    width: 100% !important;
+  }
+
+  #plataforma-root .users-page .users-toolbar-actions select {
+    width: 100% !important;
+    min-height: 36px !important;
+  }
+
+  #plataforma-root .users-page .users-invite-button {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    padding: 0.4rem 0.65rem !important;
+    border-radius: 10px !important;
+    font-size: 0.68rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  #plataforma-root .users-page .users-search-card {
+    margin-bottom: 0.55rem !important;
+    padding: 0.32rem !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .users-page .users-search-input {
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0.4rem 0.55rem 0.4rem 2rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  #plataforma-root .users-page .users-search-wrap svg {
+    left: 0.65rem !important;
+    width: 15px;
+    height: 15px;
+  }
+
+  #plataforma-root .users-page .responsive-table-card {
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card tbody {
+    gap: 0.48rem !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card tr {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    padding: 0.45rem 0.55rem !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035) !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td {
+    display: block !important;
+    min-width: 0;
+    padding: 0.32rem 0.38rem !important;
+    border: 0 !important;
+    text-align: left !important;
+    font-size: 0.7rem !important;
+    overflow-wrap: anywhere;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 0.38rem !important;
+    border-bottom: 1px solid #eef2f7 !important;
+    font-size: 0.78rem !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td::before {
+    display: block !important;
+    margin: 0 0 0.08rem !important;
+    font-size: 0.53rem !important;
+    line-height: 1.1;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td > div {
+    justify-content: flex-start !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td [style*="height: 6px"] {
+    height: 2px !important;
+  }
+
+  /* Analíticas: controles y KPIs realmente compactos. */
+  #plataforma-root .analytics-page .analytics-header {
+    gap: 0.45rem !important;
+    margin-bottom: 0.58rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-header .header-title {
+    font-size: 1.12rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-filters {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.34rem !important;
+    width: 100% !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-control,
+  #plataforma-root .analytics-page .analytics-period-group,
+  #plataforma-root .analytics-page .analytics-compare {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 36px !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-control-wide,
+  #plataforma-root .analytics-page .analytics-custom-range {
+    grid-column: 1 / -1;
+  }
+
+  #plataforma-root .analytics-page .analytics-control .input-field,
+  #plataforma-root .analytics-page .analytics-period-group .input-field,
+  #plataforma-root .analytics-page .analytics-filters > .input-field {
+    width: 100% !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    border-radius: 10px !important;
+    font-size: 0.7rem !important;
+    text-overflow: ellipsis;
+  }
+
+  #plataforma-root .analytics-page .analytics-compare {
+    padding: 0.35rem 0.48rem !important;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.65rem !important;
+    line-height: 1.15;
+  }
+
+  #plataforma-root .analytics-page .analytics-compare input {
+    width: 15px !important;
+    height: 15px !important;
+    flex: 0 0 15px;
+  }
+
+  #plataforma-root .analytics-page .analytics-spacer {
+    display: none !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-filters > button,
+  #plataforma-root .analytics-page .analytics-filters > .btn-primary {
+    width: auto !important;
+    min-height: 34px !important;
+    padding: 0.4rem 0.58rem !important;
+    justify-self: end;
+    grid-column: 1 / -1;
+    font-size: 0.68rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid {
+    gap: 0.36rem !important;
+    margin-bottom: 0.6rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card {
+    min-height: 58px !important;
+    padding: 0.42rem 0.5rem !important;
+    border-radius: 11px !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card p {
+    margin-bottom: 0.22rem !important;
+    font-size: 0.56rem !important;
+    line-height: 1.1 !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card p:nth-child(2),
+  #plataforma-root .analytics-page .analytics-kpi-grid > .card strong {
+    margin-bottom: 0.24rem !important;
+    font-size: 0.86rem !important;
+  }
+
+  #plataforma-root .analytics-page .analytics-kpi-grid [style*="height: 4px"] {
+    height: 2px !important;
+    margin: 0.22rem 0 !important;
+  }
+
+  #plataforma-root .analytics-page .card [style*="height: 180px"] {
+    height: 135px !important;
+  }
+
+  /* Automatizaciones: métricas en línea y agenda sin espacios muertos. */
+  #plataforma-root .email-summary {
+    gap: 0 !important;
+  }
+
+  #plataforma-root .email-summary > div {
+    display: flex !important;
+    min-height: 40px !important;
+    padding: 0.42rem 0.55rem !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.35rem;
+  }
+
+  #plataforma-root .email-summary span {
+    margin: 0 !important;
+    font-size: 0.54rem !important;
+    line-height: 1.1 !important;
+  }
+
+  #plataforma-root .email-summary strong {
+    flex: 0 0 auto;
+    font-size: 0.78rem !important;
+    line-height: 1 !important;
+  }
+
+  #plataforma-root .wizard-content .automation-full-field {
+    margin-bottom: 0.48rem !important;
+    font-size: 0.68rem !important;
+  }
+
+  #plataforma-root .wizard-content .automation-full-field .input-field {
+    min-height: 36px !important;
+    height: 36px !important;
+    margin-top: 0.2rem;
+    padding: 0.38rem 0.5rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  #plataforma-root .wizard-timing-days {
+    margin-bottom: 0.5rem !important;
+  }
+
+  #plataforma-root .wizard-conditions {
+    margin-bottom: 0.45rem !important;
+  }
+
+  #plataforma-root .wizard-conditions:empty {
+    display: none;
+  }
+
+  #plataforma-root .wizard-content > .btn-secondary {
+    width: auto !important;
+    min-height: 34px !important;
+    padding: 0.38rem 0.55rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .wizard-timing-days > strong {
+    margin-bottom: 0.3rem !important;
+    font-size: 0.68rem !important;
+  }
+
+  #plataforma-root .wizard-day-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.28rem !important;
+  }
+
+  #plataforma-root .wizard-day-option {
+    min-width: 0;
+    min-height: 30px;
+    padding: 0.25rem 0.2rem !important;
+    justify-content: center;
+    border-radius: 9px !important;
+  }
+
+  #plataforma-root .wizard-day-option span {
+    font-size: 0.58rem !important;
+  }
+
+  #plataforma-root .wizard-timing-grid {
+    gap: 0.4rem !important;
+  }
+
+  /* Biblioteca: resumen 2x2, herramientas en una línea y archivos densos. */
+  #plataforma-root .media-library-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.36rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  #plataforma-root .media-library-stat {
+    display: flex;
+    min-height: 42px;
+    padding: 0.42rem 0.52rem !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    border-radius: 11px !important;
+  }
+
+  #plataforma-root .media-library-stat p {
+    margin: 0 !important;
+    font-size: 0.54rem !important;
+    line-height: 1.1;
+  }
+
+  #plataforma-root .media-library-stat strong {
+    flex: 0 0 auto;
+    font-size: 0.82rem !important;
+  }
+
+  #plataforma-root .media-library-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.38rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  #plataforma-root .media-library-search {
+    width: 100% !important;
+  }
+
+  #plataforma-root .media-library-search .input-field {
+    min-height: 36px !important;
+    height: 36px !important;
+    padding-left: 2rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .media-library-toolbar > button {
+    min-height: 36px !important;
+    padding: 0.4rem 0.55rem !important;
+    font-size: 0.66rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .media-library-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.42rem !important;
+  }
+
+  #plataforma-root .media-library-card {
+    min-width: 0;
+    padding: 0.45rem !important;
+    border-radius: 11px !important;
+  }
+
+  #plataforma-root .media-library-preview {
+    height: 72px !important;
+    margin-bottom: 0.4rem !important;
+    border-radius: 8px !important;
+  }
+
+  #plataforma-root .media-library-card h3 {
+    margin-bottom: 0.2rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .media-library-card h3 + div {
+    margin-bottom: 0.35rem !important;
+    font-size: 0.58rem !important;
+  }
+
+  #plataforma-root .media-library-card > div:last-child {
+    padding-top: 0.35rem !important;
+  }
+
+  #plataforma-root .media-library-card > div:last-child button {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+  }
+
+  #plataforma-root .media-editor-backdrop,
+  #plataforma-root .academy-category-backdrop {
+    align-items: flex-end !important;
+    padding: 0.3rem !important;
+  }
+
+  #plataforma-root .media-editor-modal,
+  #plataforma-root .academy-category-modal {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 0.6rem) !important;
+    padding: 0.72rem !important;
+    overflow-y: auto;
+    border-radius: 17px 17px 9px 9px !important;
+  }
+
+  #plataforma-root .media-editor-modal h3,
+  #plataforma-root .academy-category-head h3 {
+    margin-bottom: 0.15rem !important;
+    font-size: 0.92rem !important;
+  }
+
+  #plataforma-root .media-editor-modal label {
+    margin-bottom: 0.15rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .media-editor-modal .input-field {
+    min-height: 35px !important;
+    margin-bottom: 0.38rem !important;
+    padding: 0.38rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* Categorías: alta visible y listado de una sola línea. */
+  #plataforma-root .academy-category-head {
+    gap: 0.45rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  #plataforma-root .academy-category-head p {
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .academy-category-create {
+    gap: 0.35rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  #plataforma-root .academy-category-create .input-field {
+    min-height: 35px !important;
+    height: 35px !important;
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .academy-category-create button {
+    min-height: 35px !important;
+    padding: 0.35rem 0.58rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .academy-category-list {
+    gap: 0.3rem !important;
+  }
+
+  #plataforma-root .academy-category-row {
+    min-height: 40px;
+    gap: 0.3rem !important;
+    padding: 0.35rem 0.45rem !important;
+    border-radius: 9px !important;
+  }
+
+  #plataforma-root .academy-category-row > span:first-of-type {
+    min-width: 0;
+    font-size: 0.69rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #plataforma-root .academy-category-row > span:nth-of-type(2) {
+    flex: 0 0 auto;
+    font-size: 0.58rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .academy-category-row button {
+    width: 27px;
+    height: 27px;
+    padding: 0;
+  }
+
+  /* Navegación de contenido y programación semanal. */
+  #plataforma-root .content-section-tabs {
+    gap: 0.3rem !important;
+    margin-bottom: 0.55rem !important;
+    padding-bottom: 0.2rem !important;
+  }
+
+  #plataforma-root .content-section-tabs button {
+    min-height: 32px !important;
+    padding: 0.3rem 0.58rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .admin-content-page > .page-toolbar {
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .video-unlock-panel {
+    margin-bottom: 0.65rem !important;
+    padding: 0.58rem !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .video-unlock-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+
+  #plataforma-root .video-unlock-head h3 {
+    font-size: 0.8rem !important;
+  }
+
+  #plataforma-root .video-unlock-head p {
+    margin-top: 0.12rem !important;
+    font-size: 0.62rem !important;
+    line-height: 1.25 !important;
+  }
+
+  #plataforma-root .video-unlock-head > span {
+    padding: 0.22rem 0.42rem !important;
+    font-size: 0.54rem !important;
+  }
+
+  #plataforma-root .video-unlock-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.32rem !important;
+  }
+
+  #plataforma-root .video-unlock-day {
+    display: grid !important;
+    grid-template-columns: 58px repeat(2, minmax(0, 1fr));
+    gap: 0.32rem !important;
+    align-items: center;
+    padding: 0.4rem !important;
+    border-radius: 10px !important;
+  }
+
+  #plataforma-root .video-unlock-day-title {
+    margin: 0 !important;
+    font-size: 0.68rem !important;
+  }
+
+  #plataforma-root .video-unlock-row {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    gap: 0.18rem 0.28rem !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  #plataforma-root .video-unlock-row input[type="checkbox"] {
+    width: 14px !important;
+    min-width: 14px !important;
+    height: 14px !important;
+    min-height: 14px !important;
+  }
+
+  #plataforma-root .video-unlock-row span {
+    font-size: 0.6rem !important;
+  }
+
+  #plataforma-root .video-unlock-row input[type="time"] {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 0.2rem 0.28rem !important;
+    border-radius: 7px !important;
+    font-size: 0.62rem !important;
+  }
+
+  /* Panel del usuario: cabecera, video y semana más breves. */
+  #plataforma-root .user-dashboard-page .user-program-header {
+    padding: 0.52rem 0.58rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-media {
+    min-height: 205px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-copy > span {
+    margin-bottom: 0.35rem !important;
+    padding: 0.25rem 0.48rem !important;
+    font-size: 0.55rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-card {
+    gap: 0.25rem !important;
+    padding: 0.58rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-card > h3 {
+    font-size: 0.78rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-card > h3 + p {
+    margin-bottom: 0.35rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .user-week-day {
+    display: grid !important;
+    grid-template-columns: 52px repeat(2, minmax(0, 1fr));
+    gap: 0.3rem;
+    align-items: stretch;
+    margin-bottom: 0.34rem !important;
+  }
+
+  #plataforma-root .user-week-day-head {
+    margin: 0 !important;
+    align-self: center;
+  }
+
+  #plataforma-root .user-week-day-head p {
+    font-size: 0.62rem !important;
+  }
+
+  #plataforma-root .user-week-day-head span {
+    width: 5px !important;
+    height: 5px !important;
+  }
+
+  #plataforma-root .user-week-pause-row {
+    min-width: 0;
+    gap: 0.3rem !important;
+    margin: 0 !important;
+    padding: 0.38rem !important;
+    border-radius: 9px !important;
+  }
+
+  #plataforma-root .user-week-pause-row > div:first-child {
+    width: 27px !important;
+    height: 27px !important;
+    border-radius: 7px !important;
+  }
+
+  #plataforma-root .user-week-pause-row > div:nth-child(2) p:first-child {
+    font-size: 0.59rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #plataforma-root .user-week-pause-row > div:nth-child(2) p:last-child {
+    font-size: 0.52rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .user-week-pause-row > span {
+    display: none;
+  }
+
+  #plataforma-root .user-week-card > div:last-child {
+    margin-top: 0.15rem !important;
+    padding: 0.42rem 0.5rem !important;
+    border-radius: 9px !important;
+  }
+
+  #plataforma-root .user-week-card > div:last-child p {
+    font-size: 0.62rem !important;
+  }
+
+  /* Edición de categorías y del taller sin botones montados. */
+  #plataforma-root .admin-academy-category-button {
+    width: auto !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  #plataforma-root .academy-category-row:has(.academy-category-edit-input) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.32rem !important;
+  }
+
+  #plataforma-root .academy-category-edit-input {
+    width: 100% !important;
+    min-height: 35px !important;
+    height: 35px !important;
+    padding: 0.35rem 0.48rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  #plataforma-root .academy-category-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.32rem;
+  }
+
+  #plataforma-root .academy-category-edit-actions button {
+    width: auto !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0.32rem 0.48rem !important;
+    font-size: 0.62rem !important;
+  }
+
+  #plataforma-root .academy-editor-modal .admin-academy-category-button {
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .academy-editor-actions {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+  }
+
+  /* Usuarios: acciones y estado legibles en una sola línea. */
+  #plataforma-root .users-page .users-invite-button {
+    min-height: 32px !important;
+    padding: 0.35rem 0.52rem !important;
+    font-size: 0.64rem !important;
+  }
+
+  #plataforma-root .users-page .user-status-badge {
+    display: inline-flex !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0.24rem 0.48rem !important;
+    align-items: center;
+    font-size: 0.62rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td:last-child > div {
+    gap: 0.3rem !important;
+    flex-wrap: nowrap !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td:last-child button {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  /* El informe queda como acción superior derecha, no como franja completa. */
+  #plataforma-root .analytics-page .rg-trigger {
+    grid-column: 2 !important;
+    justify-self: end !important;
+    width: auto !important;
+    min-height: 32px !important;
+    padding: 0.35rem 0.52rem !important;
+    font-size: 0.64rem !important;
+  }
+
+  /* Resúmenes de emails: una métrica por renglón, valor junto al texto. */
+  #plataforma-root .email-summary {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 0.28rem !important;
+  }
+
+  #plataforma-root .email-summary > div {
+    min-height: 31px !important;
+    padding: 0.3rem 0.42rem !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid #eef2f7 !important;
+  }
+
+  #plataforma-root .email-summary > div:last-child {
+    border-bottom: 0 !important;
+  }
+
+  #plataforma-root .email-summary span {
+    flex: 1;
+    font-size: 0.56rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .email-summary strong {
+    max-width: 46%;
+    font-size: 0.68rem !important;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #plataforma-root .email-performance-head {
+    margin-bottom: 0.5rem !important;
+  }
+
+  #plataforma-root .email-performance-head h3 {
+    font-size: 0.92rem !important;
+  }
+
+  #plataforma-root .email-performance-head p {
+    margin-top: 0.15rem !important;
+    font-size: 0.66rem !important;
+    line-height: 1.3 !important;
+  }
+
+  #plataforma-root .email-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.34rem !important;
+  }
+
+  #plataforma-root .email-kpis > div {
+    display: flex;
+    min-height: 43px;
+    padding: 0.42rem 0.5rem !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.3rem;
+    border-radius: 10px !important;
+  }
+
+  #plataforma-root .email-kpis span {
+    min-width: 0;
+    gap: 0.25rem !important;
+    font-size: 0.56rem !important;
+    line-height: 1.15;
+  }
+
+  #plataforma-root .email-kpis span svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  #plataforma-root .email-kpis strong {
+    flex: 0 0 auto;
+    margin: 0 !important;
+    font-size: 0.82rem !important;
+  }
+
+  #plataforma-root .email-performance-chart {
+    margin-top: 0.5rem !important;
+    padding: 0.58rem !important;
+  }
+
+  #plataforma-root .email-empty-performance {
+    min-height: 145px !important;
+  }
+
+  /* Formularios: controles táctiles claros pero sin aire innecesario. */
+  #plataforma-root .pause-form-modal {
+    padding: 0.72rem !important;
+  }
+
+  #plataforma-root .pause-form-modal > div[style*="margin-bottom: 1.5rem"],
+  #plataforma-root .pause-form-modal [style*="margin-bottom: 1.75rem"],
+  #plataforma-root .pause-form-modal [style*="margin-bottom: 2rem"] {
+    margin-bottom: 0.72rem !important;
+  }
+
+  #plataforma-root .pause-form-modal button {
+    min-height: 38px;
+  }
+
+  #plataforma-root .pause-form-modal textarea.input-field {
+    min-height: 72px !important;
+  }
+
+  #plataforma-root .onboarding-card {
+    max-width: 520px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  /* Ajustes finales de densidad móvil. */
+  #plataforma-root .users-page .users-invite-button {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 0.28rem 0.45rem !important;
+    border-radius: 9px !important;
+    font-size: 0.6rem !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td:last-child {
+    grid-column: 2;
+    padding-right: 0 !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td:last-child > div {
+    display: grid !important;
+    grid-template-columns: auto 28px;
+    width: 100% !important;
+    max-width: none !important;
+    align-items: center;
+    justify-content: stretch !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card td:last-child button {
+    margin-left: auto;
+  }
+
+  #plataforma-root .coach-head {
+    margin-bottom: 0.45rem !important;
+  }
+
+  #plataforma-root .coach-head .header-title {
+    font-size: 1.05rem !important;
+  }
+
+  #plataforma-root .coach-head .text-muted {
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .coach-head > div:last-child {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 10px !important;
+  }
+
+  #plataforma-root .coach-featured {
+    margin-bottom: 0.48rem !important;
+    padding: 0.5rem 0.58rem !important;
+    border-radius: 11px !important;
+  }
+
+  #plataforma-root .coach-featured > div {
+    margin-bottom: 0.16rem !important;
+    font-size: 0.58rem !important;
+  }
+
+  #plataforma-root .coach-featured > p {
+    font-size: 0.72rem !important;
+    line-height: 1.3 !important;
+  }
+
+  #plataforma-root .coach-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.42rem !important;
+  }
+
+  #plataforma-root .coach-card {
+    min-height: 0 !important;
+    padding: 0.56rem !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .coach-card-top {
+    margin-bottom: 0.38rem !important;
+    gap: 0.3rem !important;
+  }
+
+  #plataforma-root .coach-card-top > div:first-child {
+    width: 31px !important;
+    height: 31px !important;
+    border-radius: 9px !important;
+  }
+
+  #plataforma-root .coach-card h3 {
+    margin-bottom: 0.28rem !important;
+    font-size: 0.76rem !important;
+  }
+
+  #plataforma-root .coach-card > p {
+    margin-bottom: 0.4rem !important;
+    font-size: 0.62rem !important;
+    line-height: 1.3 !important;
+  }
+
+  #plataforma-root .coach-recommendation {
+    margin-bottom: 0.42rem !important;
+    padding: 0.42rem 0.48rem !important;
+    border-radius: 9px !important;
+  }
+
+  #plataforma-root .coach-recommendation p:first-child {
+    font-size: 0.54rem !important;
+  }
+
+  #plataforma-root .coach-recommendation p:last-child {
+    font-size: 0.62rem !important;
+  }
+
+  #plataforma-root .coach-actions {
+    padding-top: 0.4rem !important;
+    gap: 0.3rem !important;
+  }
+
+  #plataforma-root .coach-actions .btn-primary {
+    min-height: 30px !important;
+    padding: 0.3rem 0.48rem !important;
+    font-size: 0.58rem !important;
+  }
+
+  #plataforma-root .coach-editor-backdrop {
+    align-items: flex-end !important;
+    padding: 0.35rem !important;
+  }
+
+  #plataforma-root .coach-editor-modal {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 0.7rem) !important;
+    padding: 0.72rem !important;
+    border-radius: 17px 17px 10px 10px !important;
+  }
+
+  #plataforma-root .coach-editor-modal h3 {
+    margin-bottom: 0.5rem !important;
+    font-size: 0.96rem !important;
+  }
+
+  #plataforma-root .coach-editor-modal label {
+    margin-bottom: 0.16rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  #plataforma-root .coach-editor-modal .input-field {
+    min-height: 36px !important;
+    margin-bottom: 0.38rem !important;
+    padding: 0.38rem 0.5rem !important;
+    font-size: 16px !important;
+  }
+
+  #plataforma-root .coach-editor-modal textarea.input-field {
+    min-height: 54px !important;
+  }
+
+  #plataforma-root .coach-editor-triple {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.35rem !important;
+    margin-bottom: 0.38rem !important;
+  }
+
+  #plataforma-root .coach-editor-actions {
+    position: sticky;
+    bottom: -0.72rem;
+    padding: 0.45rem 0 0.25rem;
+    background: white;
+  }
+
+  #plataforma-root .coach-editor-actions button {
+    min-height: 34px !important;
+    padding: 0.35rem 0.62rem !important;
+    font-size: 0.66rem !important;
+  }
+
+  /* 16 px evita el zoom automático de Safari al editar. */
+  #plataforma-root .academy-category-modal input,
+  #plataforma-root .academy-category-edit-input {
+    font-size: 16px !important;
+  }
+
+  #plataforma-root .admin-academy-category-button {
+    display: inline-flex !important;
+    flex-flow: row nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.24rem !important;
+    white-space: nowrap !important;
+  }
+
+  #plataforma-root .admin-academy-category-button svg {
+    flex: 0 0 auto;
+  }
+
+  #plataforma-root .video-unlock-day {
+    grid-template-columns: 46px repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.22rem !important;
+    padding: 0.3rem !important;
+  }
+
+  #plataforma-root .video-unlock-row {
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+
+  #plataforma-root .video-unlock-row input[type="time"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0.12rem 0.18rem !important;
+  }
+
+  /* El estado no debe estirarse dentro de la celda de acciones. */
+  #plataforma-root .users-page .user-status-badge {
+    justify-self: start !important;
+    align-self: center !important;
+  }
+
+  /* Horarios: día arriba y turnos en dos columnas sin solapamientos. */
+  #plataforma-root .video-unlock-day {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.28rem 0.4rem !important;
+    padding: 0.42rem !important;
+  }
+
+  #plataforma-root .video-unlock-day-title {
+    grid-column: 1 / -1;
+    padding-bottom: 0.22rem;
+    border-bottom: 1px solid #eef2f7;
+  }
+
+  #plataforma-root .video-unlock-row {
+    width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: 15px minmax(0, 1fr) !important;
+    gap: 0.2rem 0.28rem !important;
+    overflow: visible !important;
+  }
+
+  #plataforma-root .video-unlock-row input[type="time"] {
+    grid-column: 1 / -1 !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0.18rem 0.35rem !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Disposición definitiva para Safari móvil: un turno por renglón. */
+  #plataforma-root .video-unlock-day {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+    padding: 0.42rem 0.5rem !important;
+  }
+
+  #plataforma-root .video-unlock-day-title {
+    grid-column: 1 !important;
+    margin: 0 0 0.18rem !important;
+    padding: 0 0 0.28rem !important;
+  }
+
+  #plataforma-root .video-unlock-row {
+    display: grid !important;
+    grid-template-columns: 15px minmax(0, 1fr) 92px !important;
+    min-height: 34px !important;
+    gap: 0.3rem !important;
+    align-items: center !important;
+    padding: 0.18rem 0 !important;
+    overflow: hidden !important;
+  }
+
+  #plataforma-root .video-unlock-row + .video-unlock-row {
+    border-top: 1px solid #eef2f7 !important;
+  }
+
+  #plataforma-root .video-unlock-row input[type="time"] {
+    grid-column: 3 !important;
+    width: 92px !important;
+    min-width: 92px !important;
+    max-width: 92px !important;
+    min-height: 29px !important;
+    height: 29px !important;
+    margin: 0 !important;
+    padding: 0.12rem 0.32rem !important;
+    border-radius: 7px !important;
+    font-size: 0.7rem !important;
+    line-height: 1 !important;
+    -webkit-appearance: none;
+    appearance: none;
   }
 }

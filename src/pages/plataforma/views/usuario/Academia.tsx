@@ -68,8 +68,8 @@ export const UsuarioAcademia: React.FC = () => {
     .sort((left, right) => Number(isPublished(right)) - Number(isPublished(left)));
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '2rem' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+    <div className="user-academy-page" style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '2rem' }}>
+      <header className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
           <div style={{ width: 38, height: 38, borderRadius: 12, background: '#d9fbf3', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <GraduationCap size={21} />
@@ -85,12 +85,12 @@ export const UsuarioAcademia: React.FC = () => {
         </div>
       </header>
 
-      <div style={{ position: 'relative', maxWidth: 420, marginBottom: '0.9rem' }}>
+      <div className="user-academy-search" style={{ position: 'relative', maxWidth: 420, marginBottom: '0.9rem' }}>
         <Search size={16} color="#94a3b8" style={{ position: 'absolute', top: 13, left: 13 }} />
         <input className="input-field" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar por título o palabra clave..." style={{ height: 44, borderRadius: 12, paddingLeft: 38, fontSize: '0.88rem' }} />
       </div>
 
-      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+      <div className="user-academy-categories" style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         {categories.map(item => (
           <button key={item} type="button" onClick={() => setCategory(item)} style={{ border: '1px solid #e2e8f0', borderRadius: 999, padding: '0.34rem 0.7rem', background: category === item ? 'var(--primary-color)' : 'white', color: category === item ? 'white' : '#64748b', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer' }}>
             {item}
@@ -98,12 +98,12 @@ export const UsuarioAcademia: React.FC = () => {
         ))}
       </div>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
+      <section className="user-academy-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
         {filtered.map(item => {
           const published = isPublished(item);
           return (
-          <article key={item.id} style={{ background: 'white', border: published && item.recommended ? '1.5px solid var(--primary-color)' : '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', boxShadow: published && item.recommended ? '0 12px 26px rgba(0,194,168,0.12)' : '0 10px 24px rgba(15,23,42,0.05)' }}>
-            <div style={{ height: 118, background: published ? `linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.18)), url(${item.image}) center/cover` : 'linear-gradient(135deg, #f8fafc, #eef2f7)', position: 'relative' }}>
+          <article className="user-academy-card" key={item.id} style={{ background: 'white', border: published && item.recommended ? '1.5px solid var(--primary-color)' : '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', boxShadow: published && item.recommended ? '0 12px 26px rgba(0,194,168,0.12)' : '0 10px 24px rgba(15,23,42,0.05)' }}>
+            <div className="user-academy-media" style={{ height: 118, background: published ? `linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.18)), url(${item.image}) center/cover` : 'linear-gradient(135deg, #f8fafc, #eef2f7)', position: 'relative' }}>
               <span style={{ position: 'absolute', top: 12, left: 12, background: 'white', color: '#1e293b', borderRadius: 999, padding: '0.35rem 0.65rem', fontSize: '0.72rem', fontWeight: 900 }}>{item.category}</span>
               {published && item.recommended && <span style={{ position: 'absolute', top: 12, right: 12, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'var(--primary-color)', color: 'white', borderRadius: 999, padding: '0.35rem 0.65rem', fontSize: '0.72rem', fontWeight: 900 }}><Sparkles size={12} /> Recomendado</span>}
               {!published && (
@@ -113,7 +113,7 @@ export const UsuarioAcademia: React.FC = () => {
                 </div>
               )}
             </div>
-            <div style={{ padding: '1rem' }}>
+            <div className="user-academy-card-body" style={{ padding: '1rem' }}>
               <h2 style={{ margin: '0 0 0.5rem', color: '#020617', fontSize: '1.02rem', lineHeight: 1.18, fontWeight: 900 }}>{item.title}</h2>
               <p style={{ minHeight: 42, margin: '0 0 0.9rem', color: '#64748b', lineHeight: 1.4, fontSize: '0.86rem' }}>{item.description}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', color: '#64748b', fontWeight: 800, marginBottom: '0.9rem', fontSize: '0.8rem' }}>

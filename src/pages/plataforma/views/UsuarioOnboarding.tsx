@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 const radioOption = (label: string, icon: React.ReactNode, selected: boolean, onChange: () => void) => (
   <label
     key={label}
+    className="onboarding-option"
     style={{
       display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem',
       border: `2px solid ${selected ? '#10b981' : '#e2e8f0'}`,
@@ -25,6 +26,7 @@ const radioOption = (label: string, icon: React.ReactNode, selected: boolean, on
 const checkOption = (label: string, selected: boolean, onChange: () => void) => (
   <label
     key={label}
+    className="onboarding-option"
     style={{
       display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
       border: `2px solid ${selected ? '#10b981' : '#e2e8f0'}`,
@@ -257,9 +259,9 @@ export const UsuarioOnboarding: React.FC = () => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1rem' }}>
+    <div className="onboarding-page user-onboarding-page" style={{ minHeight: '100vh', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1rem' }}>
       {/* Header */}
-      <div style={{ width: '100%', maxWidth: '600px', marginBottom: '2rem' }}>
+      <div className="onboarding-progress" style={{ width: '100%', maxWidth: '600px', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
           <div style={{ width: '36px', height: '36px', backgroundColor: '#10b981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <User size={18} color="white" />
@@ -278,7 +280,7 @@ export const UsuarioOnboarding: React.FC = () => {
       </div>
 
       {/* Card */}
-      <div style={{ width: '100%', maxWidth: '600px', backgroundColor: 'white', borderRadius: '24px', padding: '2.5rem', boxShadow: '0 10px 40px rgba(0,0,0,0.06)' }}>
+      <div className="onboarding-card" style={{ width: '100%', maxWidth: '600px', backgroundColor: 'white', borderRadius: '24px', padding: '2.5rem', boxShadow: '0 10px 40px rgba(0,0,0,0.06)' }}>
 
         {/* STEP 1 */}
         {step === 1 && (
@@ -388,7 +390,7 @@ export const UsuarioOnboarding: React.FC = () => {
         )}
 
         {/* Navigation */}
-        <div style={{ display: 'flex', justifyContent: step === 1 ? 'flex-end' : 'space-between', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
+        <div className="onboarding-navigation" style={{ display: 'flex', justifyContent: step === 1 ? 'flex-end' : 'space-between', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
           {step > 1 && (
             <button onClick={handlePrev} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <ChevronLeft size={18} /> Atrás

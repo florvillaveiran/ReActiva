@@ -56,7 +56,7 @@ const coachIconFor = (id: string) => {
 };
 
 const SectionTabs: React.FC<{ value: AdminSection; onChange: (value: AdminSection) => void }> = ({ value, onChange }) => (
-  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+  <div className="content-section-tabs" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
     {[
       ['micro', 'Microentrenamientos'],
       ['coach', 'ReActiva Tips'],
@@ -108,8 +108,8 @@ const AdminCoachPanel: React.FC = () => {
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+    <div className="coach-panel">
+      <div className="coach-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
         <div>
           <h2 className="header-title" style={{ marginBottom: '0.25rem' }}>ReActiva Tips</h2>
           <p className="text-muted" style={{ margin: 0 }}>Mismos consejos que ve el usuario.</p>
@@ -118,19 +118,19 @@ const AdminCoachPanel: React.FC = () => {
           <Sparkles size={21} />
         </div>
       </div>
-      <section style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem' }}>
+      <section className="coach-featured" style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
           <Lightbulb size={15} />
           <span>RECOMENDACIÓN PARA HOY</span>
         </div>
         <p style={{ margin: 0, color: '#020617', fontSize: '0.98rem', fontWeight: 800 }}>Cada 20 minutos, mirá algo a 20 pies (6 metros) de distancia durante 20 segundos.</p>
       </section>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: '1rem' }}>
+      <div className="coach-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: '1rem' }}>
         {items.map(item => {
           const icon = coachIconFor(item.id);
           return (
-          <article key={item.id} className="card" style={{ margin: 0, padding: '1.05rem', borderRadius: 16, boxShadow: '0 8px 22px rgba(15,23,42,0.05)', minHeight: 250 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.95rem' }}>
+          <article key={item.id} className="card coach-card" style={{ margin: 0, padding: '1.05rem', borderRadius: 16, boxShadow: '0 8px 22px rgba(15,23,42,0.05)', minHeight: 250 }}>
+            <div className="coach-card-top" style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.95rem' }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: icon.bg, color: icon.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {icon.icon}
               </div>
@@ -141,12 +141,12 @@ const AdminCoachPanel: React.FC = () => {
             </div>
             <h3 style={{ margin: '0 0 0.55rem', fontSize: '1.05rem', color: '#020617', lineHeight: 1.2 }}>{item.title}</h3>
             <p style={{ color: '#64748b', margin: '0 0 0.85rem', lineHeight: 1.4, fontSize: '0.88rem' }}>{item.description}</p>
-            <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.75rem 0.85rem', marginBottom: '0.85rem' }}>
+            <div className="coach-recommendation" style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.75rem 0.85rem', marginBottom: '0.85rem' }}>
               <p style={{ margin: '0 0 0.3rem', color: 'var(--primary-color)', fontWeight: 900, fontSize: '0.72rem', letterSpacing: '0.04em' }}>RECOMENDACIÓN</p>
               <p style={{ margin: 0, color: '#020617', fontSize: '0.88rem', lineHeight: 1.35 }}>{item.recommendation}</p>
             </div>
             <p style={{ color: '#64748b', margin: '0 0 1rem', fontSize: '0.86rem' }}>{item.tags.map(tag => `◇ ${tag}`).join('  ')}</p>
-            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.7rem' }}>
+            <div className="coach-actions" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.7rem' }}>
               <button className="btn-primary" onClick={() => window.alert(`${item.title}\n\n${item.recommendation}`)} style={{ padding: '0.55rem 0.9rem', fontSize: '0.82rem' }}>Ver consejo</button>
               <div style={{ display: 'flex', gap: '0.6rem' }}>
                 <button title="Editar" onClick={() => setEditing(item)} style={{ color: 'var(--primary-color)' }}><Pencil size={17} /></button>
@@ -158,8 +158,8 @@ const AdminCoachPanel: React.FC = () => {
         })}
       </div>
       {editing && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ width: 720, maxWidth: '94vw', maxHeight: '88vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
+        <div className="coach-editor-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card coach-editor-modal" style={{ width: 720, maxWidth: '94vw', maxHeight: '88vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
             <h3 style={{ marginTop: 0 }}>Editar consejo</h3>
             <label style={fieldLabelStyle}>Categoría / nombre del consejo</label>
             <input className="input-field" value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} style={{ marginBottom: '0.7rem' }} />
@@ -171,7 +171,7 @@ const AdminCoachPanel: React.FC = () => {
             <input className="input-field" value={editing.detailTitle} onChange={e => setEditing({ ...editing, detailTitle: e.target.value })} placeholder="Título del detalle" style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Subtítulo del detalle</label>
             <input className="input-field" value={editing.subtitle} onChange={e => setEditing({ ...editing, subtitle: e.target.value })} placeholder="Subtítulo del detalle" style={{ marginBottom: '0.7rem' }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.7rem', marginBottom: '0.7rem' }}>
+            <div className="coach-editor-triple" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.7rem', marginBottom: '0.7rem' }}>
               <div>
                 <label style={fieldLabelStyle}>Tiempo</label>
                 <input className="input-field" value={editing.time} onChange={e => setEditing({ ...editing, time: e.target.value })} placeholder="Tiempo" />
@@ -198,7 +198,7 @@ const AdminCoachPanel: React.FC = () => {
             <label style={fieldLabelStyle}>Consejo relacionado</label>
             <input className="input-field" value={editing.related} onChange={e => setEditing({ ...editing, related: e.target.value })} placeholder="Consejo relacionado" style={{ marginBottom: '0.7rem' }} />
             <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}><input type="checkbox" checked={editing.active} onChange={e => setEditing({ ...editing, active: e.target.checked })} /> Activo</label>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.7rem' }}>
+            <div className="coach-editor-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.7rem' }}>
               <button className="btn-secondary" onClick={() => setEditing(null)}>Cancelar</button>
               <button className="btn-primary" onClick={save}>Guardar</button>
             </div>
@@ -285,7 +285,7 @@ const AdminAcademyPanel: React.FC = () => {
 
   const createCategory = async () => {
     const name = normalizeAcademyCategory(newCategory);
-    if (!name) return;
+    if (!name || savingCategory) return;
     const existing = categories.find(category => categoryKey(category) === categoryKey(name));
     if (existing) {
       setCategoryFilter(existing);
@@ -293,16 +293,24 @@ const AdminAcademyPanel: React.FC = () => {
       setNewCategory('');
       return;
     }
-    const result = await saveAcademyCategory(name);
-    if (!result.ok) {
-      window.alert(result.error?.message ?? 'No pudimos crear la categoria.');
-      return;
+    setSavingCategory(true);
+    try {
+      const result = await saveAcademyCategory(name);
+      if (!result.ok) {
+        window.alert(result.error?.message ?? 'No pudimos crear la categoría.');
+        return;
+      }
+      persistCustomCategories([...categories, name]);
+      const remoteCategories = await fetchAcademyCategories();
+      persistCustomCategories(remoteCategories.includes(name) ? remoteCategories : [...remoteCategories, name]);
+      setCategoryFilter(name);
+      setEditing(current => current ? { ...current, category: name } : current);
+      setNewCategory('');
+    } catch (error: any) {
+      window.alert(error?.message ?? 'No pudimos crear la categoría.');
+    } finally {
+      setSavingCategory(false);
     }
-    const remoteCategories = await fetchAcademyCategories();
-    persistCustomCategories(remoteCategories);
-    setCategoryFilter(name);
-    setEditing(current => current ? { ...current, category: name } : current);
-    setNewCategory('');
   };
 
   const renameCategory = async () => {
@@ -492,8 +500,8 @@ const AdminAcademyPanel: React.FC = () => {
   };
 
   return (
-    <div>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+    <div className="admin-academy-page">
+      <header className="admin-academy-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
         <div>
           <h2 className="header-title" style={{ marginBottom: '0.25rem' }}>Academia ReActiva</h2>
           <p className="text-muted" style={{ margin: 0 }}>Mismos talleres que ve el usuario.</p>
@@ -503,30 +511,30 @@ const AdminAcademyPanel: React.FC = () => {
           <div style={{ height: 5, background: '#e2e8f0', borderRadius: 999 }} />
         </div>
       </header>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
+      <div className="admin-academy-toolbar" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', width: 420, maxWidth: '100%' }}>
           <Search size={16} color="#94a3b8" style={{ position: 'absolute', top: 13, left: 13 }} />
           <input className="input-field" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar por título o palabra clave..." style={{ height: 44, borderRadius: 12, paddingLeft: 38, fontSize: '0.88rem' }} />
         </div>
-        <button className="btn-secondary" onClick={() => setCategoryManagerOpen(true)} style={{ height: 44, display: 'inline-flex', alignItems: 'center', gap: 7 }}><Settings size={16} /> Gestionar categorías</button>
+        <button className="btn-secondary admin-academy-category-button" onClick={() => setCategoryManagerOpen(true)} style={{ height: 44, display: 'inline-flex', alignItems: 'center', gap: 7 }}><Settings size={16} /> Categorías</button>
         <button className="btn-primary" onClick={openCreateEditor} style={{ height: 44, display: 'inline-flex', alignItems: 'center', gap: 7 }}><Plus size={17} /> Crear video</button>
       </div>
-      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+      <div className="admin-academy-categories" style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         {['Todos', ...categories].map(category => (
           <button key={category} type="button" onClick={() => setCategoryFilter(category)} style={{ border: '1px solid #e2e8f0', borderRadius: 999, padding: '0.34rem 0.7rem', background: categoryFilter === category ? 'var(--primary-color)' : 'white', color: categoryFilter === category ? 'white' : '#64748b', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer' }}>{category}</button>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
+      <div className="admin-academy-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
         {filteredItems.map(item => {
           const hasVideo = hasAcademyVideo(item);
           const published = item.active && hasVideo;
           return (
-          <article key={item.id} className="card" style={{ margin: 0, padding: '0 1rem 1rem', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 24px rgba(15,23,42,0.05)', border: item.recommended ? '1.5px solid var(--primary-color)' : '1px solid #e5e7eb' }}>
-            <div style={{ height: 118, margin: '0 -1rem', background: `linear-gradient(rgba(15,23,42,0.12), rgba(15,23,42,0.18)), url(${item.image}) center/cover`, position: 'relative' }}>
+          <article key={item.id} className="card admin-academy-card" style={{ margin: 0, padding: '0 1rem 1rem', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 24px rgba(15,23,42,0.05)', border: item.recommended ? '1.5px solid var(--primary-color)' : '1px solid #e5e7eb' }}>
+            <div className="admin-academy-media" style={{ height: 118, margin: '0 -1rem', background: `linear-gradient(rgba(15,23,42,0.12), rgba(15,23,42,0.18)), url(${item.image}) center/cover`, position: 'relative' }}>
               <span style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '0.35rem 0.65rem', color: '#1e293b', fontWeight: 900, fontSize: '0.72rem' }}>{item.category}</span>
               {item.recommended && <span style={{ position: 'absolute', top: 12, right: 12, background: 'var(--primary-color)', color: 'white', borderRadius: 999, padding: '0.35rem 0.65rem', fontWeight: 900, fontSize: '0.72rem' }}>Recomendado</span>}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', margin: '0.85rem 0 0.2rem' }}>
+            <div className="admin-academy-status" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', margin: '0.85rem 0 0.2rem' }}>
               <span style={{ background: '#f1f5f9', borderRadius: 6, padding: '0.45rem 0.65rem', color: '#020617', fontWeight: 800, fontSize: '0.82rem' }}>{item.category}</span>
               <span style={{ color: published ? 'var(--primary-color)' : hasVideo ? '#d97706' : '#94a3b8', fontWeight: 800, fontSize: '0.8rem', alignSelf: 'center' }}>
                 {published ? 'Publicado' : hasVideo ? 'Borrador' : 'Sin video'}
@@ -548,7 +556,7 @@ const AdminAcademyPanel: React.FC = () => {
                 {publishingId === item.id ? 'Publicando...' : hasVideo ? 'Publicar' : 'Cargá un video para publicar'}
               </button>
             )}
-            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.7rem' }}>
+            <div className="admin-academy-card-actions" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.7rem' }}>
               <button className="btn-secondary" onClick={() => hasVideo ? openPreview(item) : openEditor(item)} style={{ padding: '0.55rem 0.9rem', fontSize: '0.82rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 {hasVideo ? <><Eye size={15} /> Vista previa</> : <><Upload size={15} /> Cargar video</>}
               </button>
@@ -565,27 +573,29 @@ const AdminAcademyPanel: React.FC = () => {
         <div style={{ padding: '2.5rem', textAlign: 'center', border: '1px dashed #cbd5e1', borderRadius: 16, color: '#64748b' }}>No hay talleres en esta categoría.</div>
       )}
       {categoryManagerOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setCategoryManagerOpen(false)}>
-          <div className="card" style={{ width: 520, maxWidth: '96vw', maxHeight: '86vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }} onClick={event => event.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+        <div className="academy-category-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setCategoryManagerOpen(false)}>
+          <div className="card academy-category-modal" style={{ width: 520, maxWidth: '96vw', maxHeight: '86vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }} onClick={event => event.stopPropagation()}>
+            <div className="academy-category-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: '0 0 0.25rem' }}>Categorías de Academia</h3>
                 <p style={{ margin: 0, color: '#64748b', fontSize: '0.84rem' }}>Creá categorías o renombrá las existentes.</p>
               </div>
               <button type="button" onClick={() => setCategoryManagerOpen(false)} style={{ width: 34, height: 34, borderRadius: 999, border: '1px solid #e2e8f0', background: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={17} /></button>
             </div>
-            <div style={{ display: 'flex', gap: '0.55rem', marginBottom: '1rem' }}>
-              <input className="input-field" value={newCategory} onChange={event => setNewCategory(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') createCategory(); }} placeholder="Nueva categoría" />
-              <button type="button" className="btn-primary" onClick={createCategory} disabled={!newCategory.trim()} style={{ whiteSpace: 'nowrap' }}>Crear</button>
+            <div className="academy-category-create" style={{ display: 'flex', gap: '0.55rem', marginBottom: '1rem' }}>
+              <input className="input-field" value={newCategory} onChange={event => setNewCategory(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void createCategory(); } }} placeholder="Nueva categoría" />
+              <button type="button" className="btn-primary" onClick={() => void createCategory()} disabled={savingCategory || !newCategory.trim()} style={{ whiteSpace: 'nowrap' }}>{savingCategory ? 'Creando...' : 'Crear'}</button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+            <div className="academy-category-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
               {categories.map(category => (
-                <div key={category} style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', padding: '0.7rem', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                <div className="academy-category-row" key={category} style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', padding: '0.7rem', border: '1px solid #e5e7eb', borderRadius: 12 }}>
                   {editingCategory === category ? (
                     <>
-                      <input className="input-field" value={editingCategoryName} onChange={event => setEditingCategoryName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void renameCategory(); }} autoFocus />
-                      <button type="button" className="btn-primary" onClick={() => void renameCategory()} disabled={savingCategory || !editingCategoryName.trim()}>{savingCategory ? 'Guardando...' : 'Guardar'}</button>
-                      <button type="button" className="btn-secondary" onClick={() => setEditingCategory('')}>Cancelar</button>
+                      <input className="input-field academy-category-edit-input" value={editingCategoryName} onChange={event => setEditingCategoryName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void renameCategory(); }} autoFocus />
+                      <div className="academy-category-edit-actions">
+                        <button type="button" className="btn-primary" onClick={() => void renameCategory()} disabled={savingCategory || !editingCategoryName.trim()}>{savingCategory ? 'Guardando...' : 'Guardar'}</button>
+                        <button type="button" className="btn-secondary" onClick={() => setEditingCategory('')}>Cancelar</button>
+                      </div>
                     </>
                   ) : (
                     <>
@@ -602,8 +612,8 @@ const AdminAcademyPanel: React.FC = () => {
         </div>
       )}
       {editing && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ width: 560, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
+        <div className="academy-editor-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card academy-editor-modal" style={{ width: 560, maxWidth: '94vw', maxHeight: '90vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
             <h3 style={{ marginTop: 0 }}>{creating ? 'Crear video' : 'Editar taller'}</h3>
             <label style={fieldLabelStyle}>Título del taller</label>
             <input className="input-field" value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} style={{ marginBottom: '0.7rem' }} />
@@ -613,7 +623,7 @@ const AdminAcademyPanel: React.FC = () => {
                 {!categories.some(category => categoryKey(category) === categoryKey(editing.category)) && <option value={editing.category}>{editing.category}</option>}
                 {categories.map(category => <option key={category} value={category}>{category}</option>)}
               </select>
-              <button type="button" className="btn-secondary" onClick={() => setCategoryManagerOpen(true)} style={{ whiteSpace: 'nowrap' }}><Settings size={15} /> Categorías</button>
+              <button type="button" className="btn-secondary admin-academy-category-button" onClick={() => setCategoryManagerOpen(true)} style={{ whiteSpace: 'nowrap' }}><Settings size={15} /> Categorías</button>
             </div>
             <label style={fieldLabelStyle}>Descripción del taller</label>
             <textarea className="input-field" rows={3} value={editing.description} onChange={e => setEditing({ ...editing, description: e.target.value })} style={{ marginBottom: '0.7rem' }} />
@@ -663,7 +673,7 @@ const AdminAcademyPanel: React.FC = () => {
             {!hasAcademyVideo(editing) && !videoFile && (
               <p style={{ margin: '0 0 1rem 1.45rem', color: '#94a3b8', fontSize: '0.8rem' }}>Subí o seleccioná un video para habilitar la publicación.</p>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.7rem', flexWrap: 'wrap' }}>
+            <div className="academy-editor-actions" style={{ display: 'flex', justifyContent: 'space-between', gap: '0.7rem', flexWrap: 'wrap' }}>
               <button className="btn-secondary" onClick={() => openPreview(editing, videoFile)} disabled={!hasAcademyVideo(editing) && !videoFile} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Eye size={15} /> Vista previa</button>
               <div style={{ display: 'flex', gap: '0.7rem' }}>
                 <button className="btn-secondary" onClick={() => { setEditing(null); setCreating(false); setVideoFile(null); }} disabled={uploading}>Cancelar</button>
@@ -925,23 +935,23 @@ const AdminMediaPanel: React.FC = () => {
   };
 
   return (
-    <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+    <div className="media-library-page">
+      <div className="media-library-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
         {[
           ['TOTAL ARCHIVOS', String(items.length), '#020617'],
           ['VIDEOS', String(videos), '#3b82f6'],
           ['IMAGENES', String(images), 'var(--primary-color)'],
           ['ESPACIO USADO', `${usedMb.toFixed(1)} MB`, '#020617'],
         ].map(([label, value, color]) => (
-          <div key={label} className="card" style={{ margin: 0, padding: '1rem', borderRadius: 16 }}>
+          <div key={label} className="card media-library-stat" style={{ margin: 0, padding: '1rem', borderRadius: 16 }}>
             <p style={{ margin: '0 0 0.65rem', color: '#64748b', fontSize: '0.78rem', fontWeight: 900 }}>{label}</p>
             <strong style={{ color, fontSize: '1.45rem' }}>{value}</strong>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', width: 360, maxWidth: '100%' }}>
+      <div className="media-library-toolbar" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        <div className="media-library-search" style={{ position: 'relative', width: 360, maxWidth: '100%' }}>
           <Search size={16} color="#94a3b8" style={{ position: 'absolute', top: 13, left: 13 }} />
           <input className="input-field" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar archivos..." style={{ height: 44, borderRadius: 12, paddingLeft: 38, fontSize: '0.88rem' }} />
         </div>
@@ -950,13 +960,13 @@ const AdminMediaPanel: React.FC = () => {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+      <div className="media-library-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
         {filtered.map(item => {
           const previewUrl = item.thumbnailUrl || (item.kind === 'Image' ? item.url : '');
           return (
-          <article key={item.id} className="card" style={{ margin: 0, padding: '0.9rem', borderRadius: 16 }}>
+          <article key={item.id} className="card media-library-card" style={{ margin: 0, padding: '0.9rem', borderRadius: 16 }}>
             {previewUrl ? (
-              <div style={{ height: 120, borderRadius: 10, background: `linear-gradient(rgba(15,23,42,0.05), rgba(15,23,42,0.2)), url(${previewUrl}) center/cover`, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem', overflow: 'hidden' }}>
+              <div className="media-library-preview" style={{ height: 120, borderRadius: 10, background: `linear-gradient(rgba(15,23,42,0.05), rgba(15,23,42,0.2)), url(${previewUrl}) center/cover`, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem', overflow: 'hidden' }}>
                 {item.kind === 'Video' && (
                   <div style={{ width: 42, height: 42, borderRadius: 999, background: 'rgba(255,255,255,0.92)', color: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 26px rgba(15,23,42,0.18)' }}>
                     <Video size={20} fill="currentColor" />
@@ -964,7 +974,7 @@ const AdminMediaPanel: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div style={{ height: 120, borderRadius: 10, background: '#f8fafc', color: item.kind === 'Video' ? '#3b82f6' : 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>
+              <div className="media-library-preview" style={{ height: 120, borderRadius: 10, background: '#f8fafc', color: item.kind === 'Video' ? '#3b82f6' : 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>
                 {item.kind === 'Video' ? <FileVideo size={34} /> : <FileImage size={34} />}
               </div>
             )}
@@ -985,8 +995,8 @@ const AdminMediaPanel: React.FC = () => {
       </div>
 
       {editing && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ width: 560, maxWidth: '94vw', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
+        <div className="media-editor-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card media-editor-modal" style={{ width: 560, maxWidth: '94vw', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
             <h3 style={{ marginTop: 0 }}>Subir archivo multimedia</h3>
             <label style={fieldLabelStyle}>Nombre del archivo</label>
             <input className="input-field" value={editing.name} onChange={event => setEditing({ ...editing, name: event.target.value })} placeholder="Ej: Respiracion Diafragmatica.mp4" style={{ marginBottom: '0.7rem' }} />
@@ -1339,11 +1349,11 @@ export const Contenido: React.FC = () => {
   }
 
   return (
-    <div style={{animation:'fadeIn 0.3s ease-out'}}>
+    <div className="admin-content-page" style={{animation:'fadeIn 0.3s ease-out'}}>
       <SectionTabs value={adminSection} onChange={setAdminSection} />
 
       {/* ── Cabecera ── */}
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem',flexWrap:'wrap',gap:'0.75rem'}}>
+      <div className="page-toolbar" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem',flexWrap:'wrap',gap:'0.75rem'}}>
         <div>
           <h2 className="header-title" style={{marginBottom:'0.2rem'}}>Contenido</h2>
           <p className="text-muted" style={{margin:0,fontSize:'0.85rem'}}>Programa los videos de pausas activas</p>
@@ -1383,8 +1393,8 @@ export const Contenido: React.FC = () => {
       </div>
 
       {/* ══ VISTA SEMANAL ══ */}
-      <section className="card" style={{ padding: '1rem', margin: '0 0 1.25rem', borderRadius: '14px', border: '1px solid #ccfbf1', background: 'linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)', boxShadow: '0 4px 16px rgba(15, 118, 110, 0.06)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
+      <section className="card video-unlock-panel" style={{ padding: '1rem', margin: '0 0 1.25rem', borderRadius: '14px', border: '1px solid #ccfbf1', background: 'linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)', boxShadow: '0 4px 16px rgba(15, 118, 110, 0.06)' }}>
+        <div className="video-unlock-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
           <div>
             <h3 style={{ margin: 0, color: '#0f172a', fontSize: '0.98rem', fontWeight: 800 }}>Habilitación automática de videos</h3>
             <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.8rem', lineHeight: 1.45 }}>
@@ -1396,17 +1406,17 @@ export const Contenido: React.FC = () => {
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
+        <div className="video-unlock-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
           {(['Lunes', 'Miércoles', 'Viernes'] as UnlockDay[]).map(day => (
-            <div key={day} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.8rem' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.65rem' }}>{day}</div>
+            <div className="video-unlock-day" key={day} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.8rem' }}>
+              <div className="video-unlock-day-title" style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.65rem' }}>{day}</div>
               {([
                 ['morning', 'Mañana'],
                 ['afternoon', 'Tarde'],
               ] as [UnlockBlock, string][]).map(([block, label]) => {
                 const item = unlockSchedule.find(entry => entry.day === day && entry.block === block);
                 return (
-                  <label key={`${day}-${block}`} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 92px', alignItems: 'center', gap: '0.55rem', padding: '0.5rem 0', borderTop: block === 'afternoon' ? '1px solid #f1f5f9' : 'none' }}>
+                  <label className="video-unlock-row" key={`${day}-${block}`} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 92px', alignItems: 'center', gap: '0.55rem', padding: '0.5rem 0', borderTop: block === 'afternoon' ? '1px solid #f1f5f9' : 'none' }}>
                     <input
                       type="checkbox"
                       checked={Boolean(item?.enabled)}
@@ -1497,26 +1507,26 @@ export const Contenido: React.FC = () => {
 
       {/* ══ VISTA MENSUAL ══ */}
       {vista==='mes' && (
-        <div className="card" style={{padding:'1.5rem',margin:0,borderRadius:'14px',border:'1px solid #f1f5f9',boxShadow:'0 4px 20px rgba(0,0,0,0.03)'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.25rem'}}>
+        <div className="card content-month-calendar" style={{padding:'1.5rem',margin:0,borderRadius:'14px',border:'1px solid #f1f5f9',boxShadow:'0 4px 20px rgba(0,0,0,0.03)'}}>
+          <div className="content-calendar-head" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.25rem'}}>
             {btnNav(()=>navMes(-1), <ChevronLeft size={16}/>)}
             <h3 style={{margin:0,fontSize:'1.1rem',fontWeight:700,color:'#1e293b'}}>{MESES[mes]} {anio}</h3>
             {btnNav(()=>navMes(1),  <ChevronRight size={16}/>)}
           </div>
 
-          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'3px',marginBottom:'3px'}}>
+          <div className="content-calendar-weekdays" style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'3px',marginBottom:'3px'}}>
             {DIAS_LABELS.map(d=>(
               <div key={d} style={{textAlign:'center',fontSize:'0.7rem',fontWeight:700,color:'#94a3b8',padding:'0.35rem 0',textTransform:'uppercase'}}>{d}</div>
             ))}
           </div>
 
-          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'3px'}}>
+          <div className="content-calendar-grid" style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'3px'}}>
             {calDays.map((day, idx)=>{
               const filtrados = day ? eventosMes[day] : undefined;
               const tieneContenido = !!filtrados?.length;
               const esHoy = day===hoy.getDate() && mes===hoy.getMonth() && anio===hoy.getFullYear();
               return (
-                <div key={idx} onClick={()=>day&&abrirModal(day)}
+                <div className={`content-calendar-day${tieneContenido ? ' has-content' : ''}${esHoy ? ' is-today' : ''}`} key={idx} onClick={()=>day&&abrirModal(day)}
                   style={{
                     minHeight:'72px',borderRadius:'8px',padding:'0.3rem',
                     cursor:day?'pointer':'default',
@@ -1530,8 +1540,9 @@ export const Contenido: React.FC = () => {
                       {filtrados?.slice(0,2).map((e,i)=>{
                         const col = colorEmpresa[e.empresa]??{bg:'#f1f5f9',text:'#475569'};
                         return (
-                          <div key={i} style={{fontSize:'0.62rem',backgroundColor:esHoy?'rgba(255,255,255,0.2)':col.bg,color:esHoy?'white':col.text,borderRadius:'4px',padding:'1px 4px',fontWeight:600,lineHeight:1.4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                            {e.horario} — {e.empresa==='Global'?'General':e.empresa}
+                          <div className="content-calendar-event" key={i} style={{fontSize:'0.62rem',backgroundColor:esHoy?'rgba(255,255,255,0.2)':col.bg,color:esHoy?'white':col.text,borderRadius:'4px',padding:'1px 4px',fontWeight:600,lineHeight:1.4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                            <span className="content-calendar-event-time">{e.horario}</span>
+                            <span className="content-calendar-event-company"> — {e.empresa==='Global'?'General':e.empresa}</span>
                           </div>
                         );
                       })}
@@ -1545,7 +1556,7 @@ export const Contenido: React.FC = () => {
             })}
           </div>
 
-          <div style={{marginTop:'1rem',paddingTop:'0.875rem',borderTop:'1px solid #f1f5f9',display:'flex',gap:'1.25rem',flexWrap:'wrap'}}>
+          <div className="content-calendar-legend" style={{marginTop:'1rem',paddingTop:'0.875rem',borderTop:'1px solid #f1f5f9',display:'flex',gap:'1.25rem',flexWrap:'wrap'}}>
             {Object.entries(colorEmpresa).map(([name,c])=>(
               <div key={name} style={{display:'flex',alignItems:'center',gap:'0.35rem',fontSize:'0.75rem',color:'#64748b'}}>
                 <div style={{width:'8px',height:'8px',borderRadius:'50%',backgroundColor:c.text}}/>
@@ -1559,10 +1570,10 @@ export const Contenido: React.FC = () => {
 
       {/* ══ MODAL ══ */}
       {modal && (
-        <div onClick={e=>{if(e.target===e.currentTarget)setModal(false)}}
+        <div className="video-schedule-backdrop" onClick={e=>{if(e.target===e.currentTarget)setModal(false)}}
           style={{position:'fixed',inset:0,backgroundColor:'rgba(15,23,42,0.35)',backdropFilter:'blur(4px)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div style={{backgroundColor:'white',borderRadius:'16px',padding:'1.75rem',width:'460px',maxWidth:'95vw',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',animation:'fadeIn 0.2s ease-out'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1.25rem'}}>
+          <div className="video-schedule-modal" style={{backgroundColor:'white',borderRadius:'16px',padding:'1.75rem',width:'460px',maxWidth:'95vw',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',animation:'fadeIn 0.2s ease-out'}}>
+            <div className="video-schedule-head" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1.25rem'}}>
               <div>
                 <h3 style={{margin:0,fontSize:'1.05rem',fontWeight:700,color:'#1e293b'}}>Programar Video</h3>
                 <p style={{margin:'0.15rem 0 0',fontSize:'0.8rem',color:'#94a3b8'}}>
@@ -1605,7 +1616,7 @@ export const Contenido: React.FC = () => {
               <input className="input-field" value={modalTitle} onChange={e => setModalTitle(e.target.value)} placeholder="Ej: Movilidad cervical" style={{fontSize:'0.875rem'}}/>
             </div>
 
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.65rem',marginBottom:'0.9rem'}}>
+            <div className="video-schedule-grid video-schedule-grid-two" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.65rem',marginBottom:'0.9rem'}}>
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Tipo de pausa</label>
                 <select className="input-field" style={{fontSize:'0.875rem'}}>
@@ -1620,7 +1631,7 @@ export const Contenido: React.FC = () => {
               </div>
             </div>
 
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.65rem',marginBottom:'1.25rem'}}>
+            <div className="video-schedule-grid video-schedule-grid-three" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.65rem',marginBottom:'1.25rem'}}>
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Fecha</label>
                 <input type="date" className="input-field" value={modalScheduledDate} onChange={e => {
@@ -1653,7 +1664,7 @@ export const Contenido: React.FC = () => {
               <p style={{margin:0,fontSize:'0.82rem',lineHeight:1.4,color:'#475569'}}>Se enviará a los usuarios activos 5 minutos antes de que el video se desbloquee.</p>
             </div>
 
-            <div style={{display:'flex',gap:'0.65rem'}}>
+            <div className="video-schedule-actions" style={{display:'flex',gap:'0.65rem'}}>
               <button onClick={()=>setModal(false)} className="btn-secondary" style={{flex:1,fontSize:'0.875rem'}}>Cancelar</button>
               <button onClick={guardarProgramacionVideo} disabled={savingProgram} className="btn-primary" style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:'0.4rem',fontSize:'0.875rem',opacity:savingProgram?0.7:1}}>
                 <Save size={15}/> {savingProgram ? 'Guardando...' : 'Guardar programación'}

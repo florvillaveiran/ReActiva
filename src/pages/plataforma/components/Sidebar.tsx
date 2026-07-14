@@ -1,10 +1,25 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Building2, BarChart3, LogOut, PlaySquare, Video, Mail, Activity, Lightbulb, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, BarChart3, LogOut, PlaySquare, Video, Mail, Activity, Lightbulb, GraduationCap, Menu, X } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileMenuOpen]);
 
   const adminLinks = [
     { to: '/plataforma/admin', icon: <LayoutDashboard size={20} />, label: 'Dashboard', end: true },
@@ -30,61 +45,58 @@ export const Sidebar: React.FC = () => {
 
   const links = user?.role === 'admin' ? adminLinks : user?.role === 'rrhh' ? rrhhLinks : userLinks;
 
-  return (
-    <div className="sidebar">
-      <div style={{ padding: '2rem 1.5rem', textAlign: 'center', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
-        <img src="/logo-reactiva-dark.png" alt="Re-Activa" style={{ height: '40px', objectFit: 'contain' }} />
-      </div>
-      
-      <nav style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={'end' in link ? link.end : undefined}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.75rem 1rem',
-              borderRadius: 'var(--radius-sm)',
-              color: isActive ? 'var(--primary-color)' : 'var(--text-muted)',
-              backgroundColor: isActive ? 'rgba(0, 194, 168, 0.1)' : 'transparent',
-              fontWeight: isActive ? 600 : 500,
-              transition: 'all 0.2s'
-            })}
-          >
-            {link.icon}
-            {link.label}
-          </NavLink>
-        ))}
-      </nav>
-
-      <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-        <div style={{ marginBottom: '1rem', padding: '0 1rem' }}>
-          <p className="text-sm font-medium">{user?.name}</p>
-          <p className="text-sm text-muted">{user?.role}</p>
-        </div>
-        <button 
-          onClick={logout}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            width: '100%',
-            padding: '0.75rem 1rem',
-            color: '#ef4444',
-            fontWeight: 500,
-            borderRadius: 'var(--radius-sm)',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+  return <>
+    <aside className={`sidebar${mobileMenuOpen ? ' is-mobile-open' : ''}`}>
+      <div className="sidebar-brand">
+        <img src="/logo-reactiva-dark.png" alt="Re-Activa" />
+        <button
+          type="button"
+          className="mobile-menu-toggle"
+          aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen(open => !open)}
         >
-          <LogOut size={20} />
-          Cerrar sesión
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
-    </div>
-  );
+      
+      <div className="sidebar-panel">
+        <nav className="sidebar-nav" aria-label="Navegación principal">
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={'end' in link ? link.end : undefined}
+              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+            >
+              {link.icon}
+              <span>{link.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="sidebar-account">
+          <div className="sidebar-user">
+            <p className="text-sm font-medium">{user?.name}</p>
+            <p className="text-sm text-muted">{user?.role}</p>
+          </div>
+          <button
+            onClick={logout}
+            className="sidebar-logout"
+          >
+            <LogOut size={20} />
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+    {mobileMenuOpen && (
+      <button
+        type="button"
+        className="mobile-nav-overlay"
+        aria-label="Cerrar menú"
+        onClick={() => setMobileMenuOpen(false)}
+      />
+    )}
+  </>;
 };

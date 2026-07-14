@@ -55,7 +55,7 @@ export const UsuarioTips: React.FC = () => {
   if (selected) {
     const icon = iconFor(selected.id);
     return (
-      <div style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '2rem' }}>
+      <div className="user-tip-detail-page" style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '2rem' }}>
         <button type="button" onClick={() => setSelected(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #e2e8f0', borderRadius: 999, padding: '0.5rem 0.9rem', color: '#64748b', fontWeight: 800, marginBottom: '1rem', background: 'white', fontSize: '0.86rem' }}>
           <ArrowLeft size={17} /> Volver a ReActiva Tips
         </button>
@@ -75,7 +75,7 @@ export const UsuarioTips: React.FC = () => {
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f8fafc', borderRadius: 999, padding: '0.42rem 0.75rem', color: '#334155', fontWeight: 800, fontSize: '0.84rem' }}><Star size={15} /> Dificultad: {selected.difficulty}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ecfdf5', borderRadius: 999, padding: '0.42rem 0.75rem', color: '#047857', fontWeight: 800, fontSize: '0.84rem' }}><Zap size={15} /> Beneficio: {selected.benefit}</span>
         </div>
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(235px, 1fr))', gap: '1rem' }}>
+        <section className="user-tip-detail-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(235px, 1fr))', gap: '1rem' }}>
           {[
             ['RECOMENDACIÓN PRINCIPAL', selected.recommendation, <Target size={17} />],
             ['POR QUÉ IMPORTA', selected.why, <Sparkles size={17} />],
@@ -111,8 +111,8 @@ export const UsuarioTips: React.FC = () => {
   }
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '2rem' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+    <div className="user-tips-page" style={{ animation: 'fadeIn 0.3s ease-out', paddingBottom: '2rem' }}>
+      <header className="user-tips-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
         <div>
           <h1 style={{ margin: 0, color: '#020617', fontSize: '1.65rem', fontWeight: 900 }}>ReActiva Tips</h1>
           <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.95rem' }}>Tu acompañante diario de hábitos, personalizado según tu bienestar.</p>
@@ -122,7 +122,7 @@ export const UsuarioTips: React.FC = () => {
         </div>
       </header>
 
-      <section style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem' }}>
+      <section className="user-tips-today" style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', marginBottom: '0.4rem', fontSize: '0.78rem' }}>
           <Lightbulb size={15} />
           <span>RECOMENDACIÓN PARA HOY</span>
@@ -130,24 +130,24 @@ export const UsuarioTips: React.FC = () => {
         <p style={{ margin: 0, color: '#020617', fontSize: '0.98rem', fontWeight: 800 }}>Cada 20 minutos, mirá algo a 20 pies (6 metros) de distancia durante 20 segundos.</p>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: '1rem' }}>
+      <section className="user-tips-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: '1rem' }}>
         {items.map(item => {
           const icon = iconFor(item.id);
           return (
-            <article key={item.id} style={{ position: 'relative', background: 'white', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1.05rem', boxShadow: '0 8px 22px rgba(15,23,42,0.05)' }}>
+            <article className="user-tip-card" key={item.id} style={{ position: 'relative', background: 'white', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1.05rem', boxShadow: '0 8px 22px rgba(15,23,42,0.05)' }}>
               {item.isNew && (
-                <span style={{ position: 'absolute', top: '-0.65rem', right: '-0.5rem', background: '#ef4444', color: 'white', borderRadius: 999, padding: '0.32rem 0.65rem', fontSize: '0.68rem', fontWeight: 900, boxShadow: '0 6px 16px rgba(239,68,68,0.25)' }}>NUEVO</span>
+                <span className="user-tip-new" style={{ position: 'absolute', top: '-0.65rem', right: '-0.5rem', background: '#ef4444', color: 'white', borderRadius: 999, padding: '0.32rem 0.65rem', fontSize: '0.68rem', fontWeight: 900, boxShadow: '0 6px 16px rgba(239,68,68,0.25)' }}>NUEVO</span>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.95rem' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: icon.bg, color: icon.color }}>{icon.icon}</div>
+              <div className="user-tip-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.95rem' }}>
+                <div className="user-tip-icon" style={{ width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: icon.bg, color: icon.color }}>{icon.icon}</div>
                 <h2 style={{ margin: 0, color: '#020617', fontSize: '1.05rem', fontWeight: 900 }}>{item.title}</h2>
               </div>
-              <p style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.4, minHeight: 45, margin: '0 0 0.85rem' }}>{item.description}</p>
-              <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.75rem 0.85rem', marginBottom: '0.95rem' }}>
+              <p className="user-tip-description" style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.4, minHeight: 45, margin: '0 0 0.85rem' }}>{item.description}</p>
+              <div className="user-tip-recommendation" style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.75rem 0.85rem', marginBottom: '0.95rem' }}>
                 <p style={{ margin: '0 0 0.3rem', color: 'var(--primary-color)', fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.04em' }}>RECOMENDACIÓN</p>
                 <p style={{ margin: 0, color: '#020617', lineHeight: 1.35, fontSize: '0.88rem' }}>{item.recommendation}</p>
               </div>
-              <button type="button" onClick={() => setSelected(item)} className="btn-primary" style={{ borderRadius: 999, padding: '0.55rem 0.9rem', fontWeight: 900, fontSize: '0.82rem' }}>Ver consejo</button>
+              <button type="button" onClick={() => setSelected(item)} className="btn-primary user-tip-action" style={{ borderRadius: 999, padding: '0.55rem 0.9rem', fontWeight: 900, fontSize: '0.82rem' }}>Ver consejo</button>
             </article>
           );
         })}

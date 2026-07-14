@@ -169,7 +169,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div style={{
+    <div className="login-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -177,7 +177,7 @@ export const Login: React.FC = () => {
       backgroundColor: 'var(--bg-color)',
       padding: '1rem',
     }}>
-      <div style={{ width: '100%', maxWidth: '420px' }}>
+      <div className="login-shell" style={{ width: '100%', maxWidth: '420px' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <img 
@@ -201,7 +201,7 @@ export const Login: React.FC = () => {
         </div>
 
         {/* Card */}
-        <div className="card" style={{ padding: '2rem' }}>
+        <div className="card login-card" style={{ padding: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
             <div style={{ height: 1, backgroundColor: 'var(--border-color)', flex: 1 }} />
             <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 }}>
