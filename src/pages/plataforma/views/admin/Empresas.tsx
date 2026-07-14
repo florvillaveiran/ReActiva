@@ -4,6 +4,7 @@ import { getDB, setDB, addEmpresa, Empresa } from '../../mock/data';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { invitationPath, makeShortInvitationCode } from '../../lib/invitationLinks';
+import { sendTransactionalEmail } from '../../lib/emailSender';
 
 const hashToNumericId = (value: string) => {
   let hash = 0;
@@ -257,7 +258,7 @@ export const Empresas: React.FC = () => {
     (e.ubicacion || '').toLowerCase().includes(search.toLowerCase()))
   );
 
-  const handleGenerateLink = async () => {
+  const handleGenerateLink = async (options?: { sendEmail?: boolean }) => {
     if (!newNombre || !newUbicacion || !newResponsable || !newEmail) return alert('Completa todos los campos obligatorios');
     const token = makeShortInvitationCode();
     const onboardingUrl = new URL(invitationPath('company', token), window.location.origin);
@@ -293,6 +294,23 @@ export const Empresas: React.FC = () => {
     }
 
     setGeneratedLink(link);
+
+    if (options?.sendEmail) {
+      const emailResult = await sendTransactionalEmail({
+        type: 'company_onboarding',
+        to: newEmail.trim().toLowerCase(),
+        recipientName: newResponsable.trim(),
+        companyName: newNombre.trim(),
+        invitationUrl: link,
+      });
+
+      if (!emailResult.ok) {
+        alert(`El enlace se generó, pero no pudimos enviar el email: ${emailResult.message ?? 'error desconocido'}`);
+        return;
+      }
+
+      alert('Invitación enviada por email.');
+    }
   };
 
   const copyToClipboard = () => {
@@ -455,10 +473,10 @@ export const Empresas: React.FC = () => {
                   <input type="email" className="input-field" placeholder="correo@empresa.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
-                  <button onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
+                  <button onClick={() => void handleGenerateLink()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
                     <LinkIcon size={24} /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Generar enlace</span>
                   </button>
-                  <button onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
+                  <button onClick={() => void handleGenerateLink({ sendEmail: true })} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: 'pointer', borderRadius: '12px', transition: 'all 0.2s' }}>
                     <Mail size={24} /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Enviar por email</span>
                   </button>
                 </div>

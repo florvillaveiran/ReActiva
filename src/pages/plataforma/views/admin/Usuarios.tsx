@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { AnalyticsPeriod, calculateIndividualAnalytics, IndividualPauseSession } from '../../lib/individualAnalytics';
 import { invitationPath, makeShortInvitationCode } from '../../lib/invitationLinks';
+import { sendTransactionalEmail } from '../../lib/emailSender';
 
 // Section
 const Badge: React.FC<{ label: string; bg: string; color: string }> = ({ label, bg, color }) => (
@@ -707,7 +708,7 @@ export const Usuarios: React.FC = () => {
 
   const getEmpresaName = (id: number) => empresas.find(e => e.id === id)?.nombre || 'Desconocida';
 
-  const handleGenerateLink = async () => {
+  const handleGenerateLink = async (options?: { sendEmail?: boolean }) => {
     setInviteError('');
     const empresa = isRrhh ? rrhhEmpresa : empresas.find(e => e.id === parseInt(selectedEmpresaId));
 
@@ -756,6 +757,23 @@ export const Usuarios: React.FC = () => {
       });
 
       setGeneratedLink(link);
+
+      if (options?.sendEmail && !isRrhh) {
+        const emailResult = await sendTransactionalEmail({
+          type: 'user_invitation',
+          to: newEmail.trim().toLowerCase(),
+          recipientName: newResponsable.trim() || newEmail.trim().split('@')[0],
+          companyName: empresa.nombre,
+          invitationUrl: link,
+        });
+
+        if (!emailResult.ok) {
+          setInviteError(`El enlace se generó, pero no pudimos enviar el email: ${emailResult.message ?? 'error desconocido'}`);
+          return;
+        }
+
+        window.alert('Invitación enviada por email.');
+      }
     } catch (err: any) {
       setInviteError(err?.message ?? 'No pudimos crear la invitación en Supabase.');
     } finally {
@@ -974,11 +992,11 @@ export const Usuarios: React.FC = () => {
                   </div>
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: isRrhh ? '1fr' : '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
-                  <button type="button" disabled={inviteLoading} onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
+                  <button type="button" disabled={inviteLoading} onClick={() => void handleGenerateLink()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
                     <LinkIcon size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{inviteLoading ? 'Creando...' : isRrhh ? 'Generar link para empleados' : 'Generar enlace'}</span>
                   </button>
                   {!isRrhh && (
-                    <button type="button" disabled={inviteLoading} onClick={handleGenerateLink} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
+                    <button type="button" disabled={inviteLoading} onClick={() => void handleGenerateLink({ sendEmail: true })} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', cursor: inviteLoading ? 'wait' : 'pointer', borderRadius: '12px', transition: 'all 0.2s', opacity: inviteLoading ? 0.7 : 1 }}>
                       <Mail size={24} color="#4f46e5" /><span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{inviteLoading ? 'Creando...' : 'Generar para email'}</span>
                     </button>
                   )}

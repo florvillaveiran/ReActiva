@@ -46,6 +46,8 @@ import {
   Video,
 } from '../../mock/data';
 import { useEmpresas } from '../../context/EmpresasContext';
+import { sendTransactionalEmail } from '../../lib/emailSender';
+import { supabase } from '../../lib/supabase';
 
 type EmailView = 'automatizaciones' | 'rendimiento';
 
@@ -230,6 +232,15 @@ const getNextScheduledVideo = (videos: Video[], companyId: number | 'all') => {
 
 const metricPercent = (part: number, total: number) => total ? Math.round((part / total) * 100) : 0;
 
+const hashToNumericId = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) + 10000;
+};
+
 export const Emails: React.FC = () => {
   const [view, setView] = useState<EmailView>('automatizaciones');
   const [database, setDatabase] = useState<MockDB | null>(null);
@@ -238,6 +249,7 @@ export const Emails: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EmailAutomation | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
   
   // Wizard State
   const [showWizard, setShowWizard] = useState(false);
@@ -265,6 +277,111 @@ export const Emails: React.FC = () => {
   }, []);
 
   const { empresas: companies } = useEmpresas();
+
+  useEffect(() => {
+    const loadRealRecipients = async () => {
+      if (!supabase) return;
+
+      const [
+        { data: realCompanies, error: companiesError },
+        { data: profiles, error: profilesError },
+        { data: onboardingResponses, error: onboardingError },
+      ] = await Promise.all([
+        supabase
+          .from('companies')
+          .select('id, name, location, status, contact_name, rrhh_email, onboarding_completed_at, created_at'),
+        supabase
+          .from('profiles')
+          .select('id, company_id, email, full_name, role, status, created_at, updated_at, onboarding_data')
+          .eq('role', 'usuario'),
+        supabase
+          .from('onboarding_responses')
+          .select('id, company_id, profile_id, responses, completed_at')
+          .eq('type', 'user_activation')
+          .order('completed_at', { ascending: false }),
+      ]);
+
+      if (companiesError || profilesError || onboardingError || !realCompanies || !profiles) {
+        console.error('No se pudieron cargar destinatarios reales para emails', companiesError ?? profilesError ?? onboardingError);
+        return;
+      }
+
+      const realCompanyModels: Empresa[] = realCompanies.map((company: any) => ({
+        id: hashToNumericId(company.id),
+        supabaseId: company.id,
+        nombre: company.name,
+        ubicacion: company.location ?? '',
+        empleados: [],
+        estado: company.status === 'pending_onboarding' ? 'Pendiente onboarding' : company.status === 'inactive' ? 'Inactiva' : 'Activa',
+        contactoNombre: company.contact_name ?? '',
+        rrhhEmail: company.rrhh_email ?? '',
+        fechaOnboarding: company.onboarding_completed_at ?? company.created_at,
+      }));
+
+      const companyBySupabaseId = new Map(realCompanyModels.map(company => [company.supabaseId, company]));
+      const realUsers: Usuario[] = profiles.map((profile: any) => {
+        const company = companyBySupabaseId.get(profile.company_id);
+        return {
+          id: hashToNumericId(profile.id),
+          supabaseId: profile.id,
+          nombre: profile.full_name || profile.email?.split('@')[0] || 'Usuario',
+          email: profile.email,
+          empresa_id: company?.id ?? 0,
+          participacion: 0,
+          dolor: Boolean(profile.onboarding_data?.has_pain),
+          ultima_interaccion: profile.updated_at ?? profile.created_at,
+          estado: profile.status === 'inactive' ? 'Inactivo' : 'Activo',
+          fechaIngreso: profile.created_at,
+          onboardingData: profile.onboarding_data ?? {},
+        };
+      });
+
+      const profileEmails = new Set(realUsers.map(profile => profile.email.toLowerCase()));
+      const pendingByEmail = new Map<string, Usuario>();
+      (onboardingResponses ?? []).forEach((response: any) => {
+        if (response.profile_id) return;
+        const email = String(response.responses?.email ?? '').trim().toLowerCase();
+        if (!email || profileEmails.has(email) || pendingByEmail.has(email)) return;
+        const company = companyBySupabaseId.get(response.company_id);
+        pendingByEmail.set(email, {
+          id: hashToNumericId(response.id),
+          supabaseId: response.id,
+          nombre: response.responses?.nombre || email.split('@')[0],
+          email,
+          empresa_id: company?.id ?? 0,
+          participacion: 0,
+          dolor: Array.isArray(response.responses?.dolores)
+            && !response.responses.dolores.includes('No tengo dolores'),
+          ultima_interaccion: response.completed_at,
+          estado: 'Pendiente de acceso',
+          fechaIngreso: response.completed_at,
+          onboardingData: response.responses ?? {},
+        });
+      });
+
+      const allUsers = [...realUsers, ...pendingByEmail.values()];
+      const employeesByCompany = new Map<number, number[]>();
+      allUsers.forEach((profile) => {
+        if (!employeesByCompany.has(profile.empresa_id)) employeesByCompany.set(profile.empresa_id, []);
+        employeesByCompany.get(profile.empresa_id)?.push(profile.id);
+      });
+
+      setDatabase(current => {
+        const fallback = current ?? getDB();
+        return {
+          ...fallback,
+          empresas: realCompanyModels.map(company => ({
+            ...company,
+            empleados: employeesByCompany.get(company.id) ?? [],
+          })),
+          usuarios: allUsers,
+        };
+      });
+    };
+
+    void loadRealRecipients();
+  }, []);
+
   const users = database?.usuarios ?? [];
   const videos = database?.videos ?? [];
   const events = database?.emailEvents ?? [];
@@ -324,6 +441,104 @@ export const Emails: React.FC = () => {
       : users.filter(user => user.empresa_id === draft.companyId);
     return getSegmentUsers(companyUsers, draft.segment);
   }, [draft, users]);
+
+  const renderTemplate = (template: string, values: Record<string, string>) => (
+    Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{{${key}}}`, value), template)
+  );
+
+  const getAutomationRecipients = (automation: EmailAutomation) => {
+    const selectedCompanies = automation.companyId === 'all'
+      ? companies
+      : companies.filter(company => company.id === automation.companyId);
+
+    if (automation.segment === 'rrhh') {
+      return selectedCompanies
+        .filter(company => company.rrhhEmail)
+        .map(company => ({
+          email: company.rrhhEmail as string,
+          nombre: company.contactoNombre || 'Responsable de RRHH',
+          empresa: company.nombre,
+          responsable: company.contactoNombre || 'Responsable de RRHH',
+          companyId: company.id,
+        }));
+    }
+
+    const companyUsers = automation.companyId === 'all'
+      ? users
+      : users.filter(user => user.empresa_id === automation.companyId);
+
+    return getSegmentUsers(companyUsers, automation.segment)
+      .filter(user => user.email)
+      .map(user => {
+        const company = companies.find(item => item.id === user.empresa_id);
+        return {
+          email: user.email,
+          nombre: user.nombre,
+          empresa: company?.nombre || 'tu empresa',
+          responsable: company?.contactoNombre || 'Responsable de RRHH',
+          companyId: user.empresa_id,
+          userId: user.id,
+        };
+      });
+  };
+
+  const sendAutomationNow = async (automation: EmailAutomation) => {
+    if (!automation.active) {
+      window.alert('Esta automatización está inactiva. Activala antes de enviar.');
+      return;
+    }
+
+    const recipients = getAutomationRecipients(automation);
+    if (!recipients.length) {
+      window.alert('No encontramos empleados reales con email para esta empresa y segmento. Primero creá o activá usuarios en esa empresa, o cambiá el segmento/empresa de la automatización.');
+      return;
+    }
+
+    setSendingId(automation.id);
+    const appUrl = `${window.location.origin}/plataforma/login`;
+    const db = getDB();
+    let sentCount = 0;
+    const errors: string[] = [];
+
+    for (const recipient of recipients) {
+      const subject = renderTemplate(automation.subject, recipient);
+      const body = renderTemplate(automation.body, recipient);
+      const result = await sendTransactionalEmail({
+        type: 'automation_email',
+        to: recipient.email,
+        recipientName: recipient.nombre,
+        companyName: recipient.empresa,
+        invitationUrl: appUrl,
+        subject,
+        body,
+        automationId: automation.id,
+      });
+
+      if (result.ok) {
+        sentCount += 1;
+        db.emailEvents.push({
+          id: `${automation.id}-${Date.now()}-${sentCount}`,
+          automationId: automation.id,
+          companyId: recipient.companyId,
+          userId: recipient.userId,
+          sentAt: new Date().toISOString(),
+        });
+      } else {
+        errors.push(`${recipient.email}: ${result.message ?? 'error desconocido'}`);
+      }
+    }
+
+    setDB(db);
+    setDatabase(db);
+    setSendingId(null);
+
+    if (errors.length) {
+      window.alert(`Se enviaron ${sentCount} email(s), pero algunos fallaron:\n${errors.join('\n')}`);
+      return;
+    }
+
+    window.alert(`Listo: se enviaron ${sentCount} email(s).`);
+  };
 
   const performance = useMemo(() => {
     const sent = events.length;
@@ -986,6 +1201,9 @@ export const Emails: React.FC = () => {
 
             <div className="automation-drawer-actions">
               <button className="btn-secondary" onClick={() => { setEditingId(null); setDraft(null); }}>Cancelar</button>
+              <button className="btn-secondary" disabled={sendingId === draft.id} onClick={() => void sendAutomationNow(draft)}>
+                <Send size={16} /> {sendingId === draft.id ? 'Enviando...' : 'Enviar ahora'}
+              </button>
               <button className="btn-primary" onClick={saveDraft}><Save size={16} /> Guardar cambios</button>
             </div>
           </aside>
