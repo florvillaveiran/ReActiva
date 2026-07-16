@@ -18,8 +18,8 @@ for each row execute function public.touch_updated_at();
 insert into public.email_automation_templates (id, subject, body)
 values (
   'pause-reminder',
-  'Tu pausa activa estará disponible en {{minutos}} minutos',
-  E'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estará disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresá a ReActiva para comenzar.'
+  'Tu pausa activa estara disponible en {{minutos}} minutos',
+  E'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estara disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresa a ReActiva para comenzar.'
 )
 on conflict (id) do nothing;
 

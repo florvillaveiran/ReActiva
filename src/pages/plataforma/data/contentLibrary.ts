@@ -259,10 +259,12 @@ const readLibrary = (): ContentLibrary => {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') as Partial<ContentLibrary>;
     return {
       coach: (parsed.coach ?? defaultCoachItems).map(item => normalizeCoachTypography(coachDetail(item))),
-      academy: (parsed.academy ?? defaultAcademyItems).map(normalizeAcademyItem),
+      academy: (parsed.academy ?? defaultAcademyItems)
+        .map(normalizeAcademyItem)
+        .filter(item => isAcademyVideoReady(item.videoUrl)),
     };
   } catch {
-    return { coach: defaultCoachItems, academy: defaultAcademyItems };
+    return { coach: defaultCoachItems, academy: [] };
   }
 };
 
@@ -378,7 +380,7 @@ export const fetchContentLibrary = async (): Promise<ContentLibrary> => {
     const keyFor = (item: AcademyItem) => item.sourceId ?? normalizeLookup(item.title);
     const merged = new Map(base.map(item => [keyFor(item), normalizeAcademyItem(item)]));
     remote.forEach(item => merged.set(keyFor(item), normalizeAcademyItem(item)));
-    return Array.from(merged.values());
+    return Array.from(merged.values()).filter(item => isAcademyVideoReady(item.videoUrl));
   };
 
   const merged = {

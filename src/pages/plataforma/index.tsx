@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { EmpresasProvider } from './context/EmpresasContext';
 import { Layout } from './components/Layout';
 import { Login } from './views/Login';
@@ -17,7 +17,13 @@ import { Emails } from './views/admin/Emails';
 import { Feedback } from './views/admin/Feedback';
 import { EmpresaOnboarding } from './views/EmpresaOnboarding';
 import { UsuarioOnboarding } from './views/UsuarioOnboarding';
+import { DemoEmpresa, DemoUsuarios } from './views/demo/RrhhDemo';
 import './index.css';
+
+const DemoAware: React.FC<{ children: React.ReactNode; demo: React.ReactNode }> = ({ children, demo }) => {
+  const { user } = useAuth();
+  return user?.isDemo ? <>{demo}</> : <>{children}</>;
+};
 
 function App() {
   return (
@@ -26,6 +32,7 @@ function App() {
         <div id="plataforma-root">
           <Routes>
           <Route path="login" element={<Login />} />
+          <Route path="demo" element={<Login />} />
 
             {/* Rutas de Admin */}
             <Route path="admin" element={<Layout allowedRole="admin" />}>
@@ -41,8 +48,8 @@ function App() {
             {/* Rutas de RRHH */}
             <Route path="rrhh" element={<Layout allowedRole="rrhh" />}>
               <Route index element={<Navigate to="/plataforma/rrhh/analiticas" replace />} />
-              <Route path="empresas" element={<Empresas />} />
-              <Route path="usuarios" element={<Usuarios />} />
+              <Route path="empresas" element={<DemoAware demo={<DemoEmpresa />}><Empresas /></DemoAware>} />
+              <Route path="usuarios" element={<DemoAware demo={<DemoUsuarios />}><Usuarios /></DemoAware>} />
               <Route path="analiticas" element={<Analiticas />} />
             </Route>
 

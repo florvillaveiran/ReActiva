@@ -229,6 +229,7 @@ const AdminAcademyPanel: React.FC = () => {
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [savingCategory, setSavingCategory] = useState(false);
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => new Set());
   const reload = () => setItems(getContentLibrary().academy);
   useEffect(() => {
     const refresh = () => {
@@ -273,6 +274,28 @@ const AdminAcademyPanel: React.FC = () => {
       })
       .sort((left, right) => Number(right.active && hasAcademyVideo(right)) - Number(left.active && hasAcademyVideo(left)));
   }, [categoryFilter, items, query]);
+
+  const groupedAcademyItems = useMemo(() => {
+    const groups = new Map<string, { name: string; items: AcademyItem[] }>();
+    filteredItems.forEach((item) => {
+      const key = categoryKey(item.category);
+      const group = groups.get(key) ?? { name: item.category, items: [] };
+      group.items.push(item);
+      groups.set(key, group);
+    });
+    return Array.from(groups.entries())
+      .map(([key, group]) => ({ key, ...group }))
+      .sort((left, right) => left.name.localeCompare(right.name, 'es'));
+  }, [filteredItems]);
+
+  const toggleAcademyCategory = (key: string) => {
+    setExpandedCategories((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const persistCustomCategories = (next: string[]) => {
     const unique = Array.from(new Map(next.map(value => {
@@ -524,8 +547,35 @@ const AdminAcademyPanel: React.FC = () => {
           <button key={category} type="button" onClick={() => setCategoryFilter(category)} style={{ border: '1px solid #e2e8f0', borderRadius: 999, padding: '0.34rem 0.7rem', background: categoryFilter === category ? 'var(--primary-color)' : 'white', color: categoryFilter === category ? 'white' : '#64748b', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer' }}>{category}</button>
         ))}
       </div>
-      <div className="admin-academy-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
-        {filteredItems.map(item => {
+      <div className="admin-academy-accordions" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+        {groupedAcademyItems.map(group => {
+          const expanded = expandedCategories.has(group.key);
+          const publishedCount = group.items.filter(item => item.active && hasAcademyVideo(item)).length;
+          const status = publishedCount === group.items.length ? 'Activa' : `${publishedCount} publicados`;
+          return (
+          <section key={group.key} className="card admin-academy-accordion" style={{ margin: 0, padding: 0, borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 7px 20px rgba(15,23,42,0.04)' }}>
+            <button
+              type="button"
+              onClick={() => toggleAcademyCategory(group.key)}
+              aria-expanded={expanded}
+              style={{ width: '100%', border: 0, background: 'white', padding: '1rem 1.15rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', cursor: 'pointer', textAlign: 'left' }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <h3 style={{ margin: '0 0 0.35rem', color: '#0f172a', fontSize: '1rem' }}>{group.name}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#64748b', fontSize: '0.82rem', fontWeight: 700 }}>{group.items.length} {group.items.length === 1 ? 'video' : 'videos'}</span>
+                  <span style={{ width: 4, height: 4, borderRadius: 999, background: '#cbd5e1' }} />
+                  <span style={{ color: publishedCount === group.items.length ? 'var(--primary-color)' : '#d97706', fontSize: '0.8rem', fontWeight: 800 }}>{status}</span>
+                </div>
+              </div>
+              <span style={{ color: 'var(--primary-color)', fontSize: '0.84rem', fontWeight: 900, display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}>
+                {expanded ? 'Ocultar videos' : 'Ver videos'}
+                <ChevronRight size={18} style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s ease' }} />
+              </span>
+            </button>
+            {expanded && (
+              <div className="admin-academy-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem', padding: '0.25rem 1rem 1rem', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
+        {group.items.map(item => {
           const hasVideo = hasAcademyVideo(item);
           const published = item.active && hasVideo;
           return (
@@ -566,6 +616,11 @@ const AdminAcademyPanel: React.FC = () => {
               </div>
             </div>
           </article>
+          );
+        })}
+              </div>
+            )}
+          </section>
           );
         })}
       </div>
@@ -1132,15 +1187,21 @@ export const Contenido: React.FC = () => {
   const [editingScheduledId, setEditingScheduledId] = useState<string | null>(null);
   const [savingProgram, setSavingProgram] = useState(false);
   const [scheduledVideos, setScheduledVideos] = useState<ScheduledVideo[]>([]);
+  const companyIdForName = (name: string) => (
+    name === 'Global' ? null : empresas.find(item => item.nombre === name)?.supabaseId ?? null
+  );
+  const selectedScheduleCompanyId = empresa !== 'Todas las empresas'
+    ? companyIdForName(empresa)
+    : null;
 
   useEffect(() => {
-    const refreshSchedule = () => void fetchVideoUnlockSchedule().then(setUnlockSchedule);
+    const refreshSchedule = () => void fetchVideoUnlockSchedule(selectedScheduleCompanyId).then(setUnlockSchedule);
     refreshSchedule();
     const channel = supabase
       ? supabase.channel('admin-video-unlock-schedule').on('postgres_changes', { event: '*', schema: 'public', table: 'video_unlock_schedule' }, refreshSchedule).subscribe()
       : null;
     return () => { if (channel && supabase) void supabase.removeChannel(channel); };
-  }, []);
+  }, [selectedScheduleCompanyId]);
 
   useEffect(() => {
     const refreshVideos = () => fetchScheduledVideos().then(setScheduledVideos);
@@ -1157,12 +1218,14 @@ export const Contenido: React.FC = () => {
     };
   }, []);
 
-  const updateUnlockSchedule = (day: UnlockDay, block: UnlockBlock, changes: Partial<VideoUnlockItem>) => {
+  const updateUnlockSchedule = (day: UnlockDay, block: UnlockBlock, changes: Partial<VideoUnlockItem>, companyId?: string | null) => {
     const next = unlockSchedule.map((item) => (
       item.day === day && item.block === block ? { ...item, ...changes } : item
     ));
     setUnlockSchedule(next);
-    persistVideoUnlockSchedule(next).then((result) => {
+    const updatedItem = next.find(item => item.day === day && item.block === block);
+    const scheduleToPersist = supabase && updatedItem ? [updatedItem] : next;
+    persistVideoUnlockSchedule(scheduleToPersist, companyId).then((result) => {
       if (!result.ok) console.error('No se pudo guardar la programación de videos', result.error);
     });
   };
@@ -1182,7 +1245,9 @@ export const Contenido: React.FC = () => {
         .filter(video => video.scheduledDate === scheduledDate)
         .filter(video => empresa === 'Todas las empresas' || video.companyName === empresa || video.companyName === 'Global' || empresa === 'Global')
         .map(video => {
-          const unlock = unlockSchedule.find(item => item.day === video.day && item.block === video.block);
+          const unlock = empresa === 'Todas las empresas'
+            ? undefined
+            : unlockSchedule.find(item => item.day === video.day && item.block === video.block);
           return {
             id: video.id,
             turno: video.block === 'morning' ? 'Mañana' : 'Tarde',
@@ -1205,7 +1270,9 @@ export const Contenido: React.FC = () => {
       const [year, month, day] = video.scheduledDate.split('-').map(Number);
       if (year !== anio || month !== mes + 1 || !day) return;
       if (empresa !== 'Todas las empresas' && video.companyName !== empresa && video.companyName !== 'Global' && empresa !== 'Global') return;
-      const unlock = unlockSchedule.find(item => item.day === video.day && item.block === video.block);
+      const unlock = empresa === 'Todas las empresas'
+        ? undefined
+        : unlockSchedule.find(item => item.day === video.day && item.block === video.block);
       (result[day] ??= []).push({
         horario: unlock?.time ?? video.time,
         empresa: video.companyName ?? 'Global',
@@ -1244,6 +1311,7 @@ export const Contenido: React.FC = () => {
       ? toLocalDateKey(new Date(anio, mes, dia))
       : getScheduledDateForProgramDay(nextDay, lunes));
     const nextBlock = video?.block ?? modalBlock;
+    const targetCompanyId = video?.companyId ?? companyIdForName(video?.companyName ?? 'Global');
     const existing = unlockSchedule.find(item => item.day === nextDay && item.block === nextBlock);
     setDiaModal(dia??null);
     setModalScheduledDate(nextDate);
@@ -1257,6 +1325,21 @@ export const Contenido: React.FC = () => {
     setEditingScheduledId(video?.id ?? null);
     setTipoLink('link');
     setModal(true);
+    void fetchVideoUnlockSchedule(targetCompanyId).then(schedule => {
+      setUnlockSchedule(schedule);
+      const scoped = schedule.find(item => item.day === nextDay && item.block === nextBlock);
+      setModalTime(video?.time ?? scoped?.time ?? (nextBlock === 'morning' ? '08:00' : '15:00'));
+    });
+  };
+
+  const handleModalCompanyChange = (companyName: string) => {
+    setModalCompany(companyName);
+    const companyId = companyIdForName(companyName);
+    void fetchVideoUnlockSchedule(companyId).then(schedule => {
+      setUnlockSchedule(schedule);
+      const scoped = schedule.find(item => item.day === modalDay && item.block === modalBlock);
+      setModalTime(scoped?.time ?? (modalBlock === 'morning' ? '08:00' : '15:00'));
+    });
   };
 
   const uploadScheduledFile = async () => {
@@ -1289,6 +1372,11 @@ export const Contenido: React.FC = () => {
     try {
       const finalUrl = await uploadScheduledFile();
       const title = modalTitle.trim() || `Pausa ${modalBlock === 'morning' ? 'mañana' : 'tarde'}`;
+      const targetCompanyId = companyIdForName(modalCompany);
+      if (modalCompany !== 'Global' && !targetCompanyId) {
+        window.alert('No encontramos el identificador de la empresa seleccionada.');
+        return;
+      }
       const result = await saveScheduledVideo({
         id: editingScheduledId ?? `local-${Date.now()}`,
         day: exactDay,
@@ -1297,6 +1385,7 @@ export const Contenido: React.FC = () => {
         time: modalTime,
         title,
         url: finalUrl,
+        companyId: targetCompanyId,
         companyName: modalCompany,
         createdAt: new Date().toISOString(),
       });
@@ -1306,7 +1395,7 @@ export const Contenido: React.FC = () => {
         return;
       }
 
-      updateUnlockSchedule(exactDay, modalBlock, { enabled: true, time: modalTime });
+      updateUnlockSchedule(exactDay, modalBlock, { enabled: true, time: modalTime }, targetCompanyId);
       setModal(false);
     } catch (error: any) {
       window.alert(error?.message ?? 'No pudimos subir o guardar el video.');
@@ -1625,7 +1714,7 @@ export const Contenido: React.FC = () => {
               </div>
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Empresa</label>
-                <select className="input-field" value={modalCompany} onChange={e => setModalCompany(e.target.value.replace(' (todas)', ''))} style={{fontSize:'0.875rem'}}>
+                <select className="input-field" value={modalCompany} onChange={e => handleModalCompanyChange(e.target.value.replace(' (todas)', ''))} style={{fontSize:'0.875rem'}}>
                   {opcionesEmpresasModal.map(e=><option key={e} value={e.replace(' (todas)', '')}>{e}</option>)}
                 </select>
               </div>

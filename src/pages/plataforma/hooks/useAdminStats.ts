@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * Hook de métricas para las vistas de Admin (Dashboard / Analíticas).
@@ -53,6 +54,42 @@ export interface AdminStats {
 
 const DAYS = ['Lunes', 'Miércoles', 'Viernes'];
 const DAYS_SHORT: Record<string, string> = { Lunes: 'Lun', Miércoles: 'Mié', Viernes: 'Vie' };
+
+const DEMO_STATS: AdminStats = {
+  hayDatos: true,
+  usuariosCount: 48,
+  totalPausas: 238,
+  adherencia: 83,
+  reportanMolestias: 21,
+  zonasDolorTop: ['Cuello', 'Espalda baja', 'Hombros'],
+  estadoEmocional: 4.2,
+  energiaPromedio: 4.1,
+  participacionPorDia: [
+    { name: 'Lun', participacion: 88 },
+    { name: 'Mié', participacion: 82 },
+    { name: 'Vie', participacion: 79 },
+  ],
+  foco: { enfocado: 64, normal: 28, disperso: 8 },
+  zonasDolorChart: [
+    { name: 'Cuello', valor: 38 },
+    { name: 'Espalda baja', valor: 29 },
+    { name: 'Hombros', valor: 21 },
+    { name: 'Muñecas', valor: 12 },
+  ],
+  tensionDistribucion: [
+    { name: 'A la mañana', valor: 9 },
+    { name: 'Al mediodía', valor: 18 },
+    { name: 'A la tarde', valor: 31 },
+    { name: 'Al final de la jornada', valor: 27 },
+    { name: 'No sentí tensión', valor: 15 },
+  ],
+  evolucion: [
+    { name: 'Sem 1', energia: 3.4, satisfaccion: 68, participacion: 72 },
+    { name: 'Sem 2', energia: 3.7, satisfaccion: 74, participacion: 77 },
+    { name: 'Sem 3', energia: 3.9, satisfaccion: 81, participacion: 80 },
+    { name: 'Sem 4', energia: 4.1, satisfaccion: 87, participacion: 83 },
+  ],
+};
 const FEELING_TO_SCORE: Record<string, number> = {
   Mal: 1, Regular: 2, Bien: 3, 'Muy bien': 4, Genial: 5,
 };
@@ -265,12 +302,18 @@ const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: s
 };
 
 export function useAdminStats(companyId?: string, periodFrom?: string, periodTo?: string): AdminStats {
+  const { user } = useAuth();
+  const isDemo = !!user?.isDemo;
   const filteredLocalPauses = () => readPausasFromStorage().filter(pause => isWithinPeriod(pause, periodFrom, periodTo));
-  const [stats, setStats] = useState<AdminStats>(() => computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
+  const [stats, setStats] = useState<AdminStats>(() => isDemo ? DEMO_STATS : computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
 
   useEffect(() => {
     let mounted = true;
     const refresh = () => {
+      if (isDemo) {
+        setStats(DEMO_STATS);
+        return;
+      }
       setStats(computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
       readPausasFromSupabase(companyId, periodFrom, periodTo).then((pausas) => {
         if (mounted && pausas) setStats(computeStats(pausas, periodFrom, periodTo));
@@ -279,7 +322,7 @@ export function useAdminStats(companyId?: string, periodFrom?: string, periodTo?
     refresh();
     window.addEventListener('reactiva-pausas-updated', refresh);
     window.addEventListener('storage', refresh);
-    const channel = supabase
+    const channel = supabase && !isDemo
       ? supabase
           .channel(`admin-stats-${companyId ?? 'all'}-${periodFrom ?? 'start'}-${periodTo ?? 'end'}`)
           .on('postgres_changes', {
@@ -296,7 +339,7 @@ export function useAdminStats(companyId?: string, periodFrom?: string, periodTo?
       window.removeEventListener('storage', refresh);
       if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, [companyId, periodFrom, periodTo]);
+  }, [companyId, isDemo, periodFrom, periodTo]);
 
   return stats;
 }

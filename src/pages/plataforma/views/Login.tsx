@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { getEmpresaByToken, getInvitacionUsuarioByToken } from '../mock/data';
@@ -12,6 +12,7 @@ const homeForRole = (role: string) => {
 };
 
 export const Login: React.FC = () => {
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +26,7 @@ export const Login: React.FC = () => {
   const [clearingSession, setClearingSession] = useState(false);
   const [allowInvitationSession, setAllowInvitationSession] = useState(false);
   const { user, login, createAccess, activateInvitation, resetPassword, logout } = useAuth();
-  const showDemoAccounts = false;
+  const showDemoAccounts = location.pathname.endsWith('/demo');
   const invitationToken = searchParams.get('token') ?? '';
   const invitationType = searchParams.get('tipo') ?? '';
   const invitationEmail = searchParams.get('email') ?? '';
@@ -147,12 +148,12 @@ export const Login: React.FC = () => {
     setLoading(false);
   };
 
-  const loginDemo = (role: 'admin' | 'usuario' | 'rrhh') => {
-    const demoEmail = role === 'admin' ? 'admin@reactiva.com' : role === 'rrhh' ? 'rrhh@alpha.com' : 'usuario@reactiva.com';
+  const loginDemo = (role: 'usuario' | 'rrhh') => {
+    const demoEmail = role === 'rrhh' ? 'rrhh.demo@reactiva.com' : 'usuario.demo@reactiva.com';
     setEmail(demoEmail);
-    setPassword('Reactiva2025');
+    setPassword('DemoReactiva2026');
     setError('');
-    void login(demoEmail, 'Reactiva2025');
+    void login(demoEmail, 'DemoReactiva2026');
   };
 
   const handlePasswordReset = async () => {
@@ -422,24 +423,12 @@ export const Login: React.FC = () => {
           borderRadius: 'var(--radius-md)',
         }}>
           <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
-            Accesos demo para presentación
+            Accesos demo aislados para presentación
           </p>
           <p style={{ margin: '0 0 0.9rem', color: 'var(--text-muted)', fontSize: '0.78rem', lineHeight: 1.4 }}>
             Entrá rápido con un perfil de prueba. Luego el sistema redirige según el rol.
           </p>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button
-              type="button"
-              onClick={() => loginDemo('admin')}
-              style={{
-                flex: 1, padding: '0.6rem', fontSize: '0.8rem', fontWeight: 500,
-                border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--bg-color)', cursor: 'pointer',
-                color: 'var(--text-color)', transition: 'all 0.2s',
-              }}
-              onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary-color)'}
-              onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
-            >Admin</button>
             <button
               type="button"
               onClick={() => loginDemo('usuario')}
@@ -467,6 +456,9 @@ export const Login: React.FC = () => {
               RRHH
             </button>
           </div>
+          <p style={{ margin: '0.9rem 0 0', color: 'var(--text-muted)', fontSize: '0.72rem', lineHeight: 1.45 }}>
+            Estos perfiles usan datos ficticios y no guardan cambios en las cuentas reales.
+          </p>
         </div>
         )}
       </div>

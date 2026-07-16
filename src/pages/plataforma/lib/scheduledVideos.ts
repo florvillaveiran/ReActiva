@@ -11,6 +11,7 @@ export interface ScheduledVideo {
   title: string;
   url: string;
   thumbnailUrl?: string;
+  companyId?: string | null;
   companyName?: string;
   createdAt: string;
 }
@@ -69,13 +70,18 @@ export const getScheduledVideoFor = (
   videos: ScheduledVideo[],
   day: string,
   block: ScheduledVideoBlock,
-  companyName?: string,
+  companyId?: string,
   scheduledDate?: string,
 ) => {
   const matches = videos
     .filter(video => video.day === day && video.block === block)
-    .filter(video => !scheduledDate || video.scheduledDate === scheduledDate)
-    .filter(video => !video.companyName || video.companyName === 'Global' || !companyName || video.companyName === companyName);
+    .filter(video => !scheduledDate || video.scheduledDate === scheduledDate);
+
+  if (companyId) {
+    const companyVideo = matches.filter(video => video.companyId === companyId).at(-1);
+    if (companyVideo) return companyVideo;
+    return matches.filter(video => !video.companyId).at(-1) ?? null;
+  }
 
   return matches[matches.length - 1] ?? null;
 };
@@ -92,6 +98,7 @@ const rowToScheduledVideo = (row: any): ScheduledVideo | null => {
     title: row.title ?? 'Pausa activa',
     url: row.url,
     thumbnailUrl: row.thumbnail_url ?? metadata.thumbnailUrl,
+    companyId: row.company_id ?? metadata.companyId ?? null,
     companyName: metadata.companyName ?? 'Global',
     createdAt: row.created_at ?? new Date().toISOString(),
   };
@@ -102,7 +109,7 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
 
   const { data, error } = await supabase
     .from('content_items')
-    .select('id, title, url, thumbnail_url, metadata, created_at')
+    .select('id, company_id, title, url, thumbnail_url, metadata, created_at')
     .eq('kind', 'video')
     .eq('active', true)
     .order('created_at', { ascending: true });
@@ -112,7 +119,7 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
   const remote = data.map(rowToScheduledVideo).filter(Boolean) as ScheduledVideo[];
   const merged = new Map<string, ScheduledVideo>();
   remote.forEach((video) => {
-    const key = `${video.scheduledDate}__${video.block}__${video.companyName ?? 'Global'}`;
+    const key = `${video.scheduledDate}__${video.block}__${video.companyId ?? 'global'}`;
     merged.set(key, video);
   });
   const videos = Array.from(merged.values());
@@ -123,31 +130,22 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
 export const saveScheduledVideo = async (video: ScheduledVideo) => {
   if (!supabase) {
     const current = readStoredVideos();
-    const withoutSameSlot = current.filter(item => !(item.scheduledDate === video.scheduledDate && item.block === video.block && (item.companyName ?? 'Global') === (video.companyName ?? 'Global')));
+    const withoutSameSlot = current.filter(item => !(item.scheduledDate === video.scheduledDate && item.block === video.block && (item.companyId ?? 'global') === (video.companyId ?? 'global')));
     saveScheduledVideosLocal([...withoutSameSlot, video]);
     return { ok: true };
   }
 
-  const { error } = await supabase.rpc('save_content_item', {
+  const { error } = await supabase.rpc('save_scheduled_video', {
     item_id: isUuid(video.id) ? video.id : null,
-    item_kind: 'video',
+    target_company_id: video.companyId ?? null,
     item_title: video.title,
-    item_description: 'Video programado de pausa activa',
-    item_category: 'Microentrenamientos',
-    item_tags: ['microentrenamiento', video.day, video.scheduledDate, video.block],
     item_url: video.url,
     item_thumbnail_url: video.thumbnailUrl ?? null,
-    item_active: true,
-    item_featured: false,
-    item_sort_order: 0,
-    item_metadata: {
-      day: video.day,
-      scheduledDate: video.scheduledDate,
-      block: video.block,
-      time: video.time,
-      companyName: video.companyName ?? 'Global',
-      thumbnailUrl: video.thumbnailUrl ?? null,
-    },
+    scheduled_day: video.day,
+    scheduled_date: video.scheduledDate,
+    scheduled_block: video.block,
+    scheduled_time: video.time,
+    company_name: video.companyName ?? 'Global',
   });
 
   if (!error) await fetchScheduledVideos();

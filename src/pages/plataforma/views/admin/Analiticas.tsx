@@ -495,6 +495,11 @@ export const Analiticas: React.FC = () => {
     ? (rrhhEmpresa?.id.toString() ?? user.empresa_id?.toString() ?? null)
     : null;
   const effectiveFiltro = rrhhEmpresaKey ?? filtro;
+  const currentEmpresaLabel = user?.isDemo
+    ? 'Empresa Demo'
+    : effectiveFiltro === 'all'
+      ? 'Todas'
+      : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa';
   const selectedEmpresa = effectiveFiltro === 'all'
     ? undefined
     : empresas.find(e => e.id.toString() === effectiveFiltro || e.supabaseId === effectiveFiltro);
@@ -546,7 +551,7 @@ export const Analiticas: React.FC = () => {
           ? `Del ${formatReportDate(fechaDesde)} al ${formatReportDate(fechaHasta)}`
           : PERIODO_LABELS[periodo];
 
-  if (false && rrhhEmpresaKey) {
+  if (user?.isDemo && rrhhEmpresaKey) {
     const kpis = [
       { label: 'Participacion', value: data.kpis.participacion, previous: 78, color: 'var(--primary-color)', bg: '#f0fdfa', delta: '+8 pp' },
       { label: 'Foco', value: data.kpis.foco, previous: 72, color: '#3b82f6', bg: '#eff6ff', delta: '+6 pp' },
@@ -580,7 +585,7 @@ export const Analiticas: React.FC = () => {
           <div className="analytics-filters" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="input-field" style={{ width: 160, display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'white' }}>
               <Filter size={15} /> 
-              {effectiveFiltro === 'all' ? 'Todas' : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa'}
+              {currentEmpresaLabel}
             </div>
             <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={periodo} onChange={(event) => setPeriodo(event.target.value as PeriodoKey)}>
               <option value="semanal">Semanal</option>
@@ -768,6 +773,7 @@ export const Analiticas: React.FC = () => {
               disabled={!!rrhhEmpresaKey}
             >
               <option value="all">Todas</option>
+              {user?.isDemo && <option value="demo-company">Empresa Demo</option>}
               {empresas.map(emp => (
                 <option key={emp.id} value={emp.id.toString()}>{emp.nombre}</option>
               ))}
@@ -858,7 +864,7 @@ export const Analiticas: React.FC = () => {
           {user?.role === 'admin' && (
             <ReportGenerator
               currentData={data}
-              currentEmpresaLabel={effectiveFiltro === 'all' ? 'Todas' : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa'}
+              currentEmpresaLabel={currentEmpresaLabel}
               periodoLabel={reportPeriodoLabel}
               periodFrom={reportRange.from}
               periodTo={reportRange.to}

@@ -8,6 +8,7 @@ export interface User {
   role: Role;
   name: string;
   empresa_id?: number | string;
+  isDemo?: boolean;
 }
 
 interface AuthContextType {
@@ -32,6 +33,13 @@ type DevUser = {
 const DEFAULT_DEV_USERS: DevUser[] = [
   { email: 'usuario@reactiva.com', password: 'reactiva', role: 'usuario' as Role, name: 'Usuario Demo' },
 ];
+
+const DEMO_USERS: DevUser[] = [
+  { email: 'usuario.demo@reactiva.com', password: 'DemoReactiva2026', role: 'usuario', name: 'Usuario Demo' },
+  { email: 'rrhh.demo@reactiva.com', password: 'DemoReactiva2026', role: 'rrhh', name: 'RRHH Demo' },
+];
+
+const DEMO_SESSION_KEY = 'reactiva_demo_user';
 
 /**
  * Allows a local checkout to use test accounts without committing real access
@@ -136,6 +144,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const init = async () => {
+      const storedDemoUser = localStorage.getItem(DEMO_SESSION_KEY);
+      if (storedDemoUser && mounted) {
+        setUser(JSON.parse(storedDemoUser));
+        setIsLoading(false);
+        return;
+      }
       if (isSupabaseConfigured) {
         const loaded = await loadSupabaseUser();
         if (loaded && mounted) {
@@ -172,6 +186,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    const demoUser = DEMO_USERS.find(candidate => candidate.email.toLowerCase() === email.trim().toLowerCase() && candidate.password === password);
+    if (demoUser) {
+      const user: User = {
+        email: demoUser.email,
+        role: demoUser.role,
+        name: demoUser.name,
+        empresa_id: demoUser.role === 'rrhh' ? 'demo-company' : undefined,
+        isDemo: true,
+      };
+      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user));
+      setUser(user);
+      return true;
+    }
+
     if (supabase) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (!error) {
@@ -249,8 +277,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    const wasDemo = user?.isDemo;
+    localStorage.removeItem(DEMO_SESSION_KEY);
     localStorage.removeItem('reactiva_user');
-    if (supabase) await supabase.auth.signOut();
+    if (supabase && !wasDemo) await supabase.auth.signOut();
     setUser(null);
   };
 

@@ -12,8 +12,8 @@ const unlockLeadMinutes = Number(Deno.env.get('VIDEO_UNLOCK_LEAD_MINUTES') ?? '1
 const reminderBeforeUnlockMinutes = Number(Deno.env.get('PAUSE_REMINDER_BEFORE_UNLOCK_MINUTES') ?? '5');
 const reminderLeadMinutes = unlockLeadMinutes + reminderBeforeUnlockMinutes;
 const fallbackTemplate = {
-  subject: 'Tu pausa activa estará disponible en {{minutos}} minutos',
-  body: 'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estará disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresá a ReActiva para comenzar.',
+  subject: 'Tu pausa activa estara disponible en {{minutos}} minutos',
+  body: 'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estara disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresa a ReActiva para comenzar.',
 };
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
@@ -175,9 +175,28 @@ Deno.serve(async (req) => {
   const errors: string[] = [];
 
   for (const schedule of schedules) {
-    const companyQuery = schedule.company_id
+    let excludedCompanyIds: string[] = [];
+    if (!schedule.company_id) {
+      const { data: companyOverrides, error: overridesError } = await admin
+        .from('video_unlock_schedule')
+        .select('company_id')
+        .not('company_id', 'is', null)
+        .eq('enabled', true)
+        .eq('day_label', schedule.day_label)
+        .eq('block', schedule.block);
+      if (overridesError) {
+        errors.push(overridesError.message);
+        continue;
+      }
+      excludedCompanyIds = Array.from(new Set((companyOverrides ?? []).map(row => row.company_id).filter(Boolean)));
+    }
+
+    let companyQuery = schedule.company_id
       ? admin.from('companies').select('id, name').eq('id', schedule.company_id)
       : admin.from('companies').select('id, name').eq('status', 'active');
+    if (excludedCompanyIds.length) {
+      companyQuery = companyQuery.not('id', 'in', `(${excludedCompanyIds.join(',')})`);
+    }
     const { data: companies, error: companiesError } = await companyQuery;
     if (companiesError) {
       errors.push(companiesError.message);

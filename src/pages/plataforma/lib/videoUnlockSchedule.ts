@@ -55,6 +55,7 @@ export const saveVideoUnlockSchedule = (schedule: VideoUnlockItem[]) => {
 };
 
 type VideoUnlockScheduleRow = {
+  company_id: string | null;
   day_label: UnlockDay;
   block: UnlockBlock;
   enabled: boolean;
@@ -68,38 +69,47 @@ const mergeSchedule = (schedule: VideoUnlockItem[]) => DEFAULT_VIDEO_UNLOCK_SCHE
   ...(schedule.find((entry) => entry.day === item.day && entry.block === item.block) ?? {}),
 }));
 
-export const fetchVideoUnlockSchedule = async (): Promise<VideoUnlockItem[]> => {
+export const fetchVideoUnlockSchedule = async (companyId?: string | null): Promise<VideoUnlockItem[]> => {
   if (!supabase) return loadVideoUnlockSchedule();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('video_unlock_schedule')
-    .select('day_label, block, enabled, unlock_time')
-    .is('company_id', null)
+    .select('company_id, day_label, block, enabled, unlock_time')
     .order('day_label', { ascending: true })
     .order('block', { ascending: true });
+  query = companyId
+    ? query.or(`company_id.is.null,company_id.eq.${companyId}`)
+    : query.is('company_id', null);
+
+  const { data, error } = await query;
 
   if (error || !data) return loadVideoUnlockSchedule();
 
-  const remoteSchedule = (data as VideoUnlockScheduleRow[]).map((row) => ({
+  const rows = data as VideoUnlockScheduleRow[];
+  const orderedRows = companyId
+    ? [...rows.filter(row => row.company_id === null), ...rows.filter(row => row.company_id === companyId)]
+    : rows;
+  const scoped = new Map<string, VideoUnlockItem>();
+  orderedRows.forEach((row) => scoped.set(`${row.day_label}__${row.block}`, {
     day: row.day_label,
     block: row.block,
     enabled: row.enabled,
     time: normalizeTime(row.unlock_time),
   }));
-  const schedule = mergeSchedule(remoteSchedule);
+  const schedule = mergeSchedule(Array.from(scoped.values()));
 
   saveVideoUnlockSchedule(schedule);
   return schedule;
 };
 
-export const persistVideoUnlockSchedule = async (schedule: VideoUnlockItem[]) => {
+export const persistVideoUnlockSchedule = async (schedule: VideoUnlockItem[], companyId?: string | null) => {
   if (!supabase) {
     saveVideoUnlockSchedule(schedule);
     return { ok: true };
   }
 
   const rows = schedule.map((item) => ({
-    company_id: null,
+    company_id: companyId ?? null,
     day_label: item.day,
     block: item.block,
     enabled: item.enabled,

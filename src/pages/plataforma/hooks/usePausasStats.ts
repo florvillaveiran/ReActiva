@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 export interface PausaGuardada {
   dia: string;
@@ -47,9 +48,10 @@ const FEELING_TO_SCORE: Record<string, number> = {
   'Mal': 1, 'Regular': 2, 'Bien': 3, 'Muy bien': 4, 'Genial': 5,
 };
 
-const readPausas = (): PausaGuardada[] => {
+const readPausas = (email?: string): PausaGuardada[] => {
   try {
-    const all: PausaGuardada[] = JSON.parse(localStorage.getItem('reactiva_pausas') || '[]');
+    const key = email ? `reactiva_pausas:${email.trim().toLowerCase()}` : 'reactiva_pausas';
+    const all: PausaGuardada[] = JSON.parse(localStorage.getItem(key) || '[]');
     // Deduplicar por (dia, bloque) — quedarse con la más reciente
     const map = new Map<string, PausaGuardada>();
     for (const p of all) {
@@ -204,12 +206,15 @@ const computeStats = (pausas: PausaGuardada[]): PausasStats => {
 };
 
 export function usePausasStats(): PausasStats {
-  const [stats, setStats] = useState<PausasStats>(() => computeStats(supabase ? [] : readPausas()));
+  const { user } = useAuth();
+  const isDemo = !!user?.isDemo;
+  const [stats, setStats] = useState<PausasStats>(() => computeStats(isDemo || !supabase ? readPausas(user?.email) : []));
 
   useEffect(() => {
     let mounted = true;
     const refresh = () => {
-      setStats(computeStats(supabase ? [] : readPausas()));
+      setStats(computeStats(isDemo || !supabase ? readPausas(user?.email) : []));
+      if (isDemo) return;
       readPausasFromSupabase().then((pausas) => {
         if (mounted && pausas) setStats(computeStats(pausas));
       });
@@ -222,7 +227,7 @@ export function usePausasStats(): PausasStats {
       window.removeEventListener('reactiva-pausas-updated', refresh);
       window.removeEventListener('storage', refresh);
     };
-  }, []);
+  }, [isDemo, user?.email]);
 
   return stats;
 }

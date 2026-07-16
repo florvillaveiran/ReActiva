@@ -78,7 +78,7 @@ export const Sidebar: React.FC = () => {
         <div className="sidebar-account">
           <div className="sidebar-user">
             <p className="text-sm font-medium">{user?.name}</p>
-            <p className="text-sm text-muted">{user?.role}</p>
+            <p className="text-sm text-muted">{user?.isDemo ? 'Modo demo' : user?.role}</p>
           </div>
           <button
             onClick={logout}
