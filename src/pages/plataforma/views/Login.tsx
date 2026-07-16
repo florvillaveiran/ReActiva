@@ -85,7 +85,9 @@ export const Login: React.FC = () => {
     );
   }
 
-  if (user) {
+  if (user && showDemoAccounts && !user.isDemo) {
+    // La demo debe poder abrirse aunque haya una sesion admin/normal activa en otra pestana.
+  } else if (user) {
     return <Navigate to={homeForRole(user.role)} />;
   }
 

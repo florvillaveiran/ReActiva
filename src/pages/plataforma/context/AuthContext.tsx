@@ -41,6 +41,12 @@ const DEMO_USERS: DevUser[] = [
 
 const DEMO_SESSION_KEY = 'reactiva_demo_user';
 
+const getStoredDemoUser = () => sessionStorage.getItem(DEMO_SESSION_KEY);
+const clearStoredDemoUser = () => {
+  sessionStorage.removeItem(DEMO_SESSION_KEY);
+  localStorage.removeItem(DEMO_SESSION_KEY);
+};
+
 /**
  * Allows a local checkout to use test accounts without committing real access
  * details to the repository. `VITE_LOCAL_AUTH_USERS` must be a JSON array of
@@ -144,7 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const init = async () => {
-      const storedDemoUser = localStorage.getItem(DEMO_SESSION_KEY);
+      const storedDemoUser = getStoredDemoUser();
+      localStorage.removeItem(DEMO_SESSION_KEY);
       if (storedDemoUser && mounted) {
         setUser(JSON.parse(storedDemoUser));
         setIsLoading(false);
@@ -167,6 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: listener } = supabase?.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
+      if (getStoredDemoUser()) return;
       if (!session?.user) {
         setUser(null);
         return;
@@ -195,7 +203,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         empresa_id: demoUser.role === 'rrhh' ? 'demo-company' : undefined,
         isDemo: true,
       };
-      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user));
+      sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user));
+      localStorage.removeItem(DEMO_SESSION_KEY);
       setUser(user);
       return true;
     }
@@ -278,7 +287,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     const wasDemo = user?.isDemo;
-    localStorage.removeItem(DEMO_SESSION_KEY);
+    clearStoredDemoUser();
     localStorage.removeItem('reactiva_user');
     if (supabase && !wasDemo) await supabase.auth.signOut();
     setUser(null);

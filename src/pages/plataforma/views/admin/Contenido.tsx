@@ -215,6 +215,8 @@ const AdminAcademyPanel: React.FC = () => {
   const [creating, setCreating] = useState(false);
   const [mediaItems, setMediaItems] = useState<MediaItem[]>(() => readMediaItems());
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [previewing, setPreviewing] = useState<AcademyItem | null>(null);
@@ -247,6 +249,10 @@ const AdminAcademyPanel: React.FC = () => {
       : null;
     return () => { if (channel && supabase) void supabase.removeChannel(channel); };
   }, []);
+
+  useEffect(() => () => {
+    if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+  }, [coverPreviewUrl]);
 
   const categories = useMemo(() => {
     const unique = new Map<string, string>();
@@ -411,8 +417,26 @@ const AdminAcademyPanel: React.FC = () => {
     }
   };
 
+  const clearCoverSelection = () => {
+    if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+    setCoverFile(null);
+    setCoverPreviewUrl('');
+  };
+
+  const chooseCoverFile = (file?: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      window.alert('Elegí una imagen para la portada.');
+      return;
+    }
+    if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+    setCoverFile(file);
+    setCoverPreviewUrl(URL.createObjectURL(file));
+  };
+
   const openEditor = (item: AcademyItem) => {
     setVideoFile(null);
+    clearCoverSelection();
     setCreating(false);
     setEditing({ ...item, active: item.active && hasAcademyVideo(item) });
   };
@@ -422,6 +446,7 @@ const AdminAcademyPanel: React.FC = () => {
       ? `academy-${crypto.randomUUID()}`
       : `academy-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setVideoFile(null);
+    clearCoverSelection();
     setCreating(true);
     setEditing({
       id: generatedId,
@@ -470,6 +495,18 @@ const AdminAcademyPanel: React.FC = () => {
     });
   };
 
+  const uploadAcademyCover = async (file: File) => {
+    const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
+    const baseName = file.name.replace(/\.[^.]+$/, '');
+    const path = `academy-covers/${Date.now()}-${fileSafe(baseName)}.${extension}`;
+    return uploadResumableStorageFile({
+      bucket: 'reactiva-media',
+      path,
+      file,
+      onProgress: setUploadProgress,
+    });
+  };
+
   const publishAcademyItem = async (item: AcademyItem) => {
     if (!hasAcademyVideo(item)) {
       window.alert('Este taller todavía no tiene un video válido. Cargalo o seleccionalo desde la Biblioteca Multimedia antes de publicar.');
@@ -501,10 +538,11 @@ const AdminAcademyPanel: React.FC = () => {
     }
 
     setUploading(true);
-    setUploadProgress(videoFile ? 0 : null);
+    setUploadProgress(videoFile || coverFile ? 0 : null);
     try {
+      const finalImage = coverFile ? await uploadAcademyCover(coverFile) : editing.image?.trim();
       const finalVideoUrl = videoFile ? await uploadAcademyVideo(videoFile) : editing.videoUrl?.trim();
-      const finalItem = { ...editing, videoUrl: finalVideoUrl || undefined };
+      const finalItem = { ...editing, image: finalImage || editing.image, videoUrl: finalVideoUrl || undefined };
       const result = await saveAcademyItem(finalItem);
       if (!result.ok) {
         window.alert(result.error?.message ?? 'No pudimos guardar el taller.');
@@ -513,6 +551,7 @@ const AdminAcademyPanel: React.FC = () => {
       setEditing(null);
       setCreating(false);
       setVideoFile(null);
+      clearCoverSelection();
       fetchContentLibrary().then(library => setItems(library.academy));
     } catch (error: any) {
       window.alert(error?.message ?? 'No pudimos subir o guardar el taller.');
@@ -685,7 +724,26 @@ const AdminAcademyPanel: React.FC = () => {
             <label style={fieldLabelStyle}>Duración</label>
             <input className="input-field" value={editing.duration} onChange={e => setEditing({ ...editing, duration: e.target.value })} style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Imagen de portada</label>
-            <input className="input-field" value={editing.image} onChange={e => setEditing({ ...editing, image: e.target.value })} placeholder="URL de portada" style={{ marginBottom: '0.7rem' }} />
+            <div
+              onDragOver={event => event.preventDefault()}
+              onDrop={event => {
+                event.preventDefault();
+                chooseCoverFile(event.dataTransfer.files?.[0]);
+              }}
+              style={{ border: '1.5px dashed #99f6e4', borderRadius: 14, padding: '0.75rem', marginBottom: '0.7rem', background: '#f8fafc', display: 'grid', gridTemplateColumns: '96px 1fr', gap: '0.85rem', alignItems: 'center' }}
+            >
+              <div style={{ width: 96, height: 68, borderRadius: 12, background: `linear-gradient(rgba(15,23,42,0.08), rgba(15,23,42,0.12)), url(${coverPreviewUrl || editing.image}) center/cover`, border: '1px solid #e2e8f0' }} />
+              <div>
+                <p style={{ margin: '0 0 0.45rem', color: '#0f172a', fontWeight: 800 }}>Arrastrá una imagen acá</p>
+                <p style={{ margin: '0 0 0.6rem', color: '#64748b', fontSize: '0.82rem' }}>O seleccioná un archivo desde tu compu. La URL sigue disponible abajo.</p>
+                <label className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, width: 'fit-content', cursor: 'pointer' }}>
+                  <Upload size={15} /> Seleccionar imagen
+                  <input type="file" accept="image/*" onChange={event => chooseCoverFile(event.target.files?.[0])} style={{ display: 'none' }} />
+                </label>
+                {coverFile && <p style={{ margin: '0.55rem 0 0', color: '#64748b', fontSize: '0.8rem' }}>Imagen seleccionada: <strong>{coverFile.name}</strong></p>}
+              </div>
+            </div>
+            <input className="input-field" value={editing.image} onChange={e => { clearCoverSelection(); setEditing({ ...editing, image: e.target.value }); }} placeholder="URL de portada (opcional)" style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Subir video / URL del video</label>
             <input className="input-field" value={editing.videoUrl ?? ''} onChange={e => setEditing({ ...editing, videoUrl: e.target.value, active: e.target.value.trim() ? editing.active : false })} placeholder="https://..." style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Elegir video desde Biblioteca Multimedia</label>
@@ -731,7 +789,7 @@ const AdminAcademyPanel: React.FC = () => {
             <div className="academy-editor-actions" style={{ display: 'flex', justifyContent: 'space-between', gap: '0.7rem', flexWrap: 'wrap' }}>
               <button className="btn-secondary" onClick={() => openPreview(editing, videoFile)} disabled={!hasAcademyVideo(editing) && !videoFile} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Eye size={15} /> Vista previa</button>
               <div style={{ display: 'flex', gap: '0.7rem' }}>
-                <button className="btn-secondary" onClick={() => { setEditing(null); setCreating(false); setVideoFile(null); }} disabled={uploading}>Cancelar</button>
+                <button className="btn-secondary" onClick={() => { setEditing(null); setCreating(false); setVideoFile(null); clearCoverSelection(); }} disabled={uploading}>Cancelar</button>
                 <button className="btn-primary" onClick={save} disabled={uploading}>
                   {uploading ? uploadProgress === null ? 'Guardando...' : `Subiendo ${uploadProgress}%` : creating ? 'Crear video' : 'Guardar'}
                 </button>

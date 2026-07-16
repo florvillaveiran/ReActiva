@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
-import { Filter, Calendar, Bell, CheckCircle2, ListChecks, Users, Briefcase, Settings, Monitor, UserRoundCheck } from 'lucide-react';
+import { Filter, Calendar, Briefcase, Settings, Monitor, UserRoundCheck } from 'lucide-react';
 import { useAdminStats } from '../../hooks/useAdminStats';
 import { ReportGenerator } from '../../components/ReportGenerator';
 import { useAuth } from '../../context/AuthContext';
@@ -552,12 +552,13 @@ export const Analiticas: React.FC = () => {
           : PERIODO_LABELS[periodo];
 
   if (user?.isDemo && rrhhEmpresaKey) {
+    const demoData = enrichSet(ANALITICAS_MOCK.empresa1[periodo]);
     const kpis = [
-      { label: 'Participacion', value: data.kpis.participacion, previous: 78, color: 'var(--primary-color)', bg: '#f0fdfa', delta: '+8 pp' },
-      { label: 'Foco', value: data.kpis.foco, previous: 72, color: '#3b82f6', bg: '#eff6ff', delta: '+6 pp' },
-      { label: 'Impacto Pausa', value: data.kpis.impacto, previous: 88, color: '#9333ea', bg: '#faf5ff', delta: '+3 pp' },
-      { label: 'Dolor', value: data.kpis.dolor, previous: 16, color: '#f43f5e', bg: '#fff1f2', delta: '-4 pp', inverse: true },
-      { label: 'Energia', value: data.kpis.energia, previous: 69, color: '#f59e0b', bg: '#fffbeb', delta: '+5 pp' },
+      { label: 'Participacion', value: demoData.kpis.participacion, previous: 78, color: 'var(--primary-color)', bg: '#f0fdfa', delta: '+8 pp' },
+      { label: 'Foco', value: demoData.kpis.foco, previous: 72, color: '#3b82f6', bg: '#eff6ff', delta: '+6 pp' },
+      { label: 'Impacto Pausa', value: demoData.kpis.impacto, previous: 88, color: '#9333ea', bg: '#faf5ff', delta: '+3 pp' },
+      { label: 'Dolor', value: demoData.kpis.dolor, previous: 16, color: '#f43f5e', bg: '#fff1f2', delta: '-4 pp', inverse: true },
+      { label: 'Energia', value: demoData.kpis.energia, previous: 69, color: '#f59e0b', bg: '#fffbeb', delta: '+5 pp' },
     ];
     const sectorRows = [
       { sector: 'Comercial', icon: <UserRoundCheck size={18} />, part: 92, energia: 78, estado: 'Bien', color: 'var(--primary-color)' },
@@ -565,19 +566,164 @@ export const Analiticas: React.FC = () => {
       { sector: 'Administracion', icon: <Briefcase size={18} />, part: 78, energia: 68, estado: 'Atencion', color: '#9333ea' },
       { sector: 'Tecnologia', icon: <Monitor size={18} />, part: 83, energia: 77, estado: 'Bien', color: '#3b82f6' },
     ];
-    const alerts = [
-      ['Baja participacion en Administracion', 'La participacion promedio es 8 pp menor que el promedio general.', 'Atencion'],
-      ['Aumento de dolor reportado', 'El indicador de dolor aumento 4 pp vs. el mes anterior.', 'Atencion'],
-      ['Energia baja en Administracion', 'La energia promedio en este sector es la mas baja.', 'Atencion'],
-      ['Excelente impacto de pausa', '91% de impacto positivo. Sigue asi.', 'Bien'],
-    ];
-    const followups = [
-      ['LG', 'Luis Gomez', 'Comercial', 'Dolor elevado'],
-      ['MP', 'Maria Perez', 'Administracion', 'Baja energia'],
-      ['JV', 'Juan Vargas', 'Administracion', 'Baja participacion'],
-      ['CS', 'Carla Sanchez', 'Operaciones', 'Dolor elevado'],
-    ];
+    return (
+      <div className="analytics-page analytics-rrhh-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+        <div className="analytics-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.35rem' }}>
+          <h2 className="header-title" style={{ marginBottom: 0 }}>Analiticas RRHH</h2>
+          <div className="analytics-filters" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="input-field" style={{ width: 160, display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'white' }}>
+              <Filter size={15} />
+              {currentEmpresaLabel}
+            </div>
+            <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={periodo} onChange={(event) => setPeriodo(event.target.value as PeriodoKey)}>
+              <option value="semanal">Semanal</option>
+              <option value="mensual">Mensual</option>
+              <option value="anual">Anual</option>
+              <option value="personalizado">Personalizado</option>
+            </select>
+            {periodo === 'mensual' && (
+              <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={mesSel} onChange={(event) => setMesSel(event.target.value)}>
+                <option value="Julio 2026">Julio 2026</option>
+                <option value="Junio 2026">Junio 2026</option>
+                <option value="Mayo 2026">Mayo 2026</option>
+              </select>
+            )}
+            {periodo === 'personalizado' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input type="date" className="input-field" value={fechaDesde} max={fechaHasta || undefined} onChange={event => setFechaDesde(event.target.value)} style={{ width: 140, backgroundColor: 'white' }} />
+                <span style={{ color: '#94a3b8' }}>-</span>
+                <input type="date" className="input-field" value={fechaHasta} min={fechaDesde || undefined} onChange={event => setFechaHasta(event.target.value)} style={{ width: 140, backgroundColor: 'white' }} />
+              </div>
+            )}
+            {periodo === 'mensual' && (
+              <label className="analytics-compare" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#334155', fontSize: '0.88rem' }}>
+                <input type="checkbox" checked={comparar} onChange={(event) => setComparar(event.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
+                Comparar con mes anterior
+              </label>
+            )}
+          </div>
+        </div>
 
+        <div className="analytics-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+          {kpis.map(kpi => (
+            <div key={kpi.label} className="card" style={{ padding: '1.1rem 1.25rem', margin: 0 }}>
+              <p style={{ margin: '0 0 0.5rem', color: '#64748b', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase' }}>{kpi.label}</p>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
+                <strong style={{ color: kpi.color, fontSize: '1.8rem', lineHeight: 1 }}>{kpi.value}%</strong>
+                <span style={{ color: '#059669', fontWeight: 800, fontSize: '0.82rem' }}>{kpi.delta}</span>
+              </div>
+              <div style={{ height: 4, background: kpi.bg, borderRadius: 999, overflow: 'hidden', margin: '0.75rem 0' }}>
+                <div style={{ width: `${kpi.value}%`, height: '100%', background: kpi.color, borderRadius: 999 }} />
+              </div>
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.78rem' }}>vs. junio 2026: {kpi.previous}%</p>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(260px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Participacion</h3>
+            <div style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={demoData.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
+                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: 'var(--shadow-md)' }} />
+                  <Bar dataKey="participacion" name="Participacion (%)" fill="var(--primary-color)" radius={[4, 4, 0, 0]} barSize={28} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <PainZonesCard zonas={demoData.zonas} totalPersonas={48} />
+
+          <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Foco</h3>
+            <div style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={demoData.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                  <defs><linearGradient id="demoColorFoco" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0} /></linearGradient></defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
+                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: 'var(--shadow-md)' }} />
+                  <Area type="monotone" dataKey="foco" name="Foco (%)" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#demoColorFoco)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(260px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Impacto Pausa</h3>
+            <div style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={demoData.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                  <defs><linearGradient id="demoColorImpacto" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#9333ea" stopOpacity={0.3} /><stop offset="95%" stopColor="#9333ea" stopOpacity={0} /></linearGradient></defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
+                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: 'var(--shadow-md)' }} />
+                  <Area type="monotone" dataKey="impacto" name="Impacto (%)" stroke="#9333ea" strokeWidth={2.5} fillOpacity={1} fill="url(#demoColorImpacto)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Energia</h3>
+            <div style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={demoData.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                  <defs><linearGradient id="demoColorEnergia" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} /><stop offset="95%" stopColor="#f59e0b" stopOpacity={0} /></linearGradient></defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
+                  <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: 'var(--shadow-md)' }} />
+                  <Area type="monotone" dataKey="energiaPct" name="Energia (%)" stroke="#f59e0b" strokeWidth={2.5} fillOpacity={1} fill="url(#demoColorEnergia)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Momento de mayor tension</h3>
+            <div style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart layout="vertical" data={demoData.tension} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} width={110} />
+                  <Tooltip formatter={(val: number) => [`${val}%`, 'Respuestas']} contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }} />
+                  <Bar dataKey="valor" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={14} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
+          <h3 style={{ margin: '0 0 1rem', color: '#0f172a', fontSize: '1rem' }}>Rendimiento por sector</h3>
+          <div style={{ display: 'grid', gap: '0.65rem' }}>
+            {sectorRows.map(row => (
+              <div key={row.sector} style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 1fr 90px', alignItems: 'center', gap: '0.8rem', borderBottom: '1px solid #eef2f7', paddingBottom: '0.65rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#0f172a', fontWeight: 700, fontSize: '0.86rem' }}><span style={{ color: row.color }}>{row.icon}</span>{row.sector}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ flex: 1, height: 5, background: '#e2e8f0', borderRadius: 999 }}><span style={{ display: 'block', width: `${row.part}%`, height: '100%', background: 'var(--primary-color)', borderRadius: 999 }} /></span><b style={{ fontSize: '0.8rem' }}>{row.part}%</b></span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ flex: 1, height: 5, background: '#e2e8f0', borderRadius: 999 }}><span style={{ display: 'block', width: `${row.energia}%`, height: '100%', background: '#f59e0b', borderRadius: 999 }} /></span><b style={{ fontSize: '0.8rem' }}>{row.energia}%</b></span>
+                <span style={{ textAlign: 'center', borderRadius: 999, padding: '0.35rem 0.65rem', background: row.estado === 'Bien' ? '#ecfdf5' : '#fffbeb', color: row.estado === 'Bien' ? '#059669' : '#d97706', fontWeight: 800, fontSize: '0.75rem' }}>{row.estado}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.25rem', color: '#64748b', fontSize: '0.78rem' }}>
+          <span>Ultima actualizacion: 1 jul 2026, 09:30</span>
+          <span>Los datos se actualizan diariamente</span>
+        </div>
+      </div>
+    );
     return (
       <div className="analytics-page analytics-rrhh-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
         <div className="analytics-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.35rem' }}>
@@ -591,16 +737,24 @@ export const Analiticas: React.FC = () => {
               <option value="semanal">Semanal</option>
               <option value="mensual">Mensual</option>
               <option value="anual">Anual</option>
+              <option value="personalizado">Personalizado</option>
             </select>
             {periodo === 'mensual' && <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={mesSel} onChange={(event) => setMesSel(event.target.value)}>
               <option value="Julio 2026">Julio 2026</option>
               <option value="Junio 2026">Junio 2026</option>
               <option value="Mayo 2026">Mayo 2026</option>
             </select>}
-            <label className="analytics-compare" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#334155', fontSize: '0.88rem' }}>
+            {periodo === 'personalizado' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input type="date" className="input-field" value={fechaDesde} max={fechaHasta || undefined} onChange={event => setFechaDesde(event.target.value)} style={{ width: 140, backgroundColor: 'white' }} />
+                <span style={{ color: '#94a3b8' }}>-</span>
+                <input type="date" className="input-field" value={fechaHasta} min={fechaDesde || undefined} onChange={event => setFechaHasta(event.target.value)} style={{ width: 140, backgroundColor: 'white' }} />
+              </div>
+            )}
+            {periodo === 'mensual' && <label className="analytics-compare" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#334155', fontSize: '0.88rem' }}>
               <input type="checkbox" checked={comparar} onChange={(event) => setComparar(event.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />
               Comparar con mes anterior
-            </label>
+            </label>}
           </div>
         </div>
 
@@ -625,7 +779,7 @@ export const Analiticas: React.FC = () => {
             <h3 style={{ margin: '0 0 0.75rem', color: '#0f172a', fontSize: '1rem' }}>Evolucion general</h3>
             <div style={{ height: 230 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.evolucion} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                <AreaChart data={demoData.evolucion} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="#64748b" />
@@ -652,46 +806,7 @@ export const Analiticas: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr 0.95fr', gap: '1rem' }}>
-          <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 1rem', color: '#0f172a', fontSize: '1rem' }}><Bell size={18} color="#ef4444" /> Alertas del periodo</h3>
-            {alerts.map(([title, desc, state]) => (
-              <div key={title} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.8rem', borderBottom: '1px solid #eef2f7', padding: '0.7rem 0' }}>
-                <div>
-                  <p style={{ margin: '0 0 0.2rem', color: '#0f172a', fontWeight: 800, fontSize: '0.84rem' }}>{title}</p>
-                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.76rem', lineHeight: 1.35 }}>{desc}</p>
-                </div>
-                <span style={{ alignSelf: 'center', borderRadius: 999, padding: '0.28rem 0.58rem', background: state === 'Bien' ? '#ecfdf5' : '#fffbeb', color: state === 'Bien' ? '#059669' : '#d97706', fontWeight: 800, fontSize: '0.72rem' }}>{state}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 1rem', color: '#0f172a', fontSize: '1rem' }}><Users size={18} color="#3b82f6" /> Requieren seguimiento</h3>
-            {followups.map(([initials, name, sector, reason]) => (
-              <div key={name} style={{ display: 'grid', gridTemplateColumns: '42px 1fr 1fr 1fr 86px', gap: '0.55rem', alignItems: 'center', borderBottom: '1px solid #eef2f7', padding: '0.65rem 0', fontSize: '0.78rem' }}>
-                <span style={{ width: 28, height: 28, borderRadius: 999, background: '#eef2ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{initials}</span>
-                <b>{name}</b>
-                <span style={{ color: '#64748b' }}>{sector}</span>
-                <span style={{ color: '#64748b' }}>{reason}</span>
-                <span style={{ borderRadius: 999, padding: '0.28rem 0.58rem', background: '#fffbeb', color: '#d97706', fontWeight: 800, textAlign: 'center' }}>Atencion</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 1rem', color: '#0f172a', fontSize: '1rem' }}><ListChecks size={18} color="var(--primary-color)" /> Resumen ejecutivo</h3>
-            {[
-              `La participacion general mejoro ${kpis[0].delta} respecto al mes anterior y alcanza ${data.kpis.participacion}%.`,
-              `El impacto de pausa se mantiene muy alto (${data.kpis.impacto}%), reflejando buenos habitos.`,
-              'Administracion requiere atencion prioritaria por baja energia y participacion.',
-            ].map(item => (
-              <p key={item} style={{ display: 'flex', gap: 8, margin: '0 0 0.9rem', color: '#475569', fontSize: '0.86rem', lineHeight: 1.45 }}><CheckCircle2 size={16} color="var(--primary-color)" style={{ flexShrink: 0, marginTop: 2 }} /> {item}</p>
-            ))}
-          </div>
-        </div>
-
-        {data.tension && data.tension.length > 0 && (
+        {demoData.tension && demoData.tension.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', marginTop: '1rem' }}>
             <div className="card" style={{ padding: '1.25rem', margin: 0 }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 1rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -699,7 +814,7 @@ export const Analiticas: React.FC = () => {
               </h3>
               <div style={{ height: '150px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart layout="vertical" data={data.tension} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+                  <BarChart layout="vertical" data={demoData.tension} margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
                     <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} width={110} />
@@ -714,7 +829,7 @@ export const Analiticas: React.FC = () => {
             </div>
             
             {(() => {
-              const top = data.tension && data.tension.length > 0 ? [...data.tension].sort((a, b) => b.valor - a.valor)[0] : null;
+              const top = demoData.tension && demoData.tension.length > 0 ? [...demoData.tension].sort((a, b) => b.valor - a.valor)[0] : null;
               if (!top || top.valor < 30) return <div />;
               const isEndOfDay = top.name === 'Al final de la jornada';
               const isMorning = top.name === 'A la mañana';

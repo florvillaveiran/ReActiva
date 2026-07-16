@@ -222,6 +222,35 @@ const defaultAcademyIdForTitle = (title: string) => defaultAcademyItems.find(
   item => normalizeLookup(item.title) === normalizeLookup(title),
 )?.id;
 
+const ACADEMY_COVER_OVERRIDES = [
+  { keywords: ['checklist ergonomico'], image: '/academy-covers/checklist-ergonomico.jpg' },
+  { keywords: ['silla ergonomica', 'silla ergonómica'], image: '/academy-covers/silla-ergonomica.jpg' },
+  { keywords: ['diferentes posiciones', 'posiciones para trabajar', 'trabajar homeoffice', 'trabajar home office', 'homeoffice'], image: '/academy-covers/posicion-homeoffice.jpg' },
+  { keywords: ['irritacion nervio ciatico', 'ciatico'], image: '/academy-covers/dolor-espalda-ciatico.jpg' },
+  { keywords: ['elongacion cadena posterior', 'cadena posterior'], image: '/academy-covers/elongar-cadena-posterior.jpg' },
+  { keywords: ['liberacion flexores de cadera', 'flexores de cadera', 'psoas'], image: '/academy-covers/elongar-psoas.jpg' },
+  { keywords: ['esguince de tobillo', 'tipos de esguinces'], image: '/academy-covers/esguince-tobillo.jpg' },
+  { keywords: ['ejercicios tobillo', 'ejercicios de tobillo', 'ejercicios para el tobillo'], image: '/academy-covers/ejercicios-tobillo.jpg' },
+  { keywords: ['hidratacion', 'agua y cerebro'], image: '/academy-covers/hidratacion.jpg' },
+  { keywords: ['joroba cervical'], image: '/academy-covers/joroba-cervical.jpg' },
+  { keywords: ['no destruyas tu espalda', 'levantar objeto'], image: '/academy-covers/levantar-objeto.jpg' },
+  { keywords: ['mouse'], image: '/academy-covers/mouse.jpg' },
+  { keywords: ['mucha pantalla', 'ojos', 'descanso visual'], image: '/academy-covers/mucha-pantalla.jpg' },
+  { keywords: ['rutina suave antes del cafe', 'rutina suave'], image: '/academy-covers/rutina-suave.jpg' },
+];
+
+const academyCoverFor = (item: AcademyItem) => {
+  const searchable = normalizeLookup(`${item.category} ${item.title} ${item.description}`);
+  return ACADEMY_COVER_OVERRIDES.find(cover =>
+    cover.keywords.some(keyword => searchable.includes(normalizeLookup(keyword))),
+  )?.image;
+};
+
+const isReplaceableAcademyCover = (image?: string) => {
+  const value = image?.trim() ?? '';
+  return !value || value.includes('images.unsplash.com') || value.startsWith('/academy-covers/');
+};
+
 const normalizeCoachTypography = (item: CoachItem): CoachItem => ({
   ...item,
   sourceId: item.sourceId ?? defaultCoachIdForTitle(item.title) ?? item.id,
@@ -245,6 +274,7 @@ const normalizeAcademyItem = (item: AcademyItem): AcademyItem => ({
   ...item,
   sourceId: item.sourceId ?? defaultAcademyIdForTitle(item.title) ?? item.id,
   category: normalizeAcademyCategory(item.category),
+  image: isReplaceableAcademyCover(item.image) ? academyCoverFor(item) ?? item.image : item.image,
   videoUrl: normalizeAcademyVideoUrl(item.videoUrl) || undefined,
   active: item.active && isAcademyVideoReady(item.videoUrl),
 });
