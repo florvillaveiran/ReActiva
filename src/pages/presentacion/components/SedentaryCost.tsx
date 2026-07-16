@@ -45,7 +45,7 @@ const secondaryStats = [
 
 export default function SedentaryCost() {
   return (
-    <section className="h-full px-5 md:px-10 py-8 md:py-10 flex items-center justify-center bg-[#FDFBF9] overflow-hidden">
+    <section className="deck-sedentary-cost h-full px-5 md:px-10 py-8 md:py-10 flex items-center justify-center bg-[#FDFBF9] overflow-hidden">
       <div className="presentation-safe max-w-[1240px] w-full flex flex-col gap-2.5 mt-4 md:mt-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}

@@ -30,7 +30,7 @@ const cardData = [
 
 export default function WhatIs() {
   return (
-    <section className="relative h-full flex flex-col items-center justify-center px-5 md:px-10 py-8 md:py-12 overflow-hidden">
+    <section className="deck-what-is relative h-full flex flex-col items-center justify-center px-5 md:px-10 py-8 md:py-12 overflow-hidden">
       <div className="relative z-10 w-full max-w-[1600px] flex flex-col items-center text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}

@@ -36,7 +36,7 @@ const contacts = [
 
 export default function Contact() {
   return (
-    <section className="h-full overflow-hidden bg-[#F9F8F3] px-5 py-8 md:px-10 md:py-10">
+    <section className="deck-contact h-full overflow-hidden bg-[#F9F8F3] px-5 py-8 md:px-10 md:py-10">
       <div className="presentation-safe mx-auto grid h-full max-w-[1250px] grid-cols-1 items-center gap-8 lg:grid-cols-[1.35fr_0.75fr] lg:gap-14">
         <div className="space-y-6 md:space-y-8">
           <motion.div

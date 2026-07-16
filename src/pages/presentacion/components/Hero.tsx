@@ -3,7 +3,7 @@ import { TrendingUp, Heart } from 'lucide-react';
 
 export default function Hero() {
   return (
-    <section className="relative w-full h-full flex items-center justify-center overflow-hidden px-4 md:px-10 py-6 md:py-10">
+    <section className="deck-hero relative w-full h-full flex items-center justify-center overflow-hidden px-4 md:px-10 py-6 md:py-10">
       <div className="max-w-7xl mx-auto relative z-10 flex flex-col lg:grid lg:grid-cols-12 gap-6 md:gap-10 items-center">
         {/* Text Content */}
         <motion.div 

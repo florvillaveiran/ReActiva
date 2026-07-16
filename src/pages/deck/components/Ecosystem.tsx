@@ -7,7 +7,6 @@ import {
   Leaf,
   Lightbulb,
   MonitorPlay,
-  Play,
   TrendingUp,
 } from 'lucide-react';
 
@@ -61,94 +60,73 @@ const rightFeatures = [
 
 function DashboardScreen() {
   return (
-    <div className="grid h-full w-full grid-cols-[25%_1fr] overflow-hidden rounded-[10px] bg-[#F7FAF8] text-left font-sans md:rounded-[18px]">
-      <aside className="flex min-w-0 flex-col border-r border-slate-100 bg-white px-[3.8%] py-[6%]">
-        <img
-          src="/logo-reactiva-dark.png"
-          alt="ReActiva"
-          className="mb-[18%] h-[8%] w-fit max-w-[92%] object-contain"
-        />
+    <svg
+      className="deck-dashboard-screen block h-full w-full bg-[#F7FAF8]"
+      viewBox="0 0 960 576"
+      role="img"
+      aria-label="Panel ReActiva con una recomendación de respiración consciente"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <defs>
+        <radialGradient id="deckFeatureGlow" cx="72%" cy="20%" r="70%">
+          <stop offset="0%" stopColor="#126C40" stopOpacity="0.48" />
+          <stop offset="55%" stopColor="#071426" stopOpacity="0.96" />
+          <stop offset="100%" stopColor="#050816" />
+        </radialGradient>
+      </defs>
 
-        <nav className="flex flex-col gap-[5%] text-[0.42rem] font-bold text-slate-500 md:text-[0.56rem]">
-          <div className="flex items-center gap-[8%] rounded-[10px] border border-emerald-100 bg-emerald-50 px-[10%] py-[9%] text-brand-primary">
-            <Play className="h-[1em] w-[1em] shrink-0" />
-            <span className="truncate">Mi Programa</span>
-          </div>
-          <div className="flex items-center gap-[8%] px-[10%] py-[7%]">
-            <TrendingUp className="h-[1em] w-[1em] shrink-0" />
-            <span className="truncate">Mi Progreso</span>
-          </div>
-          <div className="flex items-center gap-[8%] px-[10%] py-[7%]">
-            <Lightbulb className="h-[1em] w-[1em] shrink-0" />
-            <span className="truncate">ReActiva Tips</span>
-          </div>
-          <div className="flex items-center gap-[8%] px-[10%] py-[7%]">
-            <Brain className="h-[1em] w-[1em] shrink-0" />
-            <span className="leading-tight">Academia ReActiva</span>
-          </div>
-        </nav>
-      </aside>
+      <rect width="960" height="576" fill="#F7FAF8" />
+      <rect width="238" height="576" fill="#FFFFFF" />
+      <line x1="238" y1="0" x2="238" y2="576" stroke="#E8EEF0" />
 
-      <main className="flex min-w-0 flex-col gap-[5%] p-[5%]">
-        <div className="flex h-[28%] items-center justify-between rounded-[18px] border border-slate-100 bg-white px-[5%] shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
-          <div className="flex min-w-0 items-center gap-[7%]">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFF7D8] text-[0.85rem] font-black text-[#F0A400] md:h-11 md:w-11 md:text-[1.15rem]">
-              H
-            </div>
-            <h1 className="min-w-0 text-[0.62rem] font-black leading-tight text-slate-950 md:text-[0.95rem]">
-              Hola,<br className="hidden md:block" /> Equipo!
-            </h1>
-          </div>
+      <image href="/logo-reactiva-dark.png" x="28" y="28" width="180" height="54" preserveAspectRatio="xMinYMid meet" />
 
-          <div className="flex items-center gap-2 md:gap-4">
-            <div className="text-center">
-              <p className="mb-0.5 text-[0.32rem] font-black tracking-[0.18em] text-slate-400 md:text-[0.46rem]">
-                PROGRESO
-              </p>
-              <p className="text-[0.9rem] font-black leading-none text-brand-primary md:text-[1.45rem]">85%</p>
-            </div>
-            <div className="flex gap-1 md:gap-1.5">
-              {['L', 'M', 'V'].map((day, index) => (
-                <span
-                  key={day}
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[0.45rem] font-black md:h-7 md:w-7 md:text-[0.65rem] ${
-                    index < 2 ? 'bg-brand-primary text-white' : 'bg-slate-100 text-slate-400'
-                  }`}
-                >
-                  {day}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
+      <rect x="28" y="116" width="182" height="62" rx="16" fill="#EAFBF3" stroke="#B8EED4" />
+      <text x="55" y="153" fill="#126C40" fontSize="17" fontWeight="800">▷</text>
+      <text x="88" y="153" fill="#126C40" fontSize="18" fontWeight="800">Mi Programa</text>
+      <text x="55" y="231" fill="#64748B" fontSize="18" fontWeight="700">↗</text>
+      <text x="88" y="231" fill="#64748B" fontSize="18" fontWeight="700">Mi Progreso</text>
+      <Lightbulb x={48} y={287} width={22} height={22} color="#64748B" strokeWidth={2} />
+      <text x="88" y="306" fill="#64748B" fontSize="18" fontWeight="700">ReActiva Tips</text>
+      <Brain x={48} y={358} width={22} height={22} color="#64748B" strokeWidth={2} />
+      <text x="88" y="374" fill="#64748B" fontSize="18" fontWeight="700">
+        <tspan x="88" dy="0">Academia</tspan>
+        <tspan x="88" dy="22">ReActiva</tspan>
+      </text>
 
-        <div className="relative flex-1 overflow-hidden rounded-[20px] bg-[#071022] p-[7%] shadow-[0_10px_25px_rgba(15,23,42,0.12)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_22%,rgba(18,108,64,0.34),transparent_38%),linear-gradient(135deg,#071022_0%,#050816_100%)]" />
-          <div className="relative flex h-full flex-col justify-between">
-            <span className="w-fit rounded-full bg-brand-primary px-3 py-1 text-[0.42rem] font-black uppercase tracking-[0.16em] text-white md:text-[0.62rem]">
-              Recomendado ahora
-            </span>
-            <div>
-              <h2 className="mb-2 max-w-[88%] text-[1.05rem] font-black leading-[0.96] tracking-tight text-white md:text-[1.85rem]">
-                Respiracion consciente
-              </h2>
-              <p className="flex items-center gap-2 text-[0.5rem] font-bold text-slate-200 md:text-[0.78rem]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/15 md:h-5 md:w-5">
-                  5
-                </span>
-                min de bienestar para tu cuerpo
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+      <rect x="276" y="36" width="640" height="132" rx="30" fill="#FFFFFF" stroke="#EEF2F3" />
+      <circle cx="346" cy="102" r="39" fill="#FFF5CE" />
+      <text x="346" y="112" textAnchor="middle" fill="#ECA100" fontSize="31" fontWeight="900">H</text>
+      <text x="399" y="92" fill="#081126" fontSize="27" fontWeight="900">
+        <tspan x="399" dy="0">Hola,</tspan>
+        <tspan x="399" dy="31">Equipo!</tspan>
+      </text>
+      <text x="615" y="81" fill="#94A3B8" fontSize="13" fontWeight="900" letterSpacing="3">PROGRESO</text>
+      <text x="615" y="124" fill="#126C40" fontSize="43" fontWeight="900">85%</text>
+      <circle cx="770" cy="102" r="28" fill="#126C40" />
+      <circle cx="837" cy="102" r="28" fill="#126C40" />
+      <circle cx="898" cy="102" r="28" fill="#F0F4F7" />
+      <text x="770" y="110" textAnchor="middle" fill="#FFFFFF" fontSize="18" fontWeight="900">L</text>
+      <text x="837" y="110" textAnchor="middle" fill="#FFFFFF" fontSize="18" fontWeight="900">M</text>
+      <text x="898" y="110" textAnchor="middle" fill="#94A3B8" fontSize="18" fontWeight="900">V</text>
+
+      <rect x="276" y="194" width="640" height="330" rx="30" fill="url(#deckFeatureGlow)" />
+      <rect x="320" y="238" width="310" height="44" rx="22" fill="#16834E" />
+      <text x="475" y="267" textAnchor="middle" fill="#FFFFFF" fontSize="17" fontWeight="900" letterSpacing="4">RECOMENDADO AHORA</text>
+      <text x="320" y="388" fill="#FFFFFF" fontSize="50" fontWeight="900" letterSpacing="-2">
+        <tspan x="320" dy="0">Respiración</tspan>
+        <tspan x="320" dy="54">consciente</tspan>
+      </text>
+      <circle cx="339" cy="483" r="20" fill="#FFFFFF" fillOpacity="0.14" />
+      <text x="339" y="491" textAnchor="middle" fill="#FFFFFF" fontSize="20" fontWeight="900">5</text>
+      <text x="374" y="491" fill="#E7EDF5" fontSize="21" fontWeight="800">min de bienestar para tu cuerpo</text>
+    </svg>
   );
 }
 
 export default function Ecosystem() {
   return (
-    <section className="flex h-full flex-col items-center justify-center overflow-hidden bg-brand-cream px-5 py-6 md:px-10 md:py-7">
+    <section className="deck-ecosystem flex h-full flex-col items-center justify-center overflow-hidden bg-brand-cream px-5 py-6 md:px-10 md:py-7">
       <div className="presentation-safe relative mx-auto flex h-full w-full max-w-[1300px] flex-col items-center justify-between">
         <motion.header
           initial={{ opacity: 0, y: -20 }}

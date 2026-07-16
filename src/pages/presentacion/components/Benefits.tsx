@@ -34,7 +34,7 @@ const metrics = [
 
 export default function Benefits() {
   return (
-    <section className="h-full overflow-hidden bg-brand-cream px-5 py-7 md:px-10 md:py-8">
+    <section className="deck-benefits h-full overflow-hidden bg-brand-cream px-5 py-7 md:px-10 md:py-8">
       <div className="presentation-safe mx-auto flex h-full max-w-[1240px] flex-col items-center">
         <motion.header
           initial={{ opacity: 0, y: 20 }}
@@ -64,7 +64,7 @@ export default function Benefits() {
             IMPACTO MEDIDO EN ORGANIZACIONES
           </h3>
 
-          <div className="grid grid-cols-4 divide-x divide-slate-200">
+          <div className="deck-benefits-metrics grid grid-cols-4 divide-x divide-slate-200">
             {metrics.map((metric, index) => (
               <div key={metric.value} className="flex flex-col items-center px-4 text-center">
                 <div className={`mb-5 flex h-[92px] w-[92px] items-center justify-center rounded-full ${metric.bg}`}>
@@ -86,7 +86,7 @@ export default function Benefits() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="mt-8 grid w-full max-w-[840px] grid-cols-[1fr_1px_1fr] items-center rounded-[22px] border border-slate-100 bg-white px-8 py-4 shadow-[0_16px_34px_rgba(11,27,61,0.07)]"
+          className="deck-benefits-summary mt-8 grid w-full max-w-[840px] grid-cols-[1fr_1px_1fr] items-center rounded-[22px] border border-slate-100 bg-white px-8 py-4 shadow-[0_16px_34px_rgba(11,27,61,0.07)]"
         >
           <div className="flex items-center justify-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#078A43] text-white">
