@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Users, Building2, BarChart3, LogOut, PlaySquare, Video, Mail, Activity, Lightbulb, GraduationCap, Menu, X } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -44,6 +45,11 @@ export const Sidebar: React.FC = () => {
   ];
 
   const links = user?.role === 'admin' ? adminLinks : user?.role === 'rrhh' ? rrhhLinks : userLinks;
+  const handleLogout = async () => {
+    const isDemoSession = Boolean(user?.isDemo);
+    await logout();
+    navigate(isDemoSession ? '/plataforma/demo' : '/plataforma/login', { replace: true });
+  };
 
   return <>
     <aside className={`sidebar${mobileMenuOpen ? ' is-mobile-open' : ''}`}>
@@ -81,7 +87,7 @@ export const Sidebar: React.FC = () => {
             <p className="text-sm text-muted">{user?.isDemo ? 'Modo demo' : user?.role}</p>
           </div>
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="sidebar-logout"
           >
             <LogOut size={20} />
