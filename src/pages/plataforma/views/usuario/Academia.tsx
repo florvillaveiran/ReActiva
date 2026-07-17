@@ -52,6 +52,7 @@ export const UsuarioAcademia: React.FC = () => {
     let mounted = true;
     const applyLibrary = (library = getContentLibrary()) => {
       if (!mounted) return;
+      if (user?.isDemo) return;
       setVersion(value => value + 1);
       setSelected(current => {
         if (!current) return null;
@@ -62,11 +63,13 @@ export const UsuarioAcademia: React.FC = () => {
     const refreshRemote = () => void fetchContentLibrary().then(applyLibrary);
     const refreshLocal = () => applyLibrary();
 
-    refreshRemote();
-    window.addEventListener('focus', refreshRemote);
-    window.addEventListener('reactiva-content-library-updated', refreshLocal);
+    if (!user?.isDemo) {
+      refreshRemote();
+      window.addEventListener('focus', refreshRemote);
+      window.addEventListener('reactiva-content-library-updated', refreshLocal);
+    }
 
-    const channel = supabase
+    const channel = supabase && !user?.isDemo
       ? supabase
           .channel('user-reactiva-academy')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'content_items' }, refreshRemote)
@@ -75,11 +78,13 @@ export const UsuarioAcademia: React.FC = () => {
 
     return () => {
       mounted = false;
-      window.removeEventListener('focus', refreshRemote);
-      window.removeEventListener('reactiva-content-library-updated', refreshLocal);
+      if (!user?.isDemo) {
+        window.removeEventListener('focus', refreshRemote);
+        window.removeEventListener('reactiva-content-library-updated', refreshLocal);
+      }
       if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user?.isDemo]);
 
   const libraryItems = useMemo(() => {
     return getContentLibrary().academy.filter(item => {
@@ -90,7 +95,7 @@ export const UsuarioAcademia: React.FC = () => {
   }, [version, user]);
   
   const items = useMemo(
-    () => user?.isDemo && libraryItems.filter(isPublished).length === 0 ? demoAcademyFallback : libraryItems,
+    () => user?.isDemo ? demoAcademyFallback : libraryItems,
     [libraryItems, user?.isDemo],
   );
   const publishedCount = useMemo(() => items.filter(isPublished).length, [items]);
@@ -101,7 +106,7 @@ export const UsuarioAcademia: React.FC = () => {
   }, [categories, category]);
 
   useEffect(() => {
-    if (!supabase || !selected) {
+    if (!supabase || !selected || user?.isDemo) {
       setRelatedTips([]);
       return;
     }
@@ -122,7 +127,7 @@ export const UsuarioAcademia: React.FC = () => {
       }
     };
     void fetchRelations();
-  }, [selected]);
+  }, [selected, user?.isDemo]);
 
   const filtered = items
     .filter(item => {
@@ -264,7 +269,7 @@ export const UsuarioAcademia: React.FC = () => {
                     allowFullScreen
                     onLoad={() => {
                       // Basic fallback: record as started
-                      if (supabase && user) {
+                      if (supabase && user && !user.isDemo) {
                         supabase.rpc('save_video_progress', {
                           p_content_key: selected.id,
                           p_last_position_seconds: 0,
@@ -282,7 +287,7 @@ export const UsuarioAcademia: React.FC = () => {
                     style={{ width: '100%', aspectRatio: '16 / 9', borderRadius: 14, background: '#0f172a', objectFit: 'cover' }}
                     onTimeUpdate={(e) => {
                       const video = e.target as HTMLVideoElement;
-                      if (!video.duration || !supabase || !user) return;
+                      if (!video.duration || !supabase || !user || user.isDemo) return;
                       // Throttle updates to every 5 seconds to avoid spamming the DB
                       const now = Date.now();
                       const lastUpdate = Number(video.dataset.lastUpdate || '0');
