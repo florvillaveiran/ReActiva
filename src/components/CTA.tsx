@@ -44,9 +44,7 @@ export const CTA = () => {
           </motion.p>
           
           <motion.a 
-            href="https://api.leadconnectorhq.com/widget/booking/PWtEmck2ZotUUEZHg6Nm"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/agendar"
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}

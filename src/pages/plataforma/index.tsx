@@ -15,6 +15,7 @@ import { Analiticas } from './views/admin/Analiticas';
 import { Contenido } from './views/admin/Contenido';
 import { Emails } from './views/admin/Emails';
 import { Feedback } from './views/admin/Feedback';
+import { EmpresaDashboard } from './views/rrhh/EmpresaDashboard';
 import { EmpresaOnboarding } from './views/EmpresaOnboarding';
 import { UsuarioOnboarding } from './views/UsuarioOnboarding';
 import { DemoEmpresa, DemoUsuarios } from './views/demo/RrhhDemo';
@@ -47,7 +48,7 @@ function App() {
 
             {/* Rutas de RRHH */}
             <Route path="rrhh" element={<Layout allowedRole="rrhh" />}>
-              <Route index element={<Navigate to="/plataforma/rrhh/analiticas" replace />} />
+              <Route index element={<EmpresaDashboard />} />
               <Route path="empresas" element={<DemoAware demo={<DemoEmpresa />}><Empresas /></DemoAware>} />
               <Route path="usuarios" element={<DemoAware demo={<DemoUsuarios />}><Usuarios /></DemoAware>} />
               <Route path="analiticas" element={<Analiticas />} />

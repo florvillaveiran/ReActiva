@@ -309,7 +309,8 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
 };
 
 // ─── Modal de Video (YouTube embed) ──────────────────────────────────────────
-const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => void; onEnded?: () => void }> = ({ videoUrl, titulo, onClose, onEnded }) => {
+const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => void; onWatched?: () => void }> = ({ videoUrl, titulo, onClose, onWatched }) => {
+  const youtubeId = getYouTubeIdFromUrl(videoUrl);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -364,9 +365,9 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
         </div>
         {/* Video 16:9 */}
         <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-          {getYouTubeIdFromUrl(videoUrl) ? (
+          {youtubeId ? (
             <iframe
-              src={`https://www.youtube.com/embed/${getYouTubeIdFromUrl(videoUrl)}?autoplay=1&rel=0&modestbranding=1`}
+              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`}
               title={titulo}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -380,7 +381,7 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
               src={videoUrl}
               controls
               autoPlay
-              onEnded={onEnded}
+              onEnded={onWatched}
               style={{
                 position: 'absolute', top: 0, left: 0,
                 width: '100%', height: '100%', border: 'none',
@@ -389,6 +390,25 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
             />
           )}
         </div>
+        {youtubeId && (
+          <div style={{ padding: '1rem 1.25rem', backgroundColor: '#0f172a', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button
+              type="button"
+              onClick={onWatched}
+              style={{
+                border: 'none',
+                borderRadius: 999,
+                backgroundColor: 'var(--primary-color)',
+                color: 'white',
+                cursor: 'pointer',
+                fontWeight: 800,
+                padding: '0.75rem 1.1rem',
+              }}
+            >
+              Ya vi el video
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -744,6 +764,11 @@ export const UsuarioDashboard: React.FC = () => {
 
   const handleActiveAction = () => {
     if (!activeBloque || activeStatusObj?.status !== 'available' || !activeScheduledVideo) return;
+    const videoKey = `${today}__${activeBloque}`;
+    if (!videosVistos.has(videoKey)) {
+      setOpenVideo({ dia: today, bloque: activeBloque });
+      return;
+    }
     if (activeBloque === 'morning') {
       handleFormSubmit({ bloque: 'morning', tipo: 'sin-form' });
     } else {
@@ -751,15 +776,10 @@ export const UsuarioDashboard: React.FC = () => {
     }
   };
 
-  const handleVideoEnded = () => {
+  const handleVideoWatched = () => {
     if (!openVideo) return;
     markVideoVisto(openVideo.dia, openVideo.bloque);
     setOpenVideo(null);
-    if (openVideo.bloque === 'morning') {
-      handleFormSubmit({ bloque: 'morning', tipo: 'sin-form' });
-    } else {
-      setOpenForm('afternoon');
-    }
   };
 
   return (
@@ -816,6 +836,7 @@ export const UsuarioDashboard: React.FC = () => {
                     key={d}
                     onClick={() => setToday(d)}
                     title={`Cambiar a ${d}`}
+                    aria-label={`Cambiar a ${d}`}
                     style={{
                       width: 38, height: 38, borderRadius: '50%',
                       border: 'none', cursor: 'pointer',
@@ -827,7 +848,7 @@ export const UsuarioDashboard: React.FC = () => {
                       boxShadow: isCurrent ? '0 0 0 3px rgba(0, 194, 168, 0.18)' : 'none',
                     }}
                   >
-                    {DAY_INITIAL[d]}
+                    <span translate="no" lang="es" className="notranslate">{DAY_INITIAL[d]}</span>
                   </button>
                 );
               })}
@@ -937,6 +958,7 @@ export const UsuarioDashboard: React.FC = () => {
               const requiereVideo = !!activeScheduledVideo;
               const videoVisto = videoKey ? videosVistos.has(videoKey) : false;
               const isAvailable = activeStatusObj?.status === 'available' && !!activeScheduledVideo;
+              const puedeAccionar = isAvailable && !!activeScheduledVideo;
               const puedeCompletar = isAvailable && (!requiereVideo || videoVisto);
 
               let prompt: string;
@@ -953,17 +975,17 @@ export const UsuarioDashboard: React.FC = () => {
                   <p style={{ fontSize: '0.95rem', color: 'var(--text-color)', fontWeight: 500 }}>{prompt}</p>
                   <button
                     onClick={handleActiveAction}
-                    disabled={!puedeCompletar}
-                    title={!puedeCompletar && isAvailable && !videoVisto ? 'Tenés que ver el video primero' : undefined}
+                    disabled={!puedeAccionar}
+                    title={!puedeAccionar ? undefined : !puedeCompletar ? 'Abrir video' : 'Completar pausa'}
                     style={{
                       padding: '0.85rem 2.2rem',
                       borderRadius: '999px',
                       border: 'none',
-                      backgroundColor: puedeCompletar ? 'var(--primary-color)' : '#cbd5e1',
+                      backgroundColor: puedeAccionar ? (puedeCompletar ? 'var(--primary-color)' : '#0f172a') : '#cbd5e1',
                       color: 'white', fontWeight: 700, fontSize: '0.92rem',
-                      cursor: puedeCompletar ? 'pointer' : 'not-allowed',
+                      cursor: puedeAccionar ? 'pointer' : 'not-allowed',
                       transition: 'all 0.2s',
-                      boxShadow: puedeCompletar ? '0 4px 12px rgba(0, 194, 168, 0.25)' : 'none',
+                      boxShadow: puedeAccionar ? '0 4px 12px rgba(15, 23, 42, 0.18)' : 'none',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1046,7 +1068,7 @@ export const UsuarioDashboard: React.FC = () => {
           videoUrl={openScheduledVideo.url}
           titulo={`${openScheduledVideo.title || PAUSAS[openVideo.bloque].titulo} · ${openVideo.dia} ${openVideo.bloque === 'morning' ? 'mañana' : 'tarde'}`}
           onClose={() => setOpenVideo(null)}
-          onEnded={handleVideoEnded}
+          onWatched={handleVideoWatched}
         />
       )}
     </div>

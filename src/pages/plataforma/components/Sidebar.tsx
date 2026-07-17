@@ -39,6 +39,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   const rrhhLinks = [
+    { to: '/plataforma/rrhh', icon: <LayoutDashboard size={20} />, label: 'Inicio', end: true },
     { to: '/plataforma/rrhh/analiticas', icon: <BarChart3 size={20} />, label: 'Analiticas' },
     { to: '/plataforma/rrhh/usuarios', icon: <Users size={20} />, label: 'Usuarios' },
     { to: '/plataforma/rrhh/empresas', icon: <Building2 size={20} />, label: 'Empresa' },

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
+import { Agendar } from './pages/Agendar';
 import { Terminos } from './pages/Terminos';
 import { Privacidad } from './pages/Privacidad';
 import Presentacion from './pages/presentacion';
@@ -15,6 +16,7 @@ function Layout() {
   const isPresentacion = path === '/presentacion' || path === '/presentaci%c3%b3n' || path === '/presentación';
   const isDeck = path === '/deck';
   const isPlataforma = path.startsWith('/plataforma');
+  const isAgendar = path === '/agendar';
 
   if (isPresentacion) {
     return (
@@ -36,6 +38,14 @@ function Layout() {
     return (
       <Routes>
         <Route path="/plataforma/*" element={<Plataforma />} />
+      </Routes>
+    );
+  }
+
+  if (isAgendar) {
+    return (
+      <Routes>
+        <Route path="/agendar" element={<Agendar />} />
       </Routes>
     );
   }
