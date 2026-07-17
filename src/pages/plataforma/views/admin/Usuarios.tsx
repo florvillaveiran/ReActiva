@@ -110,6 +110,25 @@ const companyStatusFromSupabase = (status?: string): Empresa['estado'] => {
   return 'Activa';
 };
 
+const pauseRowToIndividualSession = (row: any): IndividualPauseSession => ({
+  id: row.id,
+  profileId: row.profile_id,
+  dayLabel: row.day_label,
+  block: row.block,
+  occurredAt: row.occurred_at,
+  energy: row.energy ?? null,
+  feeling: row.feeling ?? null,
+  hasPain: row.has_pain ?? null,
+  painZone: row.pain_zone ?? null,
+  answers: row.answers ?? {},
+});
+
+const latestIso = (left?: string, right?: string) => {
+  if (!left) return right;
+  if (!right) return left;
+  return new Date(left).getTime() >= new Date(right).getTime() ? left : right;
+};
+
 // Section
 const UsuarioDetalle: React.FC<{
   usuario: Usuario;
@@ -187,18 +206,7 @@ const UsuarioDetalle: React.FC<{
         return;
       }
 
-      setPauseSessions(rows.map((row: any) => ({
-        id: row.id,
-        profileId: row.profile_id,
-        dayLabel: row.day_label,
-        block: row.block,
-        occurredAt: row.occurred_at,
-        energy: row.energy ?? null,
-        feeling: row.feeling ?? null,
-        hasPain: row.has_pain ?? null,
-        painZone: row.pain_zone ?? null,
-        answers: row.answers ?? {},
-      })));
+      setPauseSessions(rows.map(pauseRowToIndividualSession));
       setAnalyticsLoading(false);
     };
 
@@ -689,6 +697,28 @@ export const Usuarios: React.FC = () => {
       return;
     }
 
+    const profileIds = profiles.map((profile: any) => profile.id).filter(Boolean);
+    const sessionsByProfile = new Map<string, IndividualPauseSession[]>();
+    if (profileIds.length > 0) {
+      const { data: pauseRows, error: pauseRowsError } = await supabase
+        .from('pause_sessions')
+        .select('id, profile_id, day_label, block, occurred_at, energy, feeling, has_pain, pain_zone, answers')
+        .in('profile_id', profileIds)
+        .order('occurred_at', { ascending: true });
+
+      if (pauseRowsError) {
+        console.error('No se pudieron cargar pausas para la tabla de usuarios', pauseRowsError);
+      } else {
+        (pauseRows ?? []).forEach((row: any) => {
+          const session = pauseRowToIndividualSession(row);
+          if (!session.profileId) return;
+          const list = sessionsByProfile.get(session.profileId) ?? [];
+          list.push(session);
+          sessionsByProfile.set(session.profileId, list);
+        });
+      }
+    }
+
     const supabaseCompanies: Empresa[] = companies.map((company: any) => ({
       id: hashToNumericId(company.id),
       supabaseId: company.id,
@@ -704,15 +734,22 @@ export const Usuarios: React.FC = () => {
     const companyBySupabaseId = new Map(supabaseCompanies.map(company => [company.supabaseId, company]));
     const supabaseUsers: Usuario[] = profiles.map((profile: any) => {
       const company = companyBySupabaseId.get(profile.company_id);
+      const sessions = sessionsByProfile.get(profile.id) ?? [];
+      const monthlyAnalytics = calculateIndividualAnalytics(sessions, 'mensual');
+      const latestSession = sessions.reduce<string | undefined>(
+        (latest, session) => latestIso(latest, session.occurredAt),
+        undefined,
+      );
+      const hasReportedPain = sessions.some(session => session.hasPain === true || session.answers?.dolor === true);
       return {
         id: hashToNumericId(profile.id),
         supabaseId: profile.id,
         nombre: profile.full_name || profile.email?.split('@')[0] || 'Usuario',
         email: profile.email,
         empresa_id: company?.id ?? 0,
-        participacion: 0,
-        dolor: Boolean(profile.onboarding_data?.has_pain),
-        ultima_interaccion: profile.updated_at ?? profile.created_at,
+        participacion: monthlyAnalytics.kpis.participacion,
+        dolor: hasReportedPain || Boolean(profile.onboarding_data?.has_pain),
+        ultima_interaccion: latestIso(latestSession, profile.updated_at ?? profile.created_at) ?? profile.created_at,
         estado: profile.status === 'inactive' ? 'Inactivo' : 'Activo',
         fechaIngreso: profile.created_at,
         onboardingData: profile.onboarding_data ?? {},
@@ -759,7 +796,26 @@ export const Usuarios: React.FC = () => {
     setUsuarios(allUsers);
   };
 
-  useEffect(() => { void loadData(); }, []);
+  useEffect(() => {
+    const refresh = () => void loadData();
+    refresh();
+    window.addEventListener('focus', refresh);
+    window.addEventListener('reactiva-pausas-updated', refresh);
+
+    const channel = supabase
+      ? supabase
+          .channel('admin-users-table-live')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'pause_sessions' }, refresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refresh)
+          .subscribe()
+      : null;
+
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('reactiva-pausas-updated', refresh);
+      if (channel && supabase) void supabase.removeChannel(channel);
+    };
+  }, []);
 
   const rrhhEmpresa = useMemo(() => {
     if (user?.role !== 'rrhh') return undefined;
