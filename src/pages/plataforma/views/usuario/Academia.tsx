@@ -9,7 +9,8 @@ const isPublished = (item: AcademyItem) => isAcademyItemPublished(item);
 
 const academyEmbedUrl = (url: string) => {
   const youtubeId = getYouTubeIdFromUrl(url);
-  return youtubeId ? `https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1` : null;
+  // Add enablejsapi=1 to allow tracking if we want to add it later
+  return youtubeId ? `https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1&enablejsapi=1` : null;
 };
 
 const demoVideoUrls = [
@@ -45,6 +46,7 @@ export const UsuarioAcademia: React.FC = () => {
   const [version, setVersion] = useState(0);
   const [selected, setSelected] = useState<AcademyItem | null>(null);
   const [expandedDemoCategory, setExpandedDemoCategory] = useState<string | null>(null);
+  const [relatedTips, setRelatedTips] = useState<{id: string, title: string}[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -79,7 +81,14 @@ export const UsuarioAcademia: React.FC = () => {
     };
   }, []);
 
-  const libraryItems = useMemo(() => getContentLibrary().academy, [version]);
+  const libraryItems = useMemo(() => {
+    return getContentLibrary().academy.filter(item => {
+      if (item.companyId && user?.empresa_id && String(item.companyId) !== String(user.empresa_id)) return false;
+      if (item.targetWorkProfile && item.targetWorkProfile !== 'ALL' && user?.workProfile && item.targetWorkProfile !== user.workProfile) return false;
+      return true;
+    });
+  }, [version, user]);
+  
   const items = useMemo(
     () => user?.isDemo && libraryItems.filter(isPublished).length === 0 ? demoAcademyFallback : libraryItems,
     [libraryItems, user?.isDemo],
@@ -90,6 +99,30 @@ export const UsuarioAcademia: React.FC = () => {
   useEffect(() => {
     if (category !== 'Todos' && !categories.includes(category)) setCategory('Todos');
   }, [categories, category]);
+
+  useEffect(() => {
+    if (!supabase || !selected) {
+      setRelatedTips([]);
+      return;
+    }
+    const fetchRelations = async () => {
+      // Coach is item_a, Workshop is item_b
+      const { data } = await supabase
+        .from('content_relations')
+        .select('item_a_id')
+        .eq('item_b_id', selected.id);
+      
+      if (data && data.length > 0) {
+        const tipIds = data.map(d => d.item_a_id);
+        const library = getContentLibrary();
+        const related = library.coach.filter(t => tipIds.includes(t.id)).map(t => ({ id: t.id, title: t.title }));
+        setRelatedTips(related);
+      } else {
+        setRelatedTips([]);
+      }
+    };
+    void fetchRelations();
+  }, [selected]);
 
   const filtered = items
     .filter(item => {
@@ -229,6 +262,17 @@ export const UsuarioAcademia: React.FC = () => {
                     style={{ width: '100%', aspectRatio: '16 / 9', border: 0, borderRadius: 14, background: '#0f172a' }}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    onLoad={() => {
+                      // Basic fallback: record as started
+                      if (supabase && user) {
+                        supabase.rpc('save_video_progress', {
+                          p_content_key: selected.id,
+                          p_last_position_seconds: 0,
+                          p_progress_percent: 0,
+                          p_status: 'in_progress'
+                        }).then();
+                      }
+                    }}
                   />
                 ) : (
                   <video
@@ -236,6 +280,23 @@ export const UsuarioAcademia: React.FC = () => {
                     poster={selected.image}
                     controls
                     style={{ width: '100%', aspectRatio: '16 / 9', borderRadius: 14, background: '#0f172a', objectFit: 'cover' }}
+                    onTimeUpdate={(e) => {
+                      const video = e.target as HTMLVideoElement;
+                      if (!video.duration || !supabase || !user) return;
+                      // Throttle updates to every 5 seconds to avoid spamming the DB
+                      const now = Date.now();
+                      const lastUpdate = Number(video.dataset.lastUpdate || '0');
+                      if (now - lastUpdate > 5000) {
+                        video.dataset.lastUpdate = String(now);
+                        const percent = Math.round((video.currentTime / video.duration) * 100);
+                        supabase.rpc('save_video_progress', {
+                          p_content_key: selected.id,
+                          p_last_position_seconds: Math.floor(video.currentTime),
+                          p_progress_percent: percent,
+                          p_status: percent > 90 ? 'completed' : 'in_progress'
+                        }).then();
+                      }
+                    }}
                   />
                 )
               ) : (
@@ -252,6 +313,19 @@ export const UsuarioAcademia: React.FC = () => {
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Star size={14} /> {selected.level}</span>
               </div>
               <p style={{ margin: '0.85rem 0 0', color: '#475569', lineHeight: 1.55 }}>{selected.description}</p>
+              
+              {relatedTips.length > 0 && (
+                <div style={{ marginTop: '1.4rem', border: '1px solid #e2e8f0', borderRadius: 16, padding: '1rem', color: '#334155', fontWeight: 800, fontSize: '0.92rem', background: '#f8fafc' }}>
+                  <p style={{ margin: '0 0 0.5rem', color: '#64748b', fontSize: '0.76rem', letterSpacing: '0.04em' }}>CONSEJOS RELACIONADOS</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {relatedTips.map(t => (
+                      <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Sparkles size={14} color="var(--primary-color)" /> {t.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

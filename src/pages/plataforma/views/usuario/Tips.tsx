@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarCheck, Clock, Droplets, Eye, Leaf, Lightbulb, Moon, Monitor, Sparkles, Star, Target, Trophy, Zap } from 'lucide-react';
 import { CoachItem, fetchContentLibrary, getContentLibrary } from '../../data/contentLibrary';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 const iconFor = (id: string) => {
   if (id.includes('visual')) return { icon: <Eye size={18} />, bg: '#f3e8ff', color: '#8b5cf6' };
@@ -14,9 +15,18 @@ const iconFor = (id: string) => {
   return { icon: <Droplets size={18} />, bg: '#ecfdf5', color: '#059669' };
 };
 
+// Seeded random number generator
+function seededRandom(seed: number) {
+  const x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
+}
+
 export const UsuarioTips: React.FC = () => {
+  const { user } = useAuth();
   const [version, setVersion] = useState(0);
   const [selected, setSelected] = useState<CoachItem | null>(null);
+  const [viewedKeys, setViewedKeys] = useState<Set<string>>(new Set());
+  const [relatedWorkshops, setRelatedWorkshops] = useState<{id: string, title: string}[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -50,7 +60,59 @@ export const UsuarioTips: React.FC = () => {
     };
   }, []);
 
-  const items = useMemo(() => getContentLibrary().coach.filter(item => item.active), [version]);
+  const items = useMemo(() => {
+    return getContentLibrary().coach.filter(item => {
+      if (!item.active) return false;
+      if (item.companyId && user?.empresa_id && String(item.companyId) !== String(user.empresa_id)) return false;
+      if (item.targetWorkProfile && item.targetWorkProfile !== 'ALL' && user?.workProfile && item.targetWorkProfile !== user.workProfile) return false;
+      return true;
+    });
+  }, [version, user]);
+
+  useEffect(() => {
+    if (!supabase || !user) return;
+    supabase.from('user_content_progress').select('content_key')
+      .then(({ data }) => {
+        if (data) setViewedKeys(new Set(data.map(d => d.content_key)));
+      });
+  }, [user]);
+
+  useEffect(() => {
+    if (!supabase || !selected) {
+      setRelatedWorkshops([]);
+      return;
+    }
+    const fetchRelations = async () => {
+      // Coach is item_a, Workshop is item_b
+      const { data } = await supabase
+        .from('content_relations')
+        .select('item_b_id')
+        .eq('item_a_id', selected.id);
+      
+      if (data && data.length > 0) {
+        const workshopIds = data.map(d => d.item_b_id);
+        const library = getContentLibrary();
+        const related = library.academy.filter(w => workshopIds.includes(w.id)).map(w => ({ id: w.id, title: w.title }));
+        setRelatedWorkshops(related);
+      } else {
+        setRelatedWorkshops([]);
+      }
+    };
+    void fetchRelations();
+  }, [selected]);
+
+  const dailyTip = useMemo(() => {
+    if (items.length === 0) return null;
+    
+    // Prioritize items that haven't been viewed
+    const unviewed = items.filter(item => !viewedKeys.has(item.id));
+    const pool = unviewed.length > 0 ? unviewed : items;
+
+    // Pick one based on the current date so it stays consistent for the day
+    const daySeed = new Date().setHours(0, 0, 0, 0);
+    const index = Math.floor(seededRandom(daySeed) * pool.length);
+    return pool[index];
+  }, [items, viewedKeys]);
 
   if (selected) {
     const icon = iconFor(selected.id);
@@ -102,10 +164,19 @@ export const UsuarioTips: React.FC = () => {
             <p style={{ margin: 0, color: '#020617', lineHeight: 1.4, fontWeight: 800, fontSize: '0.9rem' }}>{selected.challenge}</p>
           </article>
         </section>
-        <div style={{ marginTop: '1.4rem', border: '1px solid #e2e8f0', borderRadius: 16, padding: '1rem', color: '#334155', fontWeight: 800, fontSize: '0.92rem' }}>
-          <p style={{ margin: '0 0 0.5rem', color: '#64748b', fontSize: '0.76rem', letterSpacing: '0.04em' }}>CONSEJO RELACIONADO</p>
-          Explorar: {selected.related}
-        </div>
+        
+        {relatedWorkshops.length > 0 && (
+          <div style={{ marginTop: '1.4rem', border: '1px solid #e2e8f0', borderRadius: 16, padding: '1rem', color: '#334155', fontWeight: 800, fontSize: '0.92rem' }}>
+            <p style={{ margin: '0 0 0.5rem', color: '#64748b', fontSize: '0.76rem', letterSpacing: '0.04em' }}>TALLERES RELACIONADOS</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {relatedWorkshops.map(w => (
+                <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Sparkles size={14} color="var(--primary-color)" /> {w.title}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -122,13 +193,15 @@ export const UsuarioTips: React.FC = () => {
         </div>
       </header>
 
-      <section className="user-tips-today" style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', marginBottom: '0.4rem', fontSize: '0.78rem' }}>
-          <Lightbulb size={15} />
-          <span>RECOMENDACIÓN PARA HOY</span>
-        </div>
-        <p style={{ margin: 0, color: '#020617', fontSize: '0.98rem', fontWeight: 800 }}>Cada 20 minutos, mirá algo a 20 pies (6 metros) de distancia durante 20 segundos.</p>
-      </section>
+      {dailyTip && (
+        <section onClick={() => setSelected(dailyTip)} className="user-tips-today" style={{ cursor: 'pointer', background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'} onMouseLeave={e => e.currentTarget.style.transform = 'none'}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', fontWeight: 900, letterSpacing: '0.04em', marginBottom: '0.4rem', fontSize: '0.78rem' }}>
+            <Lightbulb size={15} />
+            <span>RECOMENDACIÓN PARA HOY</span>
+          </div>
+          <p style={{ margin: 0, color: '#020617', fontSize: '0.98rem', fontWeight: 800 }}>{dailyTip.recommendation}</p>
+        </section>
+      )}
 
       <section className="user-tips-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: '1rem' }}>
         {items.map(item => {

@@ -21,6 +21,9 @@ export interface CoachItem {
   challenge: string;
   related: string;
   tags: string[];
+  targetWorkProfile?: 'ALL' | 'ADMINISTRATIVO' | 'OPERATIVO';
+  recommendedWorkProfile?: 'ALL' | 'ADMINISTRATIVO' | 'OPERATIVO';
+  companyId?: string | null;
   active: boolean;
   isNew?: boolean;
 }
@@ -35,6 +38,9 @@ export interface AcademyItem {
   level: 'Basico' | 'Intermedio' | 'Avanzado';
   image: string;
   videoUrl?: string;
+  targetWorkProfile?: 'ALL' | 'ADMINISTRATIVO' | 'OPERATIVO';
+  recommendedWorkProfile?: 'ALL' | 'ADMINISTRATIVO' | 'OPERATIVO';
+  companyId?: string | null;
   recommended?: boolean;
   active: boolean;
 }
@@ -71,6 +77,9 @@ const coachDetail = (overrides: Partial<CoachItem>): CoachItem => ({
   challenge: overrides.recommendation ?? '',
   related: 'Entorno saludable',
   tags: [],
+  targetWorkProfile: overrides.targetWorkProfile ?? 'ALL',
+  recommendedWorkProfile: overrides.recommendedWorkProfile ?? 'ALL',
+  companyId: overrides.companyId ?? null,
   active: true,
   ...overrides,
 });
@@ -268,6 +277,9 @@ const normalizeCoachTypography = (item: CoachItem): CoachItem => ({
   challenge: accentText(item.challenge),
   related: accentText(item.related),
   tags: item.tags.map(accentText),
+  targetWorkProfile: item.targetWorkProfile ?? 'ALL',
+  recommendedWorkProfile: item.recommendedWorkProfile ?? 'ALL',
+  companyId: item.companyId ?? null,
 });
 
 const normalizeAcademyItem = (item: AcademyItem): AcademyItem => ({
@@ -276,6 +288,9 @@ const normalizeAcademyItem = (item: AcademyItem): AcademyItem => ({
   category: normalizeAcademyCategory(item.category),
   image: isReplaceableAcademyCover(item.image) ? academyCoverFor(item) ?? item.image : item.image,
   videoUrl: normalizeAcademyVideoUrl(item.videoUrl) || undefined,
+  targetWorkProfile: item.targetWorkProfile ?? 'ALL',
+  recommendedWorkProfile: item.recommendedWorkProfile ?? 'ALL',
+  companyId: item.companyId ?? null,
   active: item.active && isAcademyVideoReady(item.videoUrl),
 });
 
@@ -353,6 +368,9 @@ const rowToCoachItem = (row: any): CoachItem => normalizeCoachTypography(coachDe
   challenge: row.metadata?.challenge ?? '',
   related: row.metadata?.related ?? '',
   tags: row.tags ?? [],
+  targetWorkProfile: row.target_work_profile ?? 'ALL',
+  recommendedWorkProfile: row.recommended_work_profile ?? 'ALL',
+  companyId: row.company_id ?? null,
   active: row.active,
   isNew: row.featured,
 }));
@@ -367,6 +385,9 @@ const rowToAcademyItem = (row: any): AcademyItem => normalizeAcademyItem({
   level: row.metadata?.level ?? 'Basico',
   image: row.thumbnail_url ?? row.metadata?.image ?? 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1400',
   videoUrl: row.url ?? row.metadata?.videoUrl,
+  targetWorkProfile: row.target_work_profile ?? 'ALL',
+  recommendedWorkProfile: row.recommended_work_profile ?? 'ALL',
+  companyId: row.company_id ?? null,
   recommended: row.featured,
   active: row.active,
 });
@@ -377,7 +398,7 @@ export const fetchContentLibrary = async (): Promise<ContentLibrary> => {
   const [{ data, error }, { data: tombstones, error: tombstonesError }] = await Promise.all([
     supabase
       .from('content_items')
-      .select('id, kind, title, description, category, tags, url, thumbnail_url, active, featured, sort_order, metadata')
+      .select('id, kind, title, description, category, tags, url, thumbnail_url, active, featured, sort_order, metadata, target_work_profile, recommended_work_profile, company_id')
       .in('kind', ['coach_tip', 'workshop'])
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true }),
@@ -434,7 +455,7 @@ export const saveCoachItem = async (item: CoachItem) => {
     return { ok: true };
   }
 
-  const { error } = await supabase.rpc('save_content_item', {
+  const { data, error } = await supabase.rpc('save_content_item', {
     item_id: isUuid(normalizedItem.id) ? normalizedItem.id : null,
     item_kind: 'coach_tip',
     item_title: normalizedItem.title,
@@ -461,12 +482,17 @@ export const saveCoachItem = async (item: CoachItem) => {
       challenge: normalizedItem.challenge,
       related: normalizedItem.related,
     },
+    item_company_id: normalizedItem.companyId ?? null,
+    item_target_work_profile: normalizedItem.targetWorkProfile ?? 'ALL',
+    item_recommended_work_profile: normalizedItem.recommendedWorkProfile ?? 'ALL',
   });
 
-  if (error) return { ok: false, error };
+  if (error) return { ok: false, error, id: null };
+  const savedId = data as string;
+  normalizedItem.id = savedId;
   updateCoachItem(normalizedItem);
   await fetchContentLibrary();
-  return { ok: true, error: null };
+  return { ok: true, error: null, id: savedId };
 };
 
 export const saveAcademyItem = async (item: AcademyItem) => {
@@ -495,6 +521,9 @@ export const saveAcademyItem = async (item: AcademyItem) => {
       image: normalizedItem.image,
       videoUrl: normalizedItem.videoUrl ?? null,
     },
+    item_company_id: normalizedItem.companyId ?? null,
+    item_target_work_profile: normalizedItem.targetWorkProfile ?? 'ALL',
+    item_recommended_work_profile: normalizedItem.recommendedWorkProfile ?? 'ALL',
   });
 
   if (error) return { ok: false, error };

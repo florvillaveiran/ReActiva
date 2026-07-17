@@ -1,42 +1,100 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Star, Eye, EyeOff, BookOpen, Clock, Tag as TagIcon, BarChart2 } from 'lucide-react';
-import { getDB, Workshop, MediaFile } from '../../../mock/data';
+import { fetchContentLibrary, saveAcademyItem, removeContentItemFromSupabase, AcademyItem } from '../../../data/contentLibrary';
+import { supabase } from '../../../lib/supabase';
+import { AcademiaEditor } from './AcademiaEditor';
 
 const NIVEL_COLOR: Record<string, { bg: string; text: string }> = {
-  'Básico':       { bg: '#f0fdfa', text: '#0d9488' },
+  'Basico':       { bg: '#f0fdfa', text: '#0d9488' },
   'Intermedio':   { bg: '#eff6ff', text: '#3b82f6' },
   'Avanzado':     { bg: '#faf5ff', text: '#9333ea' },
 };
 
 export const AcademiaTab: React.FC = () => {
-  const [workshops, setWorkshops] = useState<Workshop[]>([]);
-  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [workshops, setWorkshops] = useState<AcademyItem[]>([]);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('Todas');
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingItem, setEditingItem] = useState<AcademyItem | null>(null);
+  const [stats, setStats] = useState<Record<string, number>>({});
+
+  const loadData = async () => {
+    const lib = await fetchContentLibrary();
+    setWorkshops(lib.academy);
+    
+    if (supabase) {
+      const { data } = await supabase.from('user_content_progress').select('content_key');
+      if (data) {
+        const counts: Record<string, number> = {};
+        data.forEach(d => {
+          counts[d.content_key] = (counts[d.content_key] || 0) + 1;
+        });
+        setStats(counts);
+      }
+    }
+  };
 
   useEffect(() => {
-    const db = getDB();
-    setWorkshops(db.workshops);
-    setMediaFiles(db.mediaFiles);
+    void loadData();
   }, []);
 
   const categories = ['Todas', ...Array.from(new Set(workshops.map(w => w.category)))];
 
   const filtered = workshops.filter(w => {
-    const matchSearch = w.title.toLowerCase().includes(search.toLowerCase()) || w.shortDescription.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = w.title.toLowerCase().includes(search.toLowerCase()) || w.description.toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCategory === 'Todas' || w.category === filterCategory;
     return matchSearch && matchCat;
   });
 
   const activeCount = workshops.filter(w => w.active).length;
   const inactiveCount = workshops.length - activeCount;
-  const totalViews = workshops.reduce((acc, w) => acc + w.views, 0);
-  const topWorkshop = [...workshops].sort((a, b) => b.views - a.views)[0]?.title ?? 'Ninguno';
+  const totalViews = workshops.reduce((acc, w) => acc + (stats[w.id] || 0), 0);
+  const topWorkshopId = [...workshops].sort((a, b) => (stats[b.id] || 0) - (stats[a.id] || 0))[0]?.id;
+  const topWorkshop = workshops.find(w => w.id === topWorkshopId)?.title ?? 'Ninguno';
 
-  const getCoverUrl = (w: Workshop) => {
-    if (!w.coverImageId) return null;
-    return mediaFiles.find(f => f.id === w.coverImageId)?.url ?? null;
+  const handleCreate = () => {
+    setEditingItem(null);
+    setIsEditing(true);
   };
+
+  const handleEdit = (item: AcademyItem) => {
+    setEditingItem(item);
+    setIsEditing(true);
+  };
+
+  const handleToggleActive = async (item: AcademyItem) => {
+    const toggled = { ...item, active: !item.active };
+    await saveAcademyItem(toggled);
+    void loadData();
+  };
+
+  const handleDelete = async (item: AcademyItem) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el taller "${item.title}"?`)) return;
+    await removeContentItemFromSupabase(item.id);
+    void loadData();
+  };
+
+  const handleSave = async (item: AcademyItem, relatedTips: string[]) => {
+    const result = await saveAcademyItem(item);
+    if (result.ok && result.id && supabase) {
+      // Coach is item_a, Workshop is item_b
+      await supabase.from('content_relations').delete().eq('item_b_id', result.id);
+      if (relatedTips.length > 0) {
+        const inserts = relatedTips.map(tId => ({
+          item_a_id: tId,
+          item_b_id: result.id
+        }));
+        await supabase.from('content_relations').insert(inserts);
+      }
+    }
+    setIsEditing(false);
+    void loadData();
+  };
+
+  if (isEditing) {
+    return <AcademiaEditor item={editingItem} onSave={handleSave} onCancel={() => setIsEditing(false)} />;
+  }
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
@@ -81,7 +139,7 @@ export const AcademiaTab: React.FC = () => {
             {categories.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
-        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}>
+        <button className="btn-primary" onClick={handleCreate} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}>
           <Plus size={16} /> Nuevo taller
         </button>
       </div>
@@ -89,7 +147,7 @@ export const AcademiaTab: React.FC = () => {
       {/* Grilla de Talleres */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
         {filtered.map(workshop => {
-          const coverUrl = getCoverUrl(workshop);
+          const coverUrl = workshop.image;
           const nivelStyle = NIVEL_COLOR[workshop.level] ?? { bg: '#f1f5f9', text: '#64748b' };
           return (
             <div key={workshop.id} className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -108,14 +166,14 @@ export const AcademiaTab: React.FC = () => {
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, backgroundColor: nivelStyle.bg, color: nivelStyle.text, padding: '0.2rem 0.5rem', borderRadius: '1rem' }}>
                     {workshop.level}
                   </span>
-                  {workshop.featured && (
+                  {workshop.recommended && (
                     <span style={{ fontSize: '0.7rem', fontWeight: 700, backgroundColor: '#fef3c7', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                       <Star size={10} fill="#d97706" /> Destacado
                     </span>
                   )}
                 </div>
                 {/* Estado toggle */}
-                <button style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '1rem', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600, color: workshop.active ? 'var(--primary-color)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <button onClick={() => handleToggleActive(workshop)} style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '1rem', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600, color: workshop.active ? 'var(--primary-color)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   {workshop.active ? <Eye size={12} /> : <EyeOff size={12} />}
                   {workshop.active ? 'Activo' : 'Inactivo'}
                 </button>
@@ -130,31 +188,23 @@ export const AcademiaTab: React.FC = () => {
                   {workshop.title}
                 </h4>
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.75rem', flex: 1 }}>
-                  {workshop.shortDescription}
+                  {workshop.description}
                 </p>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Clock size={12} /> {workshop.durationMinutes} min
+                    <Clock size={12} /> {workshop.duration}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <BarChart2 size={12} /> {workshop.views} vistas
+                    <BarChart2 size={12} /> {stats[workshop.id] || 0} vistas
                   </span>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                  {workshop.tags.map(tag => (
-                    <span key={tag} style={{ fontSize: '0.68rem', backgroundColor: 'var(--bg-secondary-color)', color: 'var(--text-muted)', padding: '0.15rem 0.45rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                      <TagIcon size={9} /> {tag}
-                    </span>
-                  ))}
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-color)', fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <button onClick={() => handleEdit(workshop)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-color)', fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <Edit2 size={14} /> Editar
                   </button>
-                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red-color)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <button onClick={() => handleDelete(workshop)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red-color)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <Trash2 size={14} />
                   </button>
                 </div>
