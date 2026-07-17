@@ -10,12 +10,50 @@ import { AnalyticsPeriod, calculateIndividualAnalytics, IndividualPauseSession }
 import { invitationPath, makeShortInvitationCode } from '../../lib/invitationLinks';
 import { sendTransactionalEmail } from '../../lib/emailSender';
 
+type WorkProfile = 'ADMINISTRATIVO' | 'OPERATIVO';
+type WorkProfileFilter = 'all' | WorkProfile | 'UNCLASSIFIED';
+type UserStatusFilter = 'all' | 'ACTIVE' | 'INACTIVE';
+
+const workProfileLabel = (workProfile?: WorkProfile) => {
+  if (workProfile === 'ADMINISTRATIVO') return 'Administrativo';
+  if (workProfile === 'OPERATIVO') return 'Operativo';
+  return 'Sin clasificar';
+};
+
+const WorkProfileBadge: React.FC<{ workProfile?: WorkProfile }> = ({ workProfile }) => {
+  const isUnclassified = !workProfile;
+  return (
+    <span
+      className="work-profile-badge"
+      style={{
+        display: 'inline-flex', alignItems: 'center', width: 'fit-content', padding: '0.28rem 0.68rem', borderRadius: '999px',
+        backgroundColor: isUnclassified ? '#fff7ed' : workProfile === 'ADMINISTRATIVO' ? '#eff6ff' : '#ecfdf5',
+        color: isUnclassified ? '#c2410c' : workProfile === 'ADMINISTRATIVO' ? '#2563eb' : '#059669',
+        fontSize: '0.76rem', fontWeight: 700, whiteSpace: 'nowrap',
+      }}
+    >
+      {workProfileLabel(workProfile)}
+    </span>
+  );
+};
+
+const userStatusColors = (status?: Usuario['estado']) => {
+  if (status === 'Pendiente de acceso') return { background: '#fff7ed', color: '#c2410c' };
+  if (status === 'Inactivo') return { background: '#f1f5f9', color: '#64748b' };
+  return { background: '#ecfdf5', color: '#059669' };
+};
+
 // Section
 const Badge: React.FC<{ label: string; bg: string; color: string }> = ({ label, bg, color }) => (
   <span className="user-status-badge" style={{ display: 'inline-block', padding: '0.3rem 0.85rem', borderRadius: '999px', backgroundColor: bg, color, fontSize: '0.8rem', fontWeight: 600 }}>
     {label}
   </span>
 );
+
+const UserStatusBadge: React.FC<{ status?: Usuario['estado'] }> = ({ status }) => {
+  const colors = userStatusColors(status);
+  return <Badge label={status || 'Activo'} bg={colors.background} color={colors.color} />;
+};
 
 const MetricCard: React.FC<{ icon: React.ReactNode; label: string; inicial: string; actual?: string }> = ({ icon, label, inicial, actual }) => (
   <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0', flex: '1 1 200px' }}>
@@ -73,7 +111,13 @@ const companyStatusFromSupabase = (status?: string): Empresa['estado'] => {
 };
 
 // Section
-const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined; onBack: () => void }> = ({ usuario, empresa, onBack }) => {
+const UsuarioDetalle: React.FC<{
+  usuario: Usuario;
+  empresa: Empresa | undefined;
+  onBack: () => void;
+  canEditWorkProfile?: boolean;
+  onWorkProfileChange?: (workProfile: WorkProfile) => Promise<void>;
+}> = ({ usuario, empresa, onBack, canEditWorkProfile = false, onWorkProfileChange }) => {
   const [activeTab, setActiveTab] = useState<'resumen' | 'analiticas'>('resumen');
   const [periodo, setPeriodo] = useState<AnalyticsPeriod>('mensual');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -82,6 +126,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
   const [pauseSessions, setPauseSessions] = useState<IndividualPauseSession[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsError, setAnalyticsError] = useState('');
+  const [workProfileSaving, setWorkProfileSaving] = useState(false);
   const reporteRef = useRef<HTMLDivElement>(null);
 
   const data = usuario.onboardingData;
@@ -237,7 +282,7 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
         <div className="user-detail-primary">
           <div className="user-detail-title" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{usuario.nombre}</h2>
-            <Badge label={usuario.estado || 'Activo'} bg={usuario.estado === 'Activo' || !usuario.estado ? '#ecfdf5' : '#f1f5f9'} color={usuario.estado === 'Activo' || !usuario.estado ? '#059669' : '#64748b'} />
+            <UserStatusBadge status={usuario.estado} />
           </div>
           <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>{usuario.email}</p>
         </div>
@@ -250,6 +295,37 @@ const UsuarioDetalle: React.FC<{ usuario: Usuario; empresa: Empresa | undefined;
             <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Fecha Ingreso</p>
             <p style={{ fontWeight: 600, color: '#1e293b', margin: 0 }}>{fechaFmt}</p>
           </div>
+          {canEditWorkProfile && (
+            <div style={{ minWidth: '190px' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Perfil laboral</p>
+              <select
+                className="input-field"
+                aria-label={`Perfil laboral de ${usuario.nombre}`}
+                value={usuario.workProfile ?? ''}
+                disabled={workProfileSaving || usuario.estado === 'Pendiente de acceso'}
+                onChange={async (event) => {
+                  const nextProfile = event.target.value as WorkProfile;
+                  if (!nextProfile || !onWorkProfileChange) return;
+                  setWorkProfileSaving(true);
+                  try {
+                    await onWorkProfileChange(nextProfile);
+                  } catch (error: any) {
+                    window.alert(error?.message ?? 'No pudimos actualizar el perfil laboral.');
+                  } finally {
+                    setWorkProfileSaving(false);
+                  }
+                }}
+                style={{ width: '100%', minHeight: 40, padding: '0.5rem 0.7rem', backgroundColor: 'white', fontSize: '0.86rem' }}
+              >
+                <option value="" disabled>Sin clasificar</option>
+                <option value="ADMINISTRATIVO">Administrativo</option>
+                <option value="OPERATIVO">Operativo</option>
+              </select>
+              {usuario.estado === 'Pendiente de acceso' && (
+                <p style={{ margin: '0.35rem 0 0', color: '#94a3b8', fontSize: '0.72rem' }}>Disponible cuando active su cuenta.</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -561,6 +637,8 @@ export const Usuarios: React.FC = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [empresaFiltro, setEmpresaFiltro] = useState('all');
+  const [workProfileFiltro, setWorkProfileFiltro] = useState<WorkProfileFilter>('all');
+  const [statusFiltro, setStatusFiltro] = useState<UserStatusFilter>('all');
   const [search, setSearch] = useState('');
   
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
@@ -573,6 +651,8 @@ export const Usuarios: React.FC = () => {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [bulkWorkProfile, setBulkWorkProfile] = useState<WorkProfile | ''>('');
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const loadData = async () => {
     if (!supabase) {
@@ -595,11 +675,11 @@ export const Usuarios: React.FC = () => {
         .select('id, name, location, status, contact_name, rrhh_email, onboarding_completed_at, created_at'),
       supabase
         .from('profiles')
-        .select('id, company_id, email, full_name, role, status, created_at, updated_at, onboarding_data')
+        .select('id, company_id, email, full_name, role, status, created_at, updated_at, onboarding_data, work_profile')
         .eq('role', 'usuario'),
       supabase
         .from('onboarding_responses')
-        .select('id, company_id, profile_id, responses, completed_at')
+        .select('id, company_id, profile_id, responses, work_profile, completed_at')
         .eq('type', 'user_activation')
         .order('completed_at', { ascending: false }),
     ]);
@@ -636,6 +716,7 @@ export const Usuarios: React.FC = () => {
         estado: profile.status === 'inactive' ? 'Inactivo' : 'Activo',
         fechaIngreso: profile.created_at,
         onboardingData: profile.onboarding_data ?? {},
+        workProfile: profile.work_profile ?? undefined,
       };
     });
 
@@ -659,6 +740,7 @@ export const Usuarios: React.FC = () => {
         estado: 'Pendiente de acceso',
         fechaIngreso: response.completed_at,
         onboardingData: response.responses ?? {},
+        workProfile: response.work_profile ?? response.responses?.workProfile ?? undefined,
       });
     });
 
@@ -690,23 +772,110 @@ export const Usuarios: React.FC = () => {
   const rrhhEmpresaId = user?.role === 'rrhh' ? rrhhEmpresa?.id : undefined;
   const isRrhh = user?.role === 'rrhh';
 
+  const handleWorkProfileChange = async (usuario: Usuario, workProfile: WorkProfile) => {
+    if (usuario.estado === 'Pendiente de acceso') {
+      throw new Error('El usuario todavía no activó su cuenta. Podrás clasificarlo cuando complete el acceso.');
+    }
+
+    if (supabase && usuario.supabaseId) {
+      const { error } = await supabase.rpc('set_user_work_profile', {
+        target_profile_id: usuario.supabaseId,
+        new_work_profile: workProfile,
+      });
+      if (error) throw error;
+    } else {
+      const db = getDB();
+      db.usuarios = db.usuarios.map((item) => item.id === usuario.id ? { ...item, workProfile } : item);
+      setDB(db);
+    }
+
+    const updateUser = (item: Usuario) => item.id === usuario.id ? { ...item, workProfile } : item;
+    setUsuarios((current) => current.map(updateUser));
+    setSelectedUser((current) => current?.id === usuario.id ? { ...current, workProfile } : current);
+  };
+
   if (selectedUser) {
     if (isRrhh && (!rrhhEmpresaId || selectedUser.empresa_id !== rrhhEmpresaId)) {
       setSelectedUser(null);
       return null;
     }
     const emp = empresas.find(e => e.id === selectedUser.empresa_id);
-    return <UsuarioDetalle usuario={selectedUser} empresa={emp} onBack={() => { loadData(); setSelectedUser(null); }} />;
+    return (
+      <UsuarioDetalle
+        usuario={selectedUser}
+        empresa={emp}
+        canEditWorkProfile={!isRrhh}
+        onWorkProfileChange={(workProfile) => handleWorkProfileChange(selectedUser, workProfile)}
+        onBack={() => { loadData(); setSelectedUser(null); }}
+      />
+    );
   }
 
   const usuariosFiltrados = usuarios.filter(u => {
     if (isRrhh && (!rrhhEmpresaId || u.empresa_id !== rrhhEmpresaId)) return false;
     const coincideEmpresa = empresaFiltro === 'all' || u.empresa_id.toString() === empresaFiltro;
     const coincideBusqueda = u.nombre.toLowerCase().includes(search.toLowerCase());
-    return coincideEmpresa && coincideBusqueda;
+    const coincideWorkProfile = workProfileFiltro === 'all'
+      || (workProfileFiltro === 'UNCLASSIFIED' ? !u.workProfile : u.workProfile === workProfileFiltro);
+    const coincideEstado = statusFiltro === 'all'
+      || (statusFiltro === 'ACTIVE' ? u.estado === 'Activo' : u.estado === 'Inactivo');
+    return coincideEmpresa && coincideBusqueda && coincideWorkProfile && coincideEstado;
   });
 
   const getEmpresaName = (id: number) => empresas.find(e => e.id === id)?.nombre || 'Desconocida';
+
+  const selectedBulkCompany = !isRrhh && empresaFiltro !== 'all'
+    ? empresas.find((empresa) => empresa.id.toString() === empresaFiltro)
+    : undefined;
+  const unclassifiedCompanyUsers = selectedBulkCompany
+    ? usuarios.filter((usuario) => usuario.empresa_id === selectedBulkCompany.id
+      && usuario.estado !== 'Pendiente de acceso'
+      && !usuario.workProfile)
+    : [];
+
+  const handleBulkWorkProfile = async () => {
+    if (!selectedBulkCompany || !bulkWorkProfile) return;
+    if (!selectedBulkCompany.supabaseId && supabase) {
+      window.alert('No encontramos el identificador real de la empresa. Recargá la página y volvé a intentarlo.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Asignar ${workProfileLabel(bulkWorkProfile)} a ${unclassifiedCompanyUsers.length} usuario${unclassifiedCompanyUsers.length === 1 ? '' : 's'} sin clasificar de ${selectedBulkCompany.nombre}?`,
+    );
+    if (!confirmed) return;
+
+    setBulkSaving(true);
+    try {
+      let updatedCount = 0;
+      if (supabase && selectedBulkCompany.supabaseId) {
+        const { data, error } = await supabase.rpc('set_company_users_work_profile', {
+          target_company_id: selectedBulkCompany.supabaseId,
+          new_work_profile: bulkWorkProfile,
+          only_unclassified: true,
+        });
+        if (error) throw error;
+        updatedCount = Number(data ?? 0);
+      } else {
+        const db = getDB();
+        db.usuarios = db.usuarios.map((usuario) => {
+          if (usuario.empresa_id !== selectedBulkCompany.id || usuario.workProfile) return usuario;
+          updatedCount += 1;
+          return { ...usuario, workProfile: bulkWorkProfile };
+        });
+        setDB(db);
+      }
+
+      setBulkWorkProfile('');
+      await loadData();
+      window.alert(`${updatedCount} usuario${updatedCount === 1 ? '' : 's'} clasificado${updatedCount === 1 ? '' : 's'} correctamente.`);
+    } catch (error: any) {
+      console.error('No se pudo aplicar la clasificación masiva', error);
+      window.alert(error?.message ?? 'No pudimos clasificar los usuarios de la empresa.');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
 
   const handleGenerateLink = async (options?: { sendEmail?: boolean }) => {
     setInviteError('');
@@ -847,16 +1016,70 @@ export const Usuarios: React.FC = () => {
         <h2 className="header-title" style={{ marginBottom: 0 }}>Usuarios</h2>
         <div className="users-toolbar-actions" style={{ display: 'flex', gap: '1rem' }}>
           {!isRrhh && (
-            <select className="input-field" style={{ width: '220px', backgroundColor: 'var(--bg-color)' }} value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
-              <option value="all">Todas las empresas</option>
-              {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-            </select>
+            <>
+              <select className="input-field" aria-label="Filtrar por empresa" style={{ width: '220px', backgroundColor: 'var(--bg-color)' }} value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
+                <option value="all">Todas las empresas</option>
+                {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+              </select>
+              <select className="input-field" aria-label="Filtrar por perfil laboral" style={{ width: '180px', backgroundColor: 'var(--bg-color)' }} value={workProfileFiltro} onChange={(e) => setWorkProfileFiltro(e.target.value as WorkProfileFilter)}>
+                <option value="all">Todos los perfiles</option>
+                <option value="ADMINISTRATIVO">Administrativo</option>
+                <option value="OPERATIVO">Operativo</option>
+                <option value="UNCLASSIFIED">Sin clasificar</option>
+              </select>
+              <select className="input-field" aria-label="Filtrar por estado" style={{ width: '145px', backgroundColor: 'var(--bg-color)' }} value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value as UserStatusFilter)}>
+                <option value="all">Todos los estados</option>
+                <option value="ACTIVE">Activos</option>
+                <option value="INACTIVE">Inactivos</option>
+              </select>
+            </>
           )}
           <button className="btn-primary users-invite-button" onClick={() => { setIsModalOpen(true); setGeneratedLink(''); setInviteError(''); }}>
             {isRrhh ? 'Invitar empleados' : 'Invitar Usuarios'}
           </button>
         </div>
       </div>
+
+      {!isRrhh && selectedBulkCompany && unclassifiedCompanyUsers.length > 0 && (
+        <div
+          className="card users-bulk-profile-card"
+          style={{
+            marginBottom: '1.25rem', padding: '0.9rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: '1rem', flexWrap: 'wrap', border: '1px solid #fed7aa', backgroundColor: '#fffaf5',
+          }}
+        >
+          <div style={{ minWidth: '220px', flex: 1 }}>
+            <p style={{ margin: 0, color: '#9a3412', fontSize: '0.82rem', fontWeight: 800 }}>
+              {unclassifiedCompanyUsers.length} usuario{unclassifiedCompanyUsers.length === 1 ? '' : 's'} sin clasificar
+            </p>
+            <p style={{ margin: '0.18rem 0 0', color: '#78716c', fontSize: '0.76rem' }}>
+              Asignación segura para pendientes de {selectedBulkCompany.nombre}. Los ya clasificados no se modifican.
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+            <select
+              className="input-field"
+              aria-label="Perfil laboral para asignación masiva"
+              value={bulkWorkProfile}
+              onChange={(event) => setBulkWorkProfile(event.target.value as WorkProfile | '')}
+              style={{ width: '170px', minHeight: 40, padding: '0.5rem 0.7rem', backgroundColor: 'white', fontSize: '0.82rem' }}
+            >
+              <option value="">Elegir perfil</option>
+              <option value="ADMINISTRATIVO">Administrativo</option>
+              <option value="OPERATIVO">Operativo</option>
+            </select>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={!bulkWorkProfile || bulkSaving}
+              onClick={() => void handleBulkWorkProfile()}
+              style={{ minHeight: 40, padding: '0.55rem 0.9rem', fontSize: '0.8rem', whiteSpace: 'nowrap', opacity: !bulkWorkProfile || bulkSaving ? 0.55 : 1 }}
+            >
+              {bulkSaving ? 'Asignando...' : 'Clasificar pendientes'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="card users-search-card" style={{ marginBottom: '2rem', padding: '1rem', display: 'flex', gap: '1rem' }}>
         <div className="users-search-wrap" style={{ position: 'relative', flex: 1 }}>
@@ -875,12 +1098,13 @@ export const Usuarios: React.FC = () => {
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Ultima interacción</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>¿Dolor?</th>
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Ingreso</th>
+              {!isRrhh && <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Perfil laboral</th>}
               <th style={{ padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Estado</th>
             </tr>
           </thead>
           <tbody>
             {usuariosFiltrados.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron usuarios.</td></tr>
+              <tr><td colSpan={isRrhh ? 7 : 8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No se encontraron usuarios.</td></tr>
             )}
             {usuariosFiltrados.map((usuario, idx) => (
               <tr 
@@ -905,13 +1129,14 @@ export const Usuarios: React.FC = () => {
                   {usuario.dolor ? <span className="badge badge-warning" style={{ gap: '0.25rem' }}><AlertCircle size={14} /> Sí</span> : <span className="text-muted">No</span>}
                 </td>
                 <td data-label="Ingreso" style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{formatFecha(usuario.fechaIngreso || usuario.ultima_interaccion)}</td>
+                {!isRrhh && (
+                  <td data-label="Perfil laboral" style={{ padding: '1.25rem 1.5rem' }}>
+                    <WorkProfileBadge workProfile={usuario.workProfile} />
+                  </td>
+                )}
                 <td data-label="Estado" style={{ padding: '1.25rem 1.5rem' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.55rem' }}>
-                    <Badge
-                      label={usuario.estado || 'Activo'}
-                      bg={usuario.estado === 'Pendiente de acceso' ? '#fff7ed' : '#ecfdf5'}
-                      color={usuario.estado === 'Pendiente de acceso' ? '#c2410c' : '#059669'}
-                    />
+                    <UserStatusBadge status={usuario.estado} />
                     {!isRrhh && <button
                       type="button"
                       onClick={(event) => void handleEliminarUsuario(event, usuario)}

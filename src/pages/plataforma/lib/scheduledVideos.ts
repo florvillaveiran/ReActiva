@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 
 export type ScheduledVideoBlock = 'morning' | 'afternoon';
+export type ScheduledVideoWorkProfile = 'ADMINISTRATIVO' | 'OPERATIVO';
 
 export interface ScheduledVideo {
   id: string;
@@ -13,6 +14,7 @@ export interface ScheduledVideo {
   thumbnailUrl?: string;
   companyId?: string | null;
   companyName?: string;
+  targetWorkProfile?: ScheduledVideoWorkProfile | null;
   createdAt: string;
 }
 
@@ -72,18 +74,23 @@ export const getScheduledVideoFor = (
   block: ScheduledVideoBlock,
   companyId?: string,
   scheduledDate?: string,
+  workProfile?: ScheduledVideoWorkProfile,
 ) => {
   const matches = videos
     .filter(video => video.day === day && video.block === block)
-    .filter(video => !scheduledDate || video.scheduledDate === scheduledDate);
+    .filter(video => !scheduledDate || video.scheduledDate === scheduledDate)
+    .filter(video => !video.companyId || video.companyId === companyId)
+    .filter(video => !video.targetWorkProfile || video.targetWorkProfile === workProfile);
 
-  if (companyId) {
-    const companyVideo = matches.filter(video => video.companyId === companyId).at(-1);
-    if (companyVideo) return companyVideo;
-    return matches.filter(video => !video.companyId).at(-1) ?? null;
-  }
+  const rank = (video: ScheduledVideo) => (
+    (companyId && video.companyId === companyId ? 2 : 0)
+    + (workProfile && video.targetWorkProfile === workProfile ? 1 : 0)
+  );
 
-  return matches[matches.length - 1] ?? null;
+  return matches.sort((first, second) => (
+    rank(first) - rank(second)
+    || first.createdAt.localeCompare(second.createdAt)
+  )).at(-1) ?? null;
 };
 
 const rowToScheduledVideo = (row: any): ScheduledVideo | null => {
@@ -100,6 +107,7 @@ const rowToScheduledVideo = (row: any): ScheduledVideo | null => {
     thumbnailUrl: row.thumbnail_url ?? metadata.thumbnailUrl,
     companyId: row.company_id ?? metadata.companyId ?? null,
     companyName: metadata.companyName ?? 'Global',
+    targetWorkProfile: row.target_work_profile ?? metadata.targetWorkProfile ?? null,
     createdAt: row.created_at ?? new Date().toISOString(),
   };
 };
@@ -109,7 +117,7 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
 
   const { data, error } = await supabase
     .from('content_items')
-    .select('id, company_id, title, url, thumbnail_url, metadata, created_at')
+    .select('id, company_id, target_work_profile, title, url, thumbnail_url, metadata, created_at')
     .eq('kind', 'video')
     .eq('active', true)
     .order('created_at', { ascending: true });
@@ -119,7 +127,7 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
   const remote = data.map(rowToScheduledVideo).filter(Boolean) as ScheduledVideo[];
   const merged = new Map<string, ScheduledVideo>();
   remote.forEach((video) => {
-    const key = `${video.scheduledDate}__${video.block}__${video.companyId ?? 'global'}`;
+    const key = `${video.scheduledDate}__${video.block}__${video.companyId ?? 'global'}__${video.targetWorkProfile ?? 'all'}`;
     merged.set(key, video);
   });
   const videos = Array.from(merged.values());
@@ -127,11 +135,57 @@ export const fetchScheduledVideos = async (): Promise<ScheduledVideo[]> => {
   return videos;
 };
 
+/**
+ * Obtiene exclusivamente los turnos que le corresponden al usuario conectado.
+ * Supabase deriva empresa y perfil laboral desde auth.uid(); los argumentos se
+ * usan solamente para mantener un fallback local seguro durante el desarrollo.
+ */
+export const fetchScheduledVideosForUser = async (
+  companyId?: string,
+  workProfile?: ScheduledVideoWorkProfile,
+  referenceDate = new Date(),
+): Promise<ScheduledVideo[]> => {
+  const requestedDays = Object.keys(PROGRAM_DAY_OFFSETS).map(day => ({
+    day,
+    scheduledDate: getScheduledDateForProgramDay(day, referenceDate),
+  }));
+
+  const localFallback = () => requestedDays.flatMap(({ day, scheduledDate }) => (
+    (['morning', 'afternoon'] as const)
+      .map(block => getScheduledVideoFor(readStoredVideos(), day, block, companyId, scheduledDate, workProfile))
+      .filter((video): video is ScheduledVideo => Boolean(video))
+  ));
+
+  if (!supabase) return localFallback();
+
+  const { data, error } = await supabase.rpc('get_my_scheduled_videos', {
+    target_dates: requestedDays.map(item => item.scheduledDate),
+  });
+
+  if (error || !data) return localFallback();
+
+  return data
+    .map(rowToScheduledVideo)
+    .filter((video): video is ScheduledVideo => Boolean(video));
+};
+
 export const saveScheduledVideo = async (video: ScheduledVideo) => {
   if (!supabase) {
     const current = readStoredVideos();
-    const withoutSameSlot = current.filter(item => !(item.scheduledDate === video.scheduledDate && item.block === video.block && (item.companyId ?? 'global') === (video.companyId ?? 'global')));
-    saveScheduledVideosLocal([...withoutSameSlot, video]);
+    const conflict = current.find(item => (
+      item.id !== video.id
+      && item.scheduledDate === video.scheduledDate
+      && item.block === video.block
+      && (item.companyId ?? 'global') === (video.companyId ?? 'global')
+      && (item.targetWorkProfile ?? 'all') === (video.targetWorkProfile ?? 'all')
+    ));
+    if (conflict) {
+      return {
+        ok: false,
+        error: new Error('Ya existe un video para esa empresa, perfil, fecha y turno. Editalo o elegi otra programacion.'),
+      };
+    }
+    saveScheduledVideosLocal([...current.filter(item => item.id !== video.id), video]);
     return { ok: true };
   }
 
@@ -146,6 +200,7 @@ export const saveScheduledVideo = async (video: ScheduledVideo) => {
     scheduled_block: video.block,
     scheduled_time: video.time,
     company_name: video.companyName ?? 'Global',
+    target_work_profile: video.targetWorkProfile ?? null,
   });
 
   if (!error) await fetchScheduledVideos();

@@ -9,6 +9,7 @@ export interface User {
   name: string;
   empresa_id?: number | string;
   isDemo?: boolean;
+  workProfile?: 'ADMINISTRATIVO' | 'OPERATIVO';
 }
 
 interface AuthContextType {
@@ -84,6 +85,7 @@ const profileToUser = (profile: any, fallbackEmail = ''): User => ({
   role: roleFromValue(profile?.role),
   name: profile?.full_name ?? fallbackEmail.split('@')[0] ?? 'Usuario',
   empresa_id: profile?.company_id ?? undefined,
+  workProfile: profile?.work_profile ?? undefined,
 });
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -130,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     for (let attempt = 0; attempt < 10; attempt += 1) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('email, full_name, role, company_id')
+        .select('email, full_name, role, company_id, work_profile')
         .eq('id', authUser.id)
         .maybeSingle();
 

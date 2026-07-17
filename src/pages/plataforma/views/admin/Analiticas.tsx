@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
-import { Filter, Calendar, Briefcase, Settings, Monitor, UserRoundCheck } from 'lucide-react';
-import { useAdminStats } from '../../hooks/useAdminStats';
+import { Filter, Calendar, Bell, CheckCircle2, ListChecks, Users, Briefcase, Settings, Monitor, UserRoundCheck, GitCompareArrows, ShieldCheck } from 'lucide-react';
+import { type AdminStats, type AnalyticsWorkProfileFilter, useAdminStats } from '../../hooks/useAdminStats';
 import { ReportGenerator } from '../../components/ReportGenerator';
 import { useAuth } from '../../context/AuthContext';
 import { useEmpresas } from '../../context/EmpresasContext';
@@ -401,6 +401,117 @@ const resolveReportRange = (
 
 const EMPTY_ANALYTICS = enrichSet({ zonas: [], tension: [], evolucion: [] });
 
+const analyticsSetFromStats = (stats: AdminStats): AnaliticaSet => {
+  if (!stats.hayDatos) return EMPTY_ANALYTICS;
+  const evolucionReal = stats.evolucion.map(p => ({
+    ...p,
+    foco: stats.foco.enfocado,
+    dolor: stats.reportanMolestias,
+    impacto: p.satisfaccion,
+    energiaPct: Math.round((p.energia / 5) * 100),
+  }));
+  const focoReal = stats.foco.enfocado || (stats.estadoEmocional ? Math.round((stats.estadoEmocional / 5) * 100) : 0);
+  return {
+    zonas: stats.zonasDolorChart,
+    tension: stats.tensionDistribucion,
+    evolucion: evolucionReal,
+    kpis: {
+      participacion: stats.adherencia,
+      dolor: stats.reportanMolestias,
+      foco: focoReal,
+      impacto: stats.evolucion.at(-1)?.satisfaccion ?? 0,
+      energia: Math.round((stats.energiaPromedio / 5) * 100),
+    },
+  };
+};
+
+const analyticsEnvironment = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+const configuredPrivacyMinimum = Number(analyticsEnvironment?.VITE_ANALYTICS_MIN_GROUP_SIZE ?? 5);
+const WORK_PROFILE_PRIVACY_MIN_USERS = Number.isFinite(configuredPrivacyMinimum)
+  ? Math.max(2, Math.round(configuredPrivacyMinimum))
+  : 5;
+
+const WorkProfileComparison: React.FC<{
+  administrativeStats: AdminStats;
+  operativeStats: AdminStats;
+}> = ({ administrativeStats, operativeStats }) => {
+  const administrativeData = useMemo(() => analyticsSetFromStats(administrativeStats), [administrativeStats]);
+  const operativeData = useMemo(() => analyticsSetFromStats(operativeStats), [operativeStats]);
+  const administrativeVisible = administrativeStats.usuariosCount >= WORK_PROFILE_PRIVACY_MIN_USERS;
+  const operativeVisible = operativeStats.usuariosCount >= WORK_PROFILE_PRIVACY_MIN_USERS;
+
+  const topTension = (stats: AdminStats) => [...stats.tensionDistribucion].sort((a, b) => b.valor - a.valor)[0];
+  const administrativeTension = topTension(administrativeStats);
+  const operativeTension = topTension(operativeStats);
+  const rows = [
+    { label: 'Participación', admin: administrativeData.kpis.participacion, operative: operativeData.kpis.participacion, color: '#0f9f8f' },
+    { label: 'Energía', admin: administrativeData.kpis.energia, operative: operativeData.kpis.energia, color: '#f59e0b' },
+    { label: 'Foco', admin: administrativeData.kpis.foco, operative: operativeData.kpis.foco, color: '#3b82f6' },
+    { label: 'Dolor', admin: administrativeData.kpis.dolor, operative: operativeData.kpis.dolor, color: '#f43f5e' },
+    { label: 'Tensión', admin: administrativeTension?.valor ?? 0, operative: operativeTension?.valor ?? 0, color: '#4f46e5' },
+    { label: 'Impacto percibido', admin: administrativeData.kpis.impacto, operative: operativeData.kpis.impacto, color: '#9333ea' },
+  ];
+
+  const privacyMessage = (
+    <div className="work-profile-privacy-message">
+      <ShieldCheck size={18} />
+      <span>Datos insuficientes para preservar la privacidad.</span>
+    </div>
+  );
+
+  return (
+    <section className="work-profile-comparison card" aria-label="Comparación de perfiles laborales">
+      <div className="work-profile-comparison-header">
+        <div>
+          <p className="work-profile-comparison-eyebrow">Comparación agregada</p>
+          <h3>Administrativo vs. Operativo</h3>
+          <p>Solo se muestran grupos con al menos {WORK_PROFILE_PRIVACY_MIN_USERS} usuarios con datos en el período.</p>
+        </div>
+        <span className="work-profile-comparison-secure"><ShieldCheck size={15} /> Privacidad protegida</span>
+      </div>
+
+      <div className="work-profile-comparison-summary">
+        <div className="work-profile-segment administrative">
+          <span>Administrativo</span>
+          {administrativeVisible
+            ? <strong>{administrativeStats.usuariosCount} usuarios incluidos</strong>
+            : privacyMessage}
+        </div>
+        <div className="work-profile-segment operative">
+          <span>Operativo</span>
+          {operativeVisible
+            ? <strong>{operativeStats.usuariosCount} usuarios incluidos</strong>
+            : privacyMessage}
+        </div>
+      </div>
+
+      <div className="work-profile-comparison-table">
+        <div className="work-profile-comparison-row work-profile-comparison-labels">
+          <span>Indicador</span><span>Administrativo</span><span>Operativo</span>
+        </div>
+        {rows.map(row => (
+          <div className="work-profile-comparison-row" key={row.label}>
+            <strong>{row.label}</strong>
+            <div>
+              {administrativeVisible ? <><b style={{ color: row.color }}>{row.admin}%</b><span className="comparison-bar"><i style={{ width: `${row.admin}%`, background: row.color }} /></span></> : <em>Privado</em>}
+            </div>
+            <div>
+              {operativeVisible ? <><b style={{ color: row.color }}>{row.operative}%</b><span className="comparison-bar"><i style={{ width: `${row.operative}%`, background: row.color }} /></span></> : <em>Privado</em>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {(administrativeVisible || operativeVisible) && (
+        <div className="work-profile-tension-notes">
+          {administrativeVisible && <span><b>Administrativo:</b> mayor tensión {administrativeTension?.name?.toLowerCase() ?? 'sin registros'}.</span>}
+          {operativeVisible && <span><b>Operativo:</b> mayor tensión {operativeTension?.name?.toLowerCase() ?? 'sin registros'}.</span>}
+        </div>
+      )}
+    </section>
+  );
+};
+
 const normalizeZone = (name: string) => name.toLowerCase().replace('baja', 'baja').replace('alta', 'alta');
 
 const prettyZone = (name: string) => {
@@ -471,6 +582,8 @@ export const Analiticas: React.FC = () => {
   const { user } = useAuth();
   const { empresas } = useEmpresas();
   const [filtro, setFiltro] = useState<string>('all');
+  const [workProfileFilter, setWorkProfileFilter] = useState<AnalyticsWorkProfileFilter>('ALL');
+  const [compareWorkProfiles, setCompareWorkProfiles] = useState(false);
   const [periodo, setPeriodo] = useState<PeriodoKey>('mensual');
   
   // Selectores secundarios condicionales
@@ -499,7 +612,7 @@ export const Analiticas: React.FC = () => {
     ? 'Empresa Demo'
     : effectiveFiltro === 'all'
       ? 'Todas'
-      : empresas.find(e => e.id.toString() === effectiveFiltro)?.nombre || 'Empresa';
+      : empresas.find(e => e.id.toString() === effectiveFiltro || e.supabaseId === effectiveFiltro)?.nombre || 'Empresa';
   const selectedEmpresa = effectiveFiltro === 'all'
     ? undefined
     : empresas.find(e => e.id.toString() === effectiveFiltro || e.supabaseId === effectiveFiltro);
@@ -511,33 +624,19 @@ export const Analiticas: React.FC = () => {
     () => resolveReportRange(periodo, semanaSel, mesSel, anioSel, fechaDesde, fechaHasta),
     [anioSel, fechaDesde, fechaHasta, mesSel, periodo, semanaSel],
   );
-  const stats = useAdminStats(statsCompanyId, reportRange.from || undefined, reportRange.to || undefined);
+  const allStats = useAdminStats(statsCompanyId, reportRange.from || undefined, reportRange.to || undefined, 'ALL');
+  const administrativeStats = useAdminStats(statsCompanyId, reportRange.from || undefined, reportRange.to || undefined, 'ADMINISTRATIVO');
+  const operativeStats = useAdminStats(statsCompanyId, reportRange.from || undefined, reportRange.to || undefined, 'OPERATIVO');
+  const stats = workProfileFilter === 'ADMINISTRATIVO'
+    ? administrativeStats
+    : workProfileFilter === 'OPERATIVO'
+      ? operativeStats
+      : allStats;
 
-  const data = useMemo<AnaliticaSet>(() => {
-    if (stats.hayDatos) {
-      const evolucionReal = stats.evolucion.map((p, i) => ({
-        ...p,
-        foco: stats.foco.enfocado,
-        dolor: stats.reportanMolestias,
-        impacto: p.satisfaccion,
-        energiaPct: Math.round((p.energia / 5) * 100),
-      }));
-      const focoReal = stats.foco.enfocado || (stats.estadoEmocional ? Math.round((stats.estadoEmocional / 5) * 100) : 0);
-      return {
-        zonas: stats.zonasDolorChart,
-        tension: stats.tensionDistribucion,
-        evolucion: evolucionReal,
-        kpis: {
-          participacion: stats.adherencia,
-          dolor: stats.reportanMolestias,
-          foco: focoReal,
-          impacto: stats.evolucion.at(-1)?.satisfaccion ?? 0,
-          energia: Math.round((stats.energiaPromedio / 5) * 100),
-        },
-      };
-    }
-    return EMPTY_ANALYTICS;
-  }, [stats]);
+  const data = useMemo<AnaliticaSet>(() => analyticsSetFromStats(stats), [stats]);
+  const allReportData = useMemo<AnaliticaSet>(() => analyticsSetFromStats(allStats), [allStats]);
+  const administrativeReportData = useMemo<AnaliticaSet>(() => analyticsSetFromStats(administrativeStats), [administrativeStats]);
+  const operativeReportData = useMemo<AnaliticaSet>(() => analyticsSetFromStats(operativeStats), [operativeStats]);
 
   const painTotalPersonas = stats.hayDatos ? stats.usuariosCount : 0;
 
@@ -895,6 +994,38 @@ export const Analiticas: React.FC = () => {
             </select>
           </div>
 
+          {/* Perfil laboral */}
+          <div className="analytics-control analytics-work-profile" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Users size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
+            <select
+              className="input-field"
+              aria-label="Filtrar analíticas por perfil laboral"
+              style={{ paddingLeft: '2.25rem', paddingRight: '0.75rem', width: '170px', backgroundColor: 'var(--bg-color)', fontWeight: 500 }}
+              value={workProfileFilter}
+              disabled={compareWorkProfiles}
+              onChange={(event) => setWorkProfileFilter(event.target.value as AnalyticsWorkProfileFilter)}
+            >
+              <option value="ALL">Todos los perfiles</option>
+              <option value="ADMINISTRATIVO">Administrativo</option>
+              <option value="OPERATIVO">Operativo</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className={`analytics-profile-compare-button ${compareWorkProfiles ? 'active' : ''}`}
+            aria-pressed={compareWorkProfiles}
+            onClick={() => {
+              setCompareWorkProfiles(current => {
+                if (!current) setWorkProfileFilter('ALL');
+                return !current;
+              });
+            }}
+          >
+            <GitCompareArrows size={16} />
+            Comparar perfiles laborales
+          </button>
+
           {/* Período (Principal) */}
           <div className="analytics-control" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
@@ -976,7 +1107,7 @@ export const Analiticas: React.FC = () => {
 
           <div className="analytics-spacer" style={{ flexGrow: 1 }} />
 
-          {user?.role === 'admin' && (
+          {(user?.role === 'admin' || user?.role === 'rrhh') && (
             <ReportGenerator
               currentData={data}
               currentEmpresaLabel={currentEmpresaLabel}
@@ -984,12 +1115,27 @@ export const Analiticas: React.FC = () => {
               periodFrom={reportRange.from}
               periodTo={reportRange.to}
               periodReady={periodo !== 'personalizado' || (!!fechaDesde && !!fechaHasta && fechaDesde <= fechaHasta)}
+              selectedWorkProfile={compareWorkProfiles ? 'COMPARISON' : workProfileFilter}
+              privacyMinimum={WORK_PROFILE_PRIVACY_MIN_USERS}
+              profileReportData={{
+                ALL: { data: allReportData, usersCount: allStats.usuariosCount },
+                ADMINISTRATIVO: { data: administrativeReportData, usersCount: administrativeStats.usuariosCount },
+                OPERATIVO: { data: operativeReportData, usersCount: operativeStats.usuariosCount },
+              }}
+              allowIndividualReports={user.role === 'admin'}
             />
           )}
         </div>
       </div>
 
-      <div>
+      {compareWorkProfiles && (
+        <WorkProfileComparison
+          administrativeStats={administrativeStats}
+          operativeStats={operativeStats}
+        />
+      )}
+
+      <div style={{ display: compareWorkProfiles ? 'none' : undefined }}>
 
         {/* ─── KPIs (5 mini cards) ─────────────────────────────────────────── */}
         <div className="analytics-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>

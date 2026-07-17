@@ -46,6 +46,339 @@
   flex-direction: column;
 }
 
+/* Comparación protegida de analíticas por perfil laboral */
+#plataforma-root .analytics-profile-compare-button {
+  min-height: 42px;
+  padding: 0.62rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 11px;
+  background: #fff;
+  color: var(--text-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+#plataforma-root .analytics-profile-compare-button:hover,
+#plataforma-root .analytics-profile-compare-button.active {
+  border-color: var(--primary-color);
+  background: #ecfdf8;
+  color: #087f72;
+}
+
+#plataforma-root .work-profile-comparison {
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+#plataforma-root .work-profile-comparison-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+#plataforma-root .work-profile-comparison-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--primary-color);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .work-profile-comparison-header h3 {
+  margin: 0 0 0.25rem;
+  color: var(--text-color);
+  font-size: 1.12rem;
+}
+
+#plataforma-root .work-profile-comparison-header p:not(.work-profile-comparison-eyebrow) {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+#plataforma-root .work-profile-comparison-secure {
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  background: #ecfdf8;
+  color: #087f72;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  font-size: 0.73rem;
+  font-weight: 750;
+}
+
+#plataforma-root .work-profile-comparison-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+#plataforma-root .work-profile-segment {
+  min-height: 66px;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+#plataforma-root .work-profile-segment.administrative { background: #f0fdfa; }
+#plataforma-root .work-profile-segment.operative { background: #eff6ff; }
+
+#plataforma-root .work-profile-segment > span {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .work-profile-segment strong {
+  font-size: 0.9rem;
+}
+
+#plataforma-root .work-profile-privacy-message {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+#plataforma-root .work-profile-comparison-table {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+#plataforma-root .work-profile-comparison-row {
+  min-height: 54px;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) repeat(2, minmax(160px, 1fr));
+  align-items: center;
+  gap: 1rem;
+}
+
+#plataforma-root .work-profile-comparison-row:last-child { border-bottom: 0; }
+
+#plataforma-root .work-profile-comparison-labels {
+  min-height: 38px;
+  background: #f8fafc;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .work-profile-comparison-row > strong {
+  font-size: 0.82rem;
+}
+
+#plataforma-root .work-profile-comparison-row > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 40px minmax(55px, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#plataforma-root .work-profile-comparison-row b { font-size: 0.82rem; }
+#plataforma-root .work-profile-comparison-row em { color: var(--text-muted); font-size: 0.75rem; }
+
+#plataforma-root .comparison-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: #edf1f5;
+  overflow: hidden;
+}
+
+#plataforma-root .comparison-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+#plataforma-root .work-profile-tension-notes {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 768px) {
+  #plataforma-root .analytics-page .analytics-profile-compare-button {
+    width: 100%;
+    min-height: 38px;
+    grid-column: 1 / -1;
+    padding: 0.5rem 0.7rem;
+  }
+
+  #plataforma-root .work-profile-comparison {
+    padding: 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+
+  #plataforma-root .work-profile-comparison-header {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  #plataforma-root .work-profile-comparison-secure { justify-self: start; }
+
+  #plataforma-root .work-profile-comparison-summary {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  #plataforma-root .work-profile-segment {
+    min-height: 54px;
+    padding: 0.6rem 0.7rem;
+  }
+
+  #plataforma-root .work-profile-comparison-table {
+    overflow-x: auto;
+  }
+
+  #plataforma-root .work-profile-comparison-row {
+    min-width: 500px;
+    min-height: 48px;
+    padding: 0.55rem 0.65rem;
+    grid-template-columns: 120px repeat(2, minmax(155px, 1fr));
+    gap: 0.65rem;
+  }
+
+  #plataforma-root .work-profile-tension-notes {
+    display: grid;
+    gap: 0.35rem;
+  }
+}
+
+/* Informes PDF segmentados por perfil laboral */
+#plataforma-root .rg-privacy-status {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+#plataforma-root .rg-privacy-status.ready {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+#plataforma-root .rg-privacy-status.blocked {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+#plataforma-root .rg-modal-actions .btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#plataforma-root .rg-comparison-counts {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+#plataforma-root .rg-comparison-counts span {
+  padding: 0.42rem 0.7rem;
+  border: 1px solid #d8e5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #36507d;
+  font-size: 0.78rem;
+}
+
+#plataforma-root .rg-comparison-table {
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid #dde6ee;
+  border-radius: 14px;
+  background: #fff;
+}
+
+#plataforma-root .rg-comparison-row {
+  min-height: 62px;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid #e8eef3;
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1fr;
+  align-items: center;
+  gap: 0.8rem;
+  color: #061a3d;
+}
+
+#plataforma-root .rg-comparison-row:last-child { border-bottom: 0; }
+
+#plataforma-root .rg-comparison-row.heading {
+  min-height: 44px;
+  background: #f5f8fa;
+  color: #526987;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .rg-comparison-row > strong { font-size: 0.86rem; }
+
+#plataforma-root .rg-comparison-row > div {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+#plataforma-root .rg-comparison-row b { font-size: 0.9rem; }
+
+#plataforma-root .rg-comparison-row i {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf2f6;
+}
+
+#plataforma-root .rg-comparison-row i span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
 #plataforma-root *,
 #plataforma-root *::before,
 #plataforma-root *::after {
@@ -322,6 +655,14 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
   margin-bottom: 1.25rem;
+}
+
+#plataforma-root .rg-kind-grid.company-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#plataforma-root .rg-kind-grid.company-only > button {
+  min-height: auto;
 }
 
 #plataforma-root .rg-kind-grid button {
@@ -5409,6 +5750,67 @@
 
 /* Ajuste móvil final: densidad consistente sin alterar la vista de escritorio. */
 @media (max-width: 768px) {
+  /* Usuarios con perfil laboral: conserva la acción arriba y agrupa los dos filtros debajo. */
+  #plataforma-root .users-page > .page-toolbar:has(.users-toolbar-actions select) {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  #plataforma-root .users-page > .page-toolbar:has(.users-toolbar-actions select) .users-toolbar-actions {
+    display: contents !important;
+  }
+
+  #plataforma-root .users-page > .page-toolbar:has(.users-toolbar-actions select) .users-toolbar-actions select {
+    grid-row: 2;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0.35rem 0.55rem !important;
+    font-size: 0.67rem !important;
+  }
+
+  #plataforma-root .users-page > .page-toolbar:has(.users-toolbar-actions select) .users-toolbar-actions select:first-of-type {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+
+  #plataforma-root .users-page > .page-toolbar:has(.users-toolbar-actions select) .users-toolbar-actions select:nth-of-type(2) {
+    grid-row: 3;
+    grid-column: 1;
+    width: 100% !important;
+  }
+
+  #plataforma-root .users-page > .page-toolbar:has(.users-toolbar-actions select) .users-toolbar-actions select:nth-of-type(3) {
+    grid-row: 3;
+    grid-column: 2;
+    width: 132px !important;
+  }
+
+  #plataforma-root .users-page > .page-toolbar:has(.users-toolbar-actions select) .users-invite-button {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  #plataforma-root .users-page .users-bulk-profile-card {
+    padding: 0.6rem 0.68rem !important;
+    gap: 0.5rem !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .users-page .users-bulk-profile-card > div {
+    min-width: 0 !important;
+  }
+
+  #plataforma-root .users-page .users-bulk-profile-card select {
+    width: 132px !important;
+    min-height: 34px !important;
+  }
+
+  #plataforma-root .users-page .users-bulk-profile-card button {
+    min-height: 34px !important;
+    padding: 0.42rem 0.62rem !important;
+    font-size: 0.68rem !important;
+  }
+
   /* Usuarios: acción pequeña, buscador fino y fichas de dos columnas. */
   #plataforma-root .users-page > .page-toolbar {
     display: grid !important;

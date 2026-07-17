@@ -103,6 +103,18 @@ const AUTOMATION_DEFINITIONS: AutomationDefinition[] = [
     defaultTime: '09:00',
   },
   {
+    id: 'missed-pause-reminder',
+    name: 'Recordatorio de pausa pendiente',
+    description: 'Recuerda la pausa solo a quienes todavía no la realizaron.',
+    condition: '40 minutos después de habilitarse la pausa',
+    icon: <Clock3 size={20} />,
+    defaultSubject: 'Tu pausa activa sigue disponible',
+    defaultBody: 'Hola {{nombre}},\n\nNotamos que todavía no realizaste la pausa de {{empresa}} programada para las {{hora}} hs. Tomate unos minutos para hacerla cuando puedas.\n\nIngresá a ReActiva para comenzar.',
+    defaultSegment: 'active',
+    defaultOffset: 40,
+    defaultTime: '09:00',
+  },
+  {
     id: 'inactive-reengagement',
     name: 'Reenganche de inactivos',
     description: 'Invita a retomar el programa cuando detecta varios días sin actividad.',
@@ -190,9 +202,9 @@ export interface CustomAutomation {
   };
 }
 
-const buildDefaults = (): EmailAutomation[] => AUTOMATION_DEFINITIONS.map((definition, index) => ({
+const buildDefaults = (): EmailAutomation[] => AUTOMATION_DEFINITIONS.map((definition) => ({
   id: definition.id,
-  active: index !== 3,
+  active: !['inactive-reengagement'].includes(definition.id),
   companyId: 'all',
   segment: definition.defaultSegment,
   scheduleTime: definition.defaultTime,
@@ -283,38 +295,49 @@ export const Emails: React.FC = () => {
   useEffect(() => {
     if (!supabase) return;
 
-    const applyPauseTemplate = (template: { subject: string; body: string }) => {
+    const applySharedTemplate = (template: { id: string; subject: string; body: string; active?: boolean; delay_minutes?: number }) => {
       setAutomations(current => current.map(item => (
-        item.id === 'pause-reminder'
-          ? { ...item, subject: template.subject, body: template.body }
+        item.id === template.id
+          ? {
+              ...item,
+              subject: template.subject,
+              body: template.body,
+              active: template.id === 'pause-reminder' ? true : template.active ?? item.active,
+              offsetMinutes: template.delay_minutes ?? item.offsetMinutes,
+            }
           : item
       )));
-      setDraft(current => current?.id === 'pause-reminder'
-        ? { ...current, subject: template.subject, body: template.body }
+      setDraft(current => current?.id === template.id
+        ? {
+            ...current,
+            subject: template.subject,
+            body: template.body,
+            active: template.id === 'pause-reminder' ? true : template.active ?? current.active,
+            offsetMinutes: template.delay_minutes ?? current.offsetMinutes,
+          }
         : current);
     };
 
-    const loadPauseTemplate = async () => {
+    const loadSharedTemplates = async () => {
       const { data, error } = await supabase
         .from('email_automation_templates')
-        .select('subject, body')
-        .eq('id', 'pause-reminder')
-        .maybeSingle();
+        .select('id, subject, body, active, delay_minutes')
+        .in('id', ['pause-reminder', 'missed-pause-reminder']);
 
       if (error) {
-        console.error('No se pudo cargar la plantilla compartida del recordatorio', error);
+        console.error('No se pudieron cargar las plantillas compartidas de recordatorio', error);
         return;
       }
-      if (data) applyPauseTemplate(data);
+      (data ?? []).forEach(applySharedTemplate);
     };
 
-    void loadPauseTemplate();
+    void loadSharedTemplates();
     const channel = supabase
-      .channel('pause-reminder-template-admin')
+      .channel('pause-reminder-templates-admin')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'email_automation_templates', filter: 'id=eq.pause-reminder' },
-        () => void loadPauseTemplate(),
+        { event: '*', schema: 'public', table: 'email_automation_templates' },
+        () => void loadSharedTemplates(),
       )
       .subscribe();
 
@@ -467,9 +490,13 @@ export const Emails: React.FC = () => {
   const saveDraft = async () => {
     if (!draft) return;
 
-    if (draft.id === 'pause-reminder') {
+    if (['pause-reminder', 'missed-pause-reminder'].includes(draft.id)) {
       if (!draft.subject.trim() || !draft.body.trim()) {
         window.alert('Completa el asunto y el mensaje antes de guardar.');
+        return;
+      }
+      if (draft.id === 'missed-pause-reminder' && (!Number.isFinite(draft.offsetMinutes) || draft.offsetMinutes < 1 || draft.offsetMinutes > 1440)) {
+        window.alert('El tiempo del recordatorio debe estar entre 1 y 1440 minutos.');
         return;
       }
       if (!supabase) {
@@ -478,10 +505,12 @@ export const Emails: React.FC = () => {
       }
 
       setSavingTemplate(true);
-      const { error } = await supabase.rpc('save_email_automation_template', {
-        template_id: 'pause-reminder',
+      const { error } = await supabase.rpc('save_email_automation_settings', {
+        template_id: draft.id,
         template_subject: draft.subject.trim(),
         template_body: draft.body.trim(),
+        template_active: draft.id === 'pause-reminder' ? true : draft.active,
+        template_delay_minutes: draft.id === 'pause-reminder' ? 5 : draft.offsetMinutes,
       });
       setSavingTemplate(false);
 
@@ -1016,7 +1045,8 @@ export const Emails: React.FC = () => {
             {AUTOMATION_DEFINITIONS.map(definition => {
               const automation = automations.find(item => item.id === definition.id);
               if (!automation) return null;
-              const nextSchedule = definition.id === 'pause-reminder'
+              const isContentConnected = ['pause-reminder', 'missed-pause-reminder'].includes(definition.id);
+              const nextSchedule = isContentConnected
                 ? getNextScheduledVideo(videos, automation.companyId)
                 : null;
               return (
@@ -1031,7 +1061,7 @@ export const Emails: React.FC = () => {
                 >
                   <div className="automation-card-top">
                     <div className="automation-icon">{definition.icon}</div>
-                    {definition.id === 'pause-reminder'
+                    {isContentConnected
                       ? <span style={{ color: '#0f766e', background: '#ccfbf1', borderRadius: 999, padding: '0.28rem 0.55rem', fontSize: '0.68rem', fontWeight: 800 }}>CONECTADA</span>
                       : <label className="automation-toggle" onClick={event => event.stopPropagation()}>
                           <input
@@ -1054,7 +1084,11 @@ export const Emails: React.FC = () => {
                   </div>
                   <div className="automation-condition">
                     <Clock3 size={15} />
-                    <span>{nextSchedule ? `${nextSchedule.dia} ${nextSchedule.hora} · ${automation.offsetMinutes} min antes` : definition.condition}</span>
+                    <span>{nextSchedule
+                      ? definition.id === 'pause-reminder'
+                        ? `${nextSchedule.dia} ${nextSchedule.hora} · ${automation.offsetMinutes} min antes`
+                        : `${nextSchedule.dia} ${nextSchedule.hora} · ${automation.offsetMinutes} min después si sigue pendiente`
+                      : definition.condition}</span>
                   </div>
                   <div className="automation-card-footer">
                     <span>{formatCompany(automation.companyId, companies)}</span>
@@ -1198,18 +1232,26 @@ export const Emails: React.FC = () => {
               <div className="automation-form-grid">
                 <label>
                   Empresa
-                  <select value={draft.companyId} onChange={event => setDraft({ ...draft, companyId: event.target.value === 'all' ? 'all' : Number(event.target.value) })}>
+                  <select
+                    value={draft.companyId}
+                    disabled={editingDefinition.id === 'missed-pause-reminder'}
+                    onChange={event => setDraft({ ...draft, companyId: event.target.value === 'all' ? 'all' : Number(event.target.value) })}
+                  >
                     <option value="all">Todas las empresas</option>
                     {companies.map(company => <option key={company.id} value={company.id}>{company.nombre}</option>)}
                   </select>
                 </label>
                 <label>
                   Segmento
-                  <select value={draft.segment} onChange={event => setDraft({ ...draft, segment: event.target.value })}>
+                  <select
+                    value={draft.segment}
+                    disabled={editingDefinition.id === 'missed-pause-reminder'}
+                    onChange={event => setDraft({ ...draft, segment: event.target.value })}
+                  >
                     {SEGMENTS.map(segment => <option key={segment.value} value={segment.value}>{segment.label}</option>)}
                   </select>
                 </label>
-                {editingDefinition.id !== 'pause-reminder' && <>
+                {!['pause-reminder', 'missed-pause-reminder'].includes(editingDefinition.id) && <>
                   <label>
                     Horario de envío
                     <input type="time" value={draft.scheduleTime} onChange={event => setDraft({ ...draft, scheduleTime: event.target.value })} />
@@ -1222,15 +1264,32 @@ export const Emails: React.FC = () => {
                     </div>
                   </label>
                 </>}
+                {editingDefinition.id === 'missed-pause-reminder' && (
+                  <label>
+                    Enviar si sigue pendiente después de
+                    <div className="automation-number-field">
+                      <input
+                        type="number"
+                        min="1"
+                        max="1440"
+                        value={draft.offsetMinutes}
+                        onChange={event => setDraft({ ...draft, offsetMinutes: Number(event.target.value) })}
+                      />
+                      <span>minutos</span>
+                    </div>
+                  </label>
+                )}
               </div>
 
-              {editingDefinition.id === 'pause-reminder' && (
+              {['pause-reminder', 'missed-pause-reminder'].includes(editingDefinition.id) && (
                 <div className="automation-source-box">
                   <CalendarDays size={19} />
                   <div>
                     <strong>Programación de contenido conectada</strong>
                     <p>
-                      El horario y los bloques de mañana y tarde se administran desde Contenidos. El recordatorio automático se envía 5 minutos antes del desbloqueo.
+                      {editingDefinition.id === 'pause-reminder'
+                        ? 'El horario y los bloques de mañana y tarde se administran desde Contenidos. El recordatorio automático se envía 5 minutos antes del desbloqueo.'
+                        : `El sistema respeta la empresa, fecha y turno programados en Contenidos. A los ${draft.offsetMinutes} minutos verifica Supabase y solo escribe a quienes todavía no registraron esa pausa.`}
                     </p>
                   </div>
                 </div>
@@ -1251,7 +1310,7 @@ export const Emails: React.FC = () => {
               <label className="automation-full-field">
                 Mensaje
                 <textarea value={draft.body} onChange={event => setDraft({ ...draft, body: event.target.value })} rows={6} />
-                {editingDefinition.id === 'pause-reminder' && (
+                {['pause-reminder', 'missed-pause-reminder'].includes(editingDefinition.id) && (
                   <small>Podés usar: {'{{nombre}}'}, {'{{empresa}}'}, {'{{hora}}'} y {'{{minutos}}'}.</small>
                 )}
               </label>
@@ -1288,11 +1347,13 @@ export const Emails: React.FC = () => {
 
             <div className="automation-drawer-actions">
               <button className="btn-secondary" onClick={() => { setEditingId(null); setDraft(null); }}>Cancelar</button>
-              <button className="btn-secondary" disabled={sendingId === draft.id} onClick={() => void sendAutomationNow(draft)}>
-                <Send size={16} /> {sendingId === draft.id ? 'Enviando...' : 'Enviar ahora'}
-              </button>
+              {editingDefinition.id !== 'missed-pause-reminder' && (
+                <button className="btn-secondary" disabled={sendingId === draft.id} onClick={() => void sendAutomationNow(draft)}>
+                  <Send size={16} /> {sendingId === draft.id ? 'Enviando...' : 'Enviar ahora'}
+                </button>
+              )}
               <button className="btn-primary" disabled={savingTemplate} onClick={() => void saveDraft()}>
-                <Save size={16} /> {savingTemplate ? 'Guardando...' : editingDefinition.id === 'pause-reminder' ? 'Guardar plantilla' : 'Guardar cambios'}
+                <Save size={16} /> {savingTemplate ? 'Guardando...' : ['pause-reminder', 'missed-pause-reminder'].includes(editingDefinition.id) ? 'Guardar automatización' : 'Guardar cambios'}
               </button>
             </div>
           </aside>

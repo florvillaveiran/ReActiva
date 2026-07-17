@@ -1,5 +1,9 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  getMissedReminderWindowStatus,
+  getReminderWindowStatus,
+} from './reminder-window.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,10 +14,21 @@ const corsHeaders = {
 const appUrl = Deno.env.get('PUBLIC_APP_URL') ?? 'https://metodoreactiva.com/plataforma/login';
 const unlockLeadMinutes = Number(Deno.env.get('VIDEO_UNLOCK_LEAD_MINUTES') ?? '1');
 const reminderBeforeUnlockMinutes = Number(Deno.env.get('PAUSE_REMINDER_BEFORE_UNLOCK_MINUTES') ?? '5');
-const reminderLeadMinutes = unlockLeadMinutes + reminderBeforeUnlockMinutes;
+const reminderRecoveryWindowMinutes = Number(
+  Deno.env.get('PAUSE_REMINDER_RECOVERY_WINDOW_MINUTES') ?? String(reminderBeforeUnlockMinutes),
+);
+const missedReminderRecoveryWindowMinutes = Number(
+  Deno.env.get('MISSED_PAUSE_REMINDER_RECOVERY_WINDOW_MINUTES') ?? '10',
+);
 const fallbackTemplate = {
   subject: 'Tu pausa activa estara disponible en {{minutos}} minutos',
   body: 'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estara disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresa a ReActiva para comenzar.',
+};
+const fallbackMissedTemplate = {
+  subject: 'Tu pausa activa sigue disponible',
+  body: 'Hola {{nombre}},\n\nNotamos que todavia no realizaste la pausa de {{empresa}} programada para las {{hora}} hs. Tomate unos minutos para hacerla cuando puedas.\n\nIngresa a ReActiva para comenzar.',
+  active: true,
+  delay_minutes: 40,
 };
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
@@ -50,6 +65,13 @@ const timeForBuenosAires = (date: Date) => new Intl.DateTimeFormat('en-GB', {
   minute: '2-digit',
   hour12: false,
   timeZone: 'America/Argentina/Buenos_Aires',
+}).format(date);
+
+const dateForBuenosAires = (date: Date) => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Argentina/Buenos_Aires',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
 }).format(date);
 
 const sendEmail = async (payload: Record<string, unknown>) => {
@@ -144,52 +166,96 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
-  const targetDate = new Date(Date.now() + reminderLeadMinutes * 60 * 1000);
-  const targetDay = dayLabelForBuenosAires(targetDate);
-  const targetTime = timeForBuenosAires(targetDate);
-  const reminderDate = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(targetDate);
+  const now = new Date();
+  const targetDay = dayLabelForBuenosAires(now);
+  const currentTime = timeForBuenosAires(now);
+  const reminderDate = dateForBuenosAires(now);
 
-  const { data: schedules, error: scheduleError } = await admin
-    .from('video_unlock_schedule')
-    .select('id, company_id, day_label, block, enabled, unlock_time')
-    .eq('enabled', true)
-    .eq('day_label', targetDay)
-    .eq('unlock_time', targetTime);
+  const { data: scheduledRows, error: scheduleError } = await admin
+    .from('content_items')
+    .select('id, company_id, metadata, created_at')
+    .eq('kind', 'video')
+    .eq('active', true)
+    .eq('metadata->>scheduledDate', reminderDate)
+    .order('created_at', { ascending: true });
 
   if (scheduleError) return jsonResponse({ error: scheduleError.message }, 500);
-  if (!schedules?.length) return jsonResponse({ ok: true, checked: `${targetDay} ${targetTime}`, sent: 0 });
 
-  const { data: savedTemplate, error: templateError } = await admin
+  // Cada video programado es la unica fuente de verdad para empresa, fecha,
+  // turno y horario. Si quedo una version anterior del mismo bloque, gana la
+  // mas reciente y nunca se generan dos recordatorios para el mismo turno.
+  const scheduleByScope = new Map<string, Record<string, unknown>>();
+  for (const row of scheduledRows ?? []) {
+    const metadata = row.metadata ?? {};
+    if (metadata.day !== targetDay || !['morning', 'afternoon'].includes(metadata.block) || !metadata.time) continue;
+    scheduleByScope.set(`${row.company_id ?? 'global'}:${metadata.block}`, {
+      id: row.id,
+      company_id: row.company_id,
+      day_label: metadata.day,
+      block: metadata.block,
+      enabled: true,
+      unlock_time: metadata.time,
+    });
+  }
+  const schedules = Array.from(scheduleByScope.values());
+  const companyOverridesFor = (block: string) => Array.from(new Set(
+    schedules
+      .filter(schedule => schedule.company_id && schedule.block === block)
+      .map(schedule => schedule.company_id as string),
+  ));
+  const { data: templateRows, error: templatesError } = await admin
     .from('email_automation_templates')
-    .select('subject, body')
-    .eq('id', 'pause-reminder')
-    .maybeSingle();
-  const emailTemplate = templateError || !savedTemplate ? fallbackTemplate : savedTemplate;
+    .select('id, subject, body, active, delay_minutes')
+    .in('id', ['pause-reminder', 'missed-pause-reminder']);
 
-  let sent = 0;
+  if (templatesError) return jsonResponse({ error: templatesError.message }, 500);
+
+  const pauseTemplate = templateRows?.find(row => row.id === 'pause-reminder') ?? fallbackTemplate;
+  const missedTemplate = templateRows?.find(row => row.id === 'missed-pause-reminder') ?? fallbackMissedTemplate;
+  const missedDelayMinutes = Number(missedTemplate.delay_minutes ?? 40);
+  const dueSchedules = pauseTemplate.active === false ? [] : schedules.map((schedule) => ({
+    ...schedule,
+    ...getReminderWindowStatus({
+      unlockTime: schedule.unlock_time,
+      currentTime,
+      unlockLeadMinutes,
+      reminderBeforeUnlockMinutes,
+      recoveryWindowMinutes: reminderRecoveryWindowMinutes,
+    }),
+  })).filter((schedule) => schedule.due);
+
+  const dueMissedSchedules = missedTemplate.active === false ? [] : schedules.map((schedule) => ({
+    ...schedule,
+    ...getMissedReminderWindowStatus({
+      unlockTime: schedule.unlock_time,
+      currentTime,
+      unlockLeadMinutes,
+      delayMinutes: missedDelayMinutes,
+      recoveryWindowMinutes: missedReminderRecoveryWindowMinutes,
+    }),
+  })).filter((schedule) => schedule.due);
+
+  if (!dueSchedules.length && !dueMissedSchedules.length) {
+    return jsonResponse({
+      ok: true,
+      checked: `${targetDay} ${currentTime}`,
+      schedules: schedules.length,
+      dueSchedules: 0,
+      dueMissedSchedules: 0,
+      sentBeforePause: 0,
+      sentMissedPause: 0,
+    });
+  }
+
+  let sentBeforePause = 0;
+  let sentMissedPause = 0;
+  let skippedWithoutContent = 0;
+  let skippedCompleted = 0;
   const errors: string[] = [];
 
-  for (const schedule of schedules) {
-    let excludedCompanyIds: string[] = [];
-    if (!schedule.company_id) {
-      const { data: companyOverrides, error: overridesError } = await admin
-        .from('video_unlock_schedule')
-        .select('company_id')
-        .not('company_id', 'is', null)
-        .eq('enabled', true)
-        .eq('day_label', schedule.day_label)
-        .eq('block', schedule.block);
-      if (overridesError) {
-        errors.push(overridesError.message);
-        continue;
-      }
-      excludedCompanyIds = Array.from(new Set((companyOverrides ?? []).map(row => row.company_id).filter(Boolean)));
-    }
+  for (const schedule of dueSchedules) {
+    const targetTime = schedule.targetTime;
+    const excludedCompanyIds = schedule.company_id ? [] : companyOverridesFor(schedule.block);
 
     let companyQuery = schedule.company_id
       ? admin.from('companies').select('id, name').eq('id', schedule.company_id)
@@ -204,6 +270,25 @@ Deno.serve(async (req) => {
     }
 
     for (const company of companies ?? []) {
+      const { data: scheduledContent, error: contentError } = await admin
+        .from('content_items')
+        .select('id, company_id')
+        .eq('kind', 'video')
+        .eq('active', true)
+        .eq('metadata->>scheduledDate', reminderDate)
+        .eq('metadata->>block', schedule.block)
+        .or(`company_id.eq.${company.id},company_id.is.null`)
+        .limit(1);
+
+      if (contentError) {
+        errors.push(`Contenido ${company.name}: ${contentError.message}`);
+        continue;
+      }
+      if (!scheduledContent?.length) {
+        skippedWithoutContent += 1;
+        continue;
+      }
+
       const { data: profiles, error: profilesError } = await admin
         .from('profiles')
         .select('id, email, full_name, status')
@@ -234,10 +319,10 @@ Deno.serve(async (req) => {
             nombre: profile.full_name || profile.email.split('@')[0],
             empresa: company.name,
             hora: targetTime,
-            minutos: String(reminderBeforeUnlockMinutes),
+            minutos: String(Math.max(0, schedule.minutesUntilUnlock)),
           };
-          const subject = renderTemplate(emailTemplate.subject, templateValues);
-          const body = renderTemplate(emailTemplate.body, templateValues);
+          const subject = renderTemplate(pauseTemplate.subject, templateValues);
+          const body = renderTemplate(pauseTemplate.body, templateValues);
           const providerResponse = await sendEmail({
             from: Deno.env.get('EMAIL_FROM') ?? 'ReActiva <onboarding@metodoreactiva.com>',
             to: [profile.email],
@@ -255,12 +340,12 @@ Deno.serve(async (req) => {
               day: targetDay,
               block: schedule.block,
               time: targetTime,
-              reminderBeforeUnlockMinutes,
+              reminderBeforeUnlockMinutes: schedule.minutesUntilUnlock,
               provider: 'resend',
               providerResponse,
             },
           });
-          sent += 1;
+          sentBeforePause += 1;
         } catch (error) {
           errors.push(`${profile.email}: ${error.message}`);
           await admin.from('email_events').insert({
@@ -281,5 +366,161 @@ Deno.serve(async (req) => {
     }
   }
 
-  return jsonResponse({ ok: errors.length === 0, checked: `${targetDay} ${targetTime}`, sent, errors });
+  const dayStart = new Date(`${reminderDate}T00:00:00-03:00`).toISOString();
+  const dayEnd = new Date(new Date(dayStart).getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+  for (const schedule of dueMissedSchedules) {
+    const targetTime = schedule.targetTime;
+    const excludedCompanyIds = schedule.company_id ? [] : companyOverridesFor(schedule.block);
+
+    let companyQuery = schedule.company_id
+      ? admin.from('companies').select('id, name').eq('id', schedule.company_id)
+      : admin.from('companies').select('id, name').eq('status', 'active');
+    if (excludedCompanyIds.length) {
+      companyQuery = companyQuery.not('id', 'in', `(${excludedCompanyIds.join(',')})`);
+    }
+    const { data: companies, error: companiesError } = await companyQuery;
+    if (companiesError) {
+      errors.push(companiesError.message);
+      continue;
+    }
+
+    for (const company of companies ?? []) {
+      const { data: scheduledContent, error: contentError } = await admin
+        .from('content_items')
+        .select('id, company_id')
+        .eq('kind', 'video')
+        .eq('active', true)
+        .eq('metadata->>scheduledDate', reminderDate)
+        .eq('metadata->>block', schedule.block)
+        .or(`company_id.eq.${company.id},company_id.is.null`)
+        .limit(1);
+
+      if (contentError) {
+        errors.push(`Contenido ${company.name}: ${contentError.message}`);
+        continue;
+      }
+      if (!scheduledContent?.length) {
+        skippedWithoutContent += 1;
+        continue;
+      }
+
+      const { data: profiles, error: profilesError } = await admin
+        .from('profiles')
+        .select('id, email, full_name, status')
+        .eq('company_id', company.id)
+        .eq('role', 'usuario')
+        .neq('status', 'inactive');
+
+      if (profilesError) {
+        errors.push(profilesError.message);
+        continue;
+      }
+
+      const profileIds = (profiles ?? []).map(profile => profile.id);
+      let completedProfileIds = new Set<string>();
+      if (profileIds.length) {
+        const { data: completedSessions, error: sessionsError } = await admin
+          .from('pause_sessions')
+          .select('profile_id')
+          .eq('company_id', company.id)
+          .eq('day_label', schedule.day_label)
+          .eq('block', schedule.block)
+          .gte('occurred_at', dayStart)
+          .lt('occurred_at', dayEnd)
+          .in('profile_id', profileIds);
+
+        if (sessionsError) {
+          errors.push(`Pausas ${company.name}: ${sessionsError.message}`);
+          continue;
+        }
+        completedProfileIds = new Set((completedSessions ?? []).map(session => session.profile_id));
+      }
+
+      for (const profile of profiles ?? []) {
+        if (!profile.email) continue;
+        if (completedProfileIds.has(profile.id)) {
+          skippedCompleted += 1;
+          continue;
+        }
+
+        const dedupeKey = `${reminderDate}:${schedule.id}:${company.id}:${profile.id}:${targetTime}`;
+        const { data: existing, error: existingError } = await admin
+          .from('email_events')
+          .select('id')
+          .eq('event_type', 'missed_pause_reminder_sent')
+          .eq('profile_id', profile.id)
+          .contains('metadata', { dedupeKey })
+          .limit(1);
+
+        if (existingError) {
+          errors.push(`${profile.email}: ${existingError.message}`);
+          continue;
+        }
+        if (existing?.length) continue;
+
+        try {
+          const templateValues = {
+            nombre: profile.full_name || profile.email.split('@')[0],
+            empresa: company.name,
+            hora: targetTime,
+            minutos: String(missedDelayMinutes),
+          };
+          const subject = renderTemplate(missedTemplate.subject, templateValues);
+          const body = renderTemplate(missedTemplate.body, templateValues);
+          const providerResponse = await sendEmail({
+            from: Deno.env.get('EMAIL_FROM') ?? 'ReActiva <onboarding@metodoreactiva.com>',
+            to: [profile.email],
+            subject,
+            html: renderHtml(subject, body),
+          });
+
+          await admin.from('email_events').insert({
+            company_id: company.id,
+            profile_id: profile.id,
+            event_type: 'missed_pause_reminder_sent',
+            metadata: {
+              dedupeKey,
+              scheduleId: schedule.id,
+              day: targetDay,
+              block: schedule.block,
+              time: targetTime,
+              delayMinutes: missedDelayMinutes,
+              provider: 'resend',
+              providerResponse,
+            },
+          });
+          sentMissedPause += 1;
+        } catch (error) {
+          errors.push(`${profile.email}: ${error.message}`);
+          await admin.from('email_events').insert({
+            company_id: company.id,
+            profile_id: profile.id,
+            event_type: 'missed_pause_reminder_failed',
+            metadata: {
+              dedupeKey,
+              scheduleId: schedule.id,
+              day: targetDay,
+              block: schedule.block,
+              time: targetTime,
+              delayMinutes: missedDelayMinutes,
+              error: error.message,
+            },
+          });
+        }
+      }
+    }
+  }
+
+  return jsonResponse({
+    ok: errors.length === 0,
+    checked: `${targetDay} ${currentTime}`,
+    dueSchedules: dueSchedules.length,
+    dueMissedSchedules: dueMissedSchedules.length,
+    skippedWithoutContent,
+    skippedCompleted,
+    sentBeforePause,
+    sentMissedPause,
+    errors,
+  });
 });

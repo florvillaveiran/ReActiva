@@ -39,6 +39,31 @@ const checkOption = (label: string, selected: boolean, onChange: () => void) => 
   </label>
 );
 
+const workProfileOption = (
+  icon: string,
+  title: string,
+  description: string,
+  selected: boolean,
+  onChange: () => void,
+) => (
+  <label
+    className="onboarding-option"
+    style={{
+      display: 'grid', gridTemplateColumns: 'auto auto 1fr', alignItems: 'center', gap: '0.85rem', padding: '1.1rem',
+      border: `2px solid ${selected ? '#10b981' : '#e2e8f0'}`,
+      borderRadius: '16px', cursor: 'pointer', transition: 'all 0.2s',
+      backgroundColor: selected ? '#f0fdf4' : 'white',
+    }}
+  >
+    <input type="radio" checked={selected} onChange={onChange} style={{ width: '20px', height: '20px', accentColor: '#10b981' }} />
+    <span aria-hidden="true" style={{ fontSize: '1.45rem', lineHeight: 1 }}>{icon}</span>
+    <span style={{ minWidth: 0 }}>
+      <strong style={{ display: 'block', color: '#1e293b', fontSize: '1rem', marginBottom: '0.2rem' }}>{title}</strong>
+      <span style={{ display: 'block', color: '#64748b', fontSize: '0.86rem', lineHeight: 1.45, fontWeight: 500 }}>{description}</span>
+    </span>
+  </label>
+);
+
 export const UsuarioOnboarding: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -51,6 +76,7 @@ export const UsuarioOnboarding: React.FC = () => {
   const [respuestas, setRespuestas] = useState({
     nombre: '',
     email: '',
+    workProfile: '' as '' | 'ADMINISTRATIVO' | 'OPERATIVO',
     actividadFisica: '', // Baja | Media | Alta
     energia: '', // Baja | Media | Alta
     dolores: [] as string[],
@@ -138,7 +164,7 @@ export const UsuarioOnboarding: React.FC = () => {
 
   if (!invitacion) return null;
 
-  const TOTAL_STEPS = 7;
+  const TOTAL_STEPS = 8;
   const progress = (step / TOTAL_STEPS) * 100;
 
   const handleNext = () => setStep(s => Math.min(s + 1, TOTAL_STEPS));
@@ -159,12 +185,13 @@ export const UsuarioOnboarding: React.FC = () => {
 
   const canNext = () => {
     if (step === 1) return !!respuestas.nombre && !!respuestas.email;
-    if (step === 2) return !!respuestas.actividadFisica;
-    if (step === 3) return !!respuestas.energia;
-    if (step === 4) return respuestas.dolores.length > 0;
-    if (step === 5) return !!respuestas.fatiga;
-    if (step === 6) return !!respuestas.bienestar;
-    if (step === 7) return respuestas.objetivos.length > 0;
+    if (step === 2) return !!respuestas.workProfile;
+    if (step === 3) return !!respuestas.actividadFisica;
+    if (step === 4) return !!respuestas.energia;
+    if (step === 5) return respuestas.dolores.length > 0;
+    if (step === 6) return !!respuestas.fatiga;
+    if (step === 7) return !!respuestas.bienestar;
+    if (step === 8) return respuestas.objetivos.length > 0;
     return true;
   };
 
@@ -227,15 +254,16 @@ export const UsuarioOnboarding: React.FC = () => {
       passwordTemporal: pwd,
       requiereCambioPassword: true,
       onboardingData: respuestas,
+      workProfile: respuestas.workProfile,
     };
 
     addUsuario(newUser);
     setLoading(false);
-    setStep(8);
+    setStep(9);
   };
 
   // ── Success screen ──────────────────────────────────────────────
-  if (step === 8) return (
+  if (step === 9) return (
     <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '2rem' }}>
       <div style={{ backgroundColor: 'white', padding: '3rem', borderRadius: '24px', textAlign: 'center', maxWidth: '450px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', animation: 'fadeIn 0.5s ease-out' }}>
         <div style={{ width: '70px', height: '70px', backgroundColor: '#ecfdf5', color: '#10b981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
@@ -305,6 +333,31 @@ export const UsuarioOnboarding: React.FC = () => {
         {/* STEP 2 */}
         {step === 2 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+            <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Tu perfil laboral</p>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>¿Qué tipo de trabajo realizás principalmente?</h2>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>Seleccioná la opción que mejor describa la mayor parte de tu jornada.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {workProfileOption(
+                '🖥️',
+                'Administrativo',
+                'Paso la mayor parte de mi jornada trabajando en computadora o realizando tareas administrativas.',
+                respuestas.workProfile === 'ADMINISTRATIVO',
+                () => setRespuestas(prev => ({ ...prev, workProfile: 'ADMINISTRATIVO' })),
+              )}
+              {workProfileOption(
+                '🏃',
+                'Operativo',
+                'Paso la mayor parte de mi jornada realizando tareas físicas, de pie, en movimiento o fuera de una computadora.',
+                respuestas.workProfile === 'OPERATIVO',
+                () => setRespuestas(prev => ({ ...prev, workProfile: 'OPERATIVO' })),
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3 */}
+        {step === 3 && (
+          <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Diagnóstico Físico</p>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🏃‍♀️ ¿Cuál es tu nivel de actividad física actual?</h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>Considerá ejercicio, deporte o caminatas largas.</p>
@@ -316,8 +369,8 @@ export const UsuarioOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 3 */}
-        {step === 3 && (
+        {/* STEP 4 */}
+        {step === 4 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Energía</p>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🔋 ¿Cómo percibís tu nivel de energía durante la jornada de trabajo?</h2>
@@ -330,8 +383,8 @@ export const UsuarioOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 4 */}
-        {step === 4 && (
+        {/* STEP 5 */}
+        {step === 5 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Dolores y Molestias</p>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>⚠️ ¿Sentís dolores musculares o articulares por tu trabajo?</h2>
@@ -347,8 +400,8 @@ export const UsuarioOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 5 */}
-        {step === 5 && (
+        {/* STEP 6 */}
+        {step === 6 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Fatiga</p>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🥱 Al finalizar tu jornada laboral, ¿cómo es tu nivel de fatiga?</h2>
@@ -361,8 +414,8 @@ export const UsuarioOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 6 */}
-        {step === 6 && (
+        {/* STEP 7 */}
+        {step === 7 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Bienestar</p>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🤍 ¿Cómo calificarías tu nivel de bienestar general?</h2>
@@ -375,8 +428,8 @@ export const UsuarioOnboarding: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 7 */}
-        {step === 7 && (
+        {/* STEP 8 */}
+        {step === 8 && (
           <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>Tus metas</p>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>🎯 ¿Qué te gustaría lograr usando ReActiva?</h2>

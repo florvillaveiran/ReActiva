@@ -10,6 +10,7 @@ import {
   Clock,
   HeartPulse,
   LineChart,
+  ShieldCheck,
   Target,
   Users,
   UserRound,
@@ -23,6 +24,7 @@ import { AnalyticsPeriod, calculateIndividualAnalytics, IndividualAnalytics, Ind
 import { supabase } from '../lib/supabase';
 
 type ReportKind = 'empresa' | 'usuario';
+type ReportWorkProfile = 'ALL' | 'ADMINISTRATIVO' | 'OPERATIVO' | 'COMPARISON';
 
 interface ReportPoint {
   name: string;
@@ -53,7 +55,18 @@ interface Props {
   periodFrom?: string;
   periodTo?: string;
   periodReady?: boolean;
+  selectedWorkProfile?: ReportWorkProfile;
+  privacyMinimum?: number;
+  profileReportData?: Record<'ALL' | 'ADMINISTRATIVO' | 'OPERATIVO', { data: ReportData; usersCount: number }>;
+  allowIndividualReports?: boolean;
 }
+
+const WORK_PROFILE_LABELS: Record<ReportWorkProfile, string> = {
+  ALL: 'Toda la empresa',
+  ADMINISTRATIVO: 'Administrativo',
+  OPERATIVO: 'Operativo',
+  COMPARISON: 'Comparación Administrativo vs Operativo',
+};
 
 const COLORS = {
   navy: '#061a3d',
@@ -577,12 +590,13 @@ const buildCompanyNarrative = (data: ReportData) => {
   };
 };
 
-const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: ReportData }> = ({ empresaName, periodo, data }) => {
+const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: ReportData; profileLabel: string; usersCount: number }> = ({ empresaName, periodo, data, profileLabel, usersCount }) => {
   const narrative = buildCompanyNarrative(data);
   const names = data.evolucion.map(point => point.name);
   const firstPeriodName = names[0] ?? 'inicio';
   const lastPeriodName = names.at(-1) ?? 'cierre';
   const hasTension = Boolean(data.tension?.some(item => item.valor > 0));
+  const reportEyebrow = `Informe Ejecutivo - ${periodo} - ${profileLabel}`;
   return (
     <>
       <Page page="Pag. 1" className="rg-company-page rg-company-page-1">
@@ -590,6 +604,7 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           <h1>Informe de<br />Bienestar Corporativo</h1>
           <div className="rg-meta"><Building2 size={30} /> <strong>{empresaName}</strong></div>
           <div className="rg-meta"><Calendar size={30} /> <span>Periodo: <strong>{periodo}</strong></span></div>
+          <div className="rg-meta"><Users size={30} /> <span>Perfil analizado: <strong>{profileLabel}</strong> · {usersCount} usuarios incluidos</span></div>
           <blockquote>Cuando las personas se sienten mejor,<br />trabajan mejor.</blockquote>
         </div>
         <KpiGrid data={data} />
@@ -601,7 +616,7 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           <MiniLine title="Energia" points={percentSeries(data.evolucion, 'energiaPct')} color={COLORS.orange} fill="#ffe4bd" names={names} />
         </div>
       </Page>
-      <Page page="Pag. 2" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-2">
+      <Page page="Pag. 2" eyebrow={reportEyebrow} className="rg-company-page rg-company-page-2">
         <h1>Resumen Ejecutivo</h1>
         <p className="rg-lead">{narrative.intro}</p>
         <KpiGrid data={data} />
@@ -613,7 +628,7 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           </div>
         </div>
       </Page>
-      <Page page="Pag. 3" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-3">
+      <Page page="Pag. 3" eyebrow={reportEyebrow} className="rg-company-page rg-company-page-3">
         <h1>Participacion y uso</h1>
         <p className="rg-lead">Evolucion de la participacion y del impacto de las pausas en el periodo {periodo}.</p>
         <div className="rg-grid side">
@@ -628,14 +643,14 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
         </div>
         <InsightList title="En sintesis" items={narrative.participationSummary} />
       </Page>
-      <Page page="Pag. 4" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-4">
+      <Page page="Pag. 4" eyebrow={reportEyebrow} className="rg-company-page rg-company-page-4">
         <h1>Foco y energia</h1>
         <p className="rg-lead">Evolucion del foco y la energia en el periodo {periodo}.</p>
         <div className="rg-grid two compact"><KpiCard label="Foco" value={data.kpis.foco} color={COLORS.blue} /><KpiCard label="Energia" value={data.kpis.energia} color={COLORS.orange} /></div>
         <DualLine data={data} />
         <InsightList title="Interpretacion" items={narrative.focusInterpretation} icon={<LineChart size={34} />} />
       </Page>
-      <Page page="Pag. 5" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-5">
+      <Page page="Pag. 5" eyebrow={reportEyebrow} className="rg-company-page rg-company-page-5">
         <h1>Dolor musculoesqueletico</h1>
         <p className="rg-lead">Este indicador muestra la evolucion del dolor musculoesqueletico percibido en el periodo {periodo}.</p>
         <div className="rg-grid side">
@@ -650,7 +665,7 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           </div>
         </div>
       </Page>
-      <Page page="Pag. 6" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-tension-page">
+      <Page page="Pag. 6" eyebrow={reportEyebrow} className="rg-company-page rg-tension-page">
         <h1>Momentos de mayor tension</h1>
         <p className="rg-lead">Distribucion de los momentos del dia en que los colaboradores reportaron sentir mas tension durante la jornada laboral.</p>
         {hasTension && data.tension ? (() => {
@@ -688,7 +703,7 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           </div>
         )}
       </Page>
-      <Page page="Pag. 7" eyebrow={`Informe Ejecutivo - ${periodo}`} className="rg-company-page rg-company-page-6">
+      <Page page="Pag. 7" eyebrow={reportEyebrow} className="rg-company-page rg-company-page-6">
         <h1>Conclusiones y<br />recomendaciones</h1>
         <p className="rg-lead">Con base en los indicadores del periodo, presentamos las principales conclusiones y recomendaciones para seguir fortaleciendo el bienestar corporativo.</p>
         <div className="rg-grid two">
@@ -696,6 +711,114 @@ const CompanyReport: React.FC<{ empresaName: string; periodo: string; data: Repo
           <InsightList title="Recomendaciones" items={narrative.recommendations} icon={<Target size={34} />} />
         </div>
         <KpiGrid data={data} />
+      </Page>
+    </>
+  );
+};
+
+const ComparisonTable: React.FC<{ administrative: ReportData; operative: ReportData }> = ({ administrative, operative }) => {
+  const rows = [
+    ['Participación', administrative.kpis.participacion, operative.kpis.participacion, COLORS.teal],
+    ['Foco', administrative.kpis.foco, operative.kpis.foco, COLORS.blue],
+    ['Impacto pausa', administrative.kpis.impacto, operative.kpis.impacto, COLORS.purple],
+    ['Dolor', administrative.kpis.dolor, operative.kpis.dolor, COLORS.red],
+    ['Energía', administrative.kpis.energia, operative.kpis.energia, COLORS.orange],
+  ] as const;
+  return (
+    <div className="rg-comparison-table">
+      <div className="rg-comparison-row heading"><span>Indicador</span><span>Administrativo</span><span>Operativo</span></div>
+      {rows.map(([label, administrativeValue, operativeValue, color]) => (
+        <div className="rg-comparison-row" key={label}>
+          <strong>{label}</strong>
+          {[administrativeValue, operativeValue].map((value, index) => (
+            <div key={`${label}-${index}`}><b style={{ color }}>{clamp(value)}%</b><i><span style={{ width: `${clamp(value)}%`, background: color }} /></i></div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const ComparisonReport: React.FC<{
+  empresaName: string;
+  periodo: string;
+  administrative: ReportData;
+  operative: ReportData;
+  administrativeUsers: number;
+  operativeUsers: number;
+}> = ({ empresaName, periodo, administrative, operative, administrativeUsers, operativeUsers }) => {
+  const administrativeNarrative = buildCompanyNarrative(administrative);
+  const operativeNarrative = buildCompanyNarrative(operative);
+  const topTension = (data: ReportData) => [...(data.tension ?? [])].sort((a, b) => b.valor - a.valor)[0];
+  const administrativeTension = topTension(administrative);
+  const operativeTension = topTension(operative);
+  const participationGap = administrative.kpis.participacion - operative.kpis.participacion;
+  const energyGap = administrative.kpis.energia - operative.kpis.energia;
+  const focusGap = administrative.kpis.foco - operative.kpis.foco;
+  const painGap = administrative.kpis.dolor - operative.kpis.dolor;
+  const strongerParticipation = participationGap >= 0 ? 'Administrativo' : 'Operativo';
+  const recommendations = [
+    Math.abs(participationGap) >= 8 ? `Reforzar recordatorios y horarios en el perfil ${strongerParticipation === 'Administrativo' ? 'Operativo' : 'Administrativo'}, que presenta menor participación.` : 'Sostener una frecuencia equivalente de pausas para ambos perfiles.',
+    Math.abs(energyGap) >= 8 ? `Priorizar contenidos de recuperación de energía para ${energyGap > 0 ? 'Operativos' : 'Administrativos'}.` : 'Mantener contenidos de activación y recuperación para ambos perfiles.',
+    Math.abs(focusGap) >= 8 ? `Incorporar ejercicios de foco para ${focusGap > 0 ? 'Operativos' : 'Administrativos'}.` : 'Continuar monitoreando el foco con la misma periodicidad.',
+    Math.abs(painGap) >= 6 ? `Reforzar prevención musculoesquelética en ${painGap > 0 ? 'Administrativos' : 'Operativos'}.` : 'Sostener la prevención musculoesquelética diferenciada por tipo de tarea.',
+  ];
+  const eyebrow = `Comparación de perfiles - ${periodo}`;
+  return (
+    <>
+      <Page page="Pag. 1 de 5" className="rg-company-page rg-company-page-1">
+        <div className="rg-cover">
+          <h1>Informe Comparativo<br />de Bienestar</h1>
+          <div className="rg-meta"><Building2 size={30} /><strong>{empresaName}</strong></div>
+          <div className="rg-meta"><Calendar size={30} /><span>Periodo: <strong>{periodo}</strong></span></div>
+          <div className="rg-meta"><Users size={30} /><span>Perfil analizado: <strong>Administrativo vs Operativo</strong></span></div>
+          <div className="rg-comparison-counts"><span>Administrativo <b>{administrativeUsers}</b></span><span>Operativo <b>{operativeUsers}</b></span><span>Total <b>{administrativeUsers + operativeUsers}</b></span></div>
+        </div>
+        <ComparisonTable administrative={administrative} operative={operative} />
+      </Page>
+      <Page page="Pag. 2 de 5" eyebrow={eyebrow} className="rg-company-page">
+        <h1>Indicadores principales</h1>
+        <p className="rg-lead">Comparación agregada de los indicadores principales para los dos perfiles laborales.</p>
+        <ComparisonTable administrative={administrative} operative={operative} />
+        <div className="rg-grid two compact">
+          <Highlight title="Mayor participación" label={strongerParticipation} value={`${Math.abs(participationGap)} puntos de diferencia`} />
+          <Highlight title="Diferencia de dolor" label={`${Math.abs(painGap)} puntos`} value={painGap > 0 ? 'Mayor en Administrativo' : painGap < 0 ? 'Mayor en Operativo' : 'Sin diferencia'} color={COLORS.red} icon={<HeartPulse size={44} />} />
+        </div>
+      </Page>
+      <Page page="Pag. 3 de 5" eyebrow={eyebrow} className="rg-company-page">
+        <h1>Evolución comparada</h1>
+        <p className="rg-lead">Participación, foco y energía calculados con la misma fuente de datos para cada perfil.</p>
+        <div className="rg-grid two">
+          <div><h2>Administrativo</h2><MiniLine title="Participación" points={percentSeries(administrative.evolucion, 'participacion')} color={COLORS.teal} labels names={administrative.evolucion.map(point => point.name)} /></div>
+          <div><h2>Operativo</h2><MiniLine title="Participación" points={percentSeries(operative.evolucion, 'participacion')} color={COLORS.blue} labels names={operative.evolucion.map(point => point.name)} /></div>
+        </div>
+        <InsightList title="Interpretación" items={[administrativeNarrative.intro, operativeNarrative.intro]} icon={<LineChart size={34} />} />
+      </Page>
+      <Page page="Pag. 4 de 5" eyebrow={eyebrow} className="rg-company-page rg-tension-page">
+        <h1>Tensión y dolor</h1>
+        <p className="rg-lead">Momentos de tensión y molestias reportadas por cada perfil laboral.</p>
+        <div className="rg-grid two">
+          <div className="rg-chart-card"><h3>Administrativo</h3>{administrative.tension?.length ? <TensionBars tension={administrative.tension} /> : <p>Sin respuestas registradas.</p>}</div>
+          <div className="rg-chart-card"><h3>Operativo</h3>{operative.tension?.length ? <TensionBars tension={operative.tension} /> : <p>Sin respuestas registradas.</p>}</div>
+        </div>
+        <InsightList title="Hallazgos" items={[
+          administrativeTension ? `En Administrativo predomina la tensión ${administrativeTension.name.toLowerCase()} (${administrativeTension.valor}%).` : 'Administrativo no registra tensión suficiente en el período.',
+          operativeTension ? `En Operativo predomina la tensión ${operativeTension.name.toLowerCase()} (${operativeTension.valor}%).` : 'Operativo no registra tensión suficiente en el período.',
+          `El dolor presenta una diferencia de ${Math.abs(painGap)} puntos entre perfiles.`,
+        ]} />
+      </Page>
+      <Page page="Pag. 5 de 5" eyebrow={eyebrow} className="rg-company-page rg-company-page-6">
+        <h1>Conclusiones y<br />recomendaciones</h1>
+        <p className="rg-lead">Las recomendaciones se basan exclusivamente en resultados agregados del período seleccionado.</p>
+        <div className="rg-grid two">
+          <InsightList title="Conclusiones" items={[
+            `${strongerParticipation} presenta la mayor participación, con una diferencia de ${Math.abs(participationGap)} puntos.`,
+            `La diferencia de energía es de ${Math.abs(energyGap)} puntos y la de foco es de ${Math.abs(focusGap)} puntos.`,
+            `La diferencia de dolor es de ${Math.abs(painGap)} puntos.`,
+          ]} />
+          <InsightList title="Recomendaciones" items={recommendations} icon={<Target size={34} />} />
+        </div>
+        <ComparisonTable administrative={administrative} operative={operative} />
       </Page>
     </>
   );
@@ -809,7 +932,18 @@ const UserReport: React.FC<{ userName: string; periodo: string; data: ReportData
   );
 };
 
-export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLabel, periodoLabel, periodFrom, periodTo, periodReady = true }) => {
+export const ReportGenerator: React.FC<Props> = ({
+  currentData,
+  currentEmpresaLabel,
+  periodoLabel,
+  periodFrom,
+  periodTo,
+  periodReady = true,
+  selectedWorkProfile = 'ALL',
+  privacyMinimum = 5,
+  profileReportData,
+  allowIndividualReports = true,
+}) => {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<ReportKind>('empresa');
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -820,6 +954,7 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
   const [previewOpen, setPreviewOpen] = useState(false);
   const [activePage, setActivePage] = useState(0);
   const [capturing, setCapturing] = useState(false);
+  const [reportWorkProfile, setReportWorkProfile] = useState<ReportWorkProfile>(selectedWorkProfile);
   const [database, setDatabase] = useState<MockDB | null>(null);
   const [individualSessions, setIndividualSessions] = useState<IndividualPauseSession[]>([]);
   const pagesRef = useRef<HTMLDivElement>(null);
@@ -833,6 +968,12 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
     const currentCompany = db.empresas.find(empresa => empresa.nombre === currentEmpresaLabel);
     if (currentCompany) setEmpresaId(currentCompany.id.toString());
   }, [currentEmpresaLabel]);
+
+  useEffect(() => setReportWorkProfile(selectedWorkProfile), [selectedWorkProfile]);
+
+  useEffect(() => {
+    if (!allowIndividualReports && kind !== 'empresa') setKind('empresa');
+  }, [allowIndividualReports, kind]);
 
   const selectedEmpresa = empresas.find(empresa => empresa.id.toString() === empresaId);
   const selectedUsuario = usuarios.find(usuario => usuario.id.toString() === usuarioId);
@@ -901,17 +1042,37 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
     return calculateIndividualAnalytics(individualSessions, analyticsPeriod, periodFrom, periodTo);
   }, [individualSessions, periodFrom, periodTo]);
 
+  const selectedProfileDataset = reportWorkProfile === 'COMPARISON'
+    ? profileReportData?.ALL
+    : profileReportData?.[reportWorkProfile];
   const reportData = useMemo(() => (
     kind === 'empresa'
-      ? buildCompanyData(selectedEmpresa, currentData, database ?? getDB(), periodFrom, periodTo)
+      ? selectedProfileDataset?.data ?? buildCompanyData(selectedEmpresa, currentData, database ?? getDB(), periodFrom, periodTo)
       : buildUserData(selectedUsuario, currentData, individualAnalytics)
-  ), [currentData, database, individualAnalytics, kind, periodFrom, periodTo, selectedEmpresa, selectedUsuario]);
+  ), [currentData, database, individualAnalytics, kind, periodFrom, periodTo, selectedEmpresa, selectedProfileDataset, selectedUsuario]);
+
+  const administrativeDataset = profileReportData?.ADMINISTRATIVO;
+  const operativeDataset = profileReportData?.OPERATIVO;
+  const comparisonAllowed = Boolean(
+    administrativeDataset && operativeDataset
+    && administrativeDataset.usersCount >= privacyMinimum
+    && operativeDataset.usersCount >= privacyMinimum,
+  );
+  const selectedSectorAllowed = reportWorkProfile === 'ADMINISTRATIVO' || reportWorkProfile === 'OPERATIVO'
+    ? (selectedProfileDataset?.usersCount ?? 0) >= privacyMinimum
+    : reportWorkProfile === 'COMPARISON'
+      ? comparisonAllowed
+      : true;
+  const reportUsersCount = reportWorkProfile === 'COMPARISON'
+    ? (administrativeDataset?.usersCount ?? 0) + (operativeDataset?.usersCount ?? 0)
+    : selectedProfileDataset?.usersCount ?? 0;
 
   const reportName = kind === 'empresa'
     ? selectedEmpresa?.nombre ?? currentEmpresaLabel
     : selectedUsuario?.nombre ?? 'Usuario ejemplo';
 
   const openPreview = () => {
+    if (kind === 'empresa' && !selectedSectorAllowed) return;
     setOpen(false);
     setActivePage(0);
     setPreviewOpen(true);
@@ -936,7 +1097,8 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       }
 
-      pdf.save(`Informe_Reactiva_${kind}_${fileSafe(reportName)}_${fileSafe(periodoLabel)}.pdf`);
+      const profileSuffix = kind === 'empresa' ? `_${fileSafe(WORK_PROFILE_LABELS[reportWorkProfile])}` : '';
+      pdf.save(`Informe_Reactiva_${kind}_${fileSafe(reportName)}_${fileSafe(periodoLabel)}${profileSuffix}.pdf`);
     } catch (error) {
       console.error('Error al generar informe:', error);
     } finally {
@@ -945,7 +1107,7 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
     }
   };
 
-  const pageCount = kind === 'empresa' ? 7 : 5;
+  const pageCount = kind === 'empresa' && reportWorkProfile === 'COMPARISON' ? 5 : kind === 'empresa' ? 7 : 5;
 
   return (
     <>
@@ -967,32 +1129,49 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
               <div className="rg-icon"><Download size={28} /></div>
               <div>
                 <h2>Generar informe</h2>
-                <p>Selecciona si queres crear un informe para una empresa o para un usuario especifico.</p>
+                <p>{allowIndividualReports
+                  ? 'Selecciona si queres crear un informe para una empresa o para un usuario especifico.'
+                  : 'Creá un informe agregado de tu empresa respetando el perfil laboral y el período seleccionados.'}</p>
               </div>
               <button type="button" className="rg-modal-close" onClick={() => setOpen(false)} aria-label="Cerrar generador de informes"><X size={18} /></button>
             </div>
 
-            <div className="rg-kind-grid">
+            <div className={`rg-kind-grid ${allowIndividualReports ? '' : 'company-only'}`}>
               <button type="button" className={kind === 'empresa' ? 'active' : ''} onClick={() => setKind('empresa')}>
                 <Building2 size={24} />
                 <strong>Empresa</strong>
                 <span>Informe corporativo de {pageCount} paginas.</span>
               </button>
-              <button type="button" className={kind === 'usuario' ? 'active' : ''} onClick={() => setKind('usuario')}>
+              {allowIndividualReports && <button type="button" className={kind === 'usuario' ? 'active' : ''} onClick={() => setKind('usuario')}>
                 <UserRound size={24} />
                 <strong>Usuario</strong>
                 <span>Informe individual de 5 paginas.</span>
-              </button>
+              </button>}
             </div>
 
             {kind === 'empresa' ? (
-              <label className="rg-field">
-                Empresa
-                <select className="input-field" value={empresaId} onChange={event => setEmpresaId(event.target.value)}>
-                  <option value="current">{currentEmpresaLabel}</option>
-                  {empresas.map(empresa => <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>)}
-                </select>
-              </label>
+              <>
+                <div className="rg-field">
+                  Empresa
+                  <div className="input-field" style={{ background: '#f8fafc', cursor: 'default' }}>{currentEmpresaLabel}</div>
+                  <small style={{ color: '#64748b', fontWeight: 500 }}>El informe respeta la empresa seleccionada en Analíticas.</small>
+                </div>
+                <label className="rg-field">
+                  Perfil laboral analizado
+                  <select className="input-field" value={reportWorkProfile} onChange={event => setReportWorkProfile(event.target.value as ReportWorkProfile)}>
+                    <option value="ALL">Toda la empresa</option>
+                    <option value="ADMINISTRATIVO">Administrativo</option>
+                    <option value="OPERATIVO">Operativo</option>
+                    <option value="COMPARISON">Comparación Administrativo vs Operativo</option>
+                  </select>
+                </label>
+                <div className={`rg-privacy-status ${selectedSectorAllowed ? 'ready' : 'blocked'}`}>
+                  <ShieldCheck size={17} />
+                  {selectedSectorAllowed
+                    ? `${reportUsersCount} usuarios incluidos · privacidad protegida`
+                    : `Datos insuficientes: se requieren al menos ${privacyMinimum} usuarios por perfil para preservar la privacidad.`}
+                </div>
+              </>
             ) : (
               <label className="rg-field">
                 Usuario
@@ -1011,7 +1190,7 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
 
             <div className="rg-modal-actions">
               <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>Cancelar</button>
-              <button type="button" className="btn-primary" onClick={openPreview}>Crear informe</button>
+              <button type="button" className="btn-primary" onClick={openPreview} disabled={kind === 'empresa' && !selectedSectorAllowed}>Crear informe</button>
             </div>
           </div>
         </div>
@@ -1023,7 +1202,7 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
             <div className="rg-preview-toolbar">
               <div>
                 <h2>{kind === 'empresa' ? 'Informe corporativo' : 'Informe individual'}</h2>
-                <p>{reportName} | {periodoLabel}</p>
+                <p>{reportName} | {periodoLabel}{kind === 'empresa' ? ` | ${WORK_PROFILE_LABELS[reportWorkProfile]}` : ''}</p>
               </div>
               <div className="rg-page-nav" aria-label="Navegacion del informe">
                 <button type="button" onClick={() => setActivePage(page => Math.max(0, page - 1))} disabled={activePage === 0 || generating} title="Pagina anterior">
@@ -1044,8 +1223,10 @@ export const ReportGenerator: React.FC<Props> = ({ currentData, currentEmpresaLa
             </div>
             <div className="rg-preview-scroll">
               <div className={`rg-preview-pages${capturing ? ' is-capturing' : ''}`} data-page={activePage} ref={pagesRef}>
-                {kind === 'empresa'
-                  ? <CompanyReport empresaName={reportName} periodo={periodoLabel} data={reportData} />
+                {kind === 'empresa' && reportWorkProfile === 'COMPARISON' && administrativeDataset && operativeDataset
+                  ? <ComparisonReport empresaName={reportName} periodo={periodoLabel} administrative={administrativeDataset.data} operative={operativeDataset.data} administrativeUsers={administrativeDataset.usersCount} operativeUsers={operativeDataset.usersCount} />
+                  : kind === 'empresa'
+                  ? <CompanyReport empresaName={reportName} periodo={periodoLabel} data={reportData} profileLabel={WORK_PROFILE_LABELS[reportWorkProfile]} usersCount={reportUsersCount} />
                   : <UserReport userName={reportName} periodo={periodoLabel} data={reportData} />}
               </div>
             </div>

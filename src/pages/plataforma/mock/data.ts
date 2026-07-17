@@ -28,6 +28,7 @@ export interface Usuario {
   passwordTemporal?: string;
   requiereCambioPassword?: boolean;
   onboardingData?: any;
+  workProfile?: 'ADMINISTRATIVO' | 'OPERATIVO';
 }
 
 export interface InvitacionUsuario {

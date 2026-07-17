@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, ChevronRight, X, Link, Upload, Save, Filter, Eye, Pencil, Trash2, CalendarCheck, Droplets, Leaf, Lightbulb, Moon, Monitor, Search, Settings, Sparkles, Star, Zap, FileImage, FileVideo, Info, Plus } from 'lucide-react';
 import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, fetchAcademyCategories, fetchContentLibrary, getContentLibrary, isAcademyVideoReady, normalizeAcademyCategory, normalizeAcademyVideoUrl, removeAcademyCategory, removeContentItemFromSupabase, renameAcademyCategory, saveAcademyCategory, saveAcademyItem, saveCoachItem } from '../../data/contentLibrary';
 import { useEmpresas } from '../../context/EmpresasContext';
-import { fetchVideoUnlockSchedule, loadVideoUnlockSchedule, persistVideoUnlockSchedule, UNLOCK_LEAD_MINUTES, UnlockBlock, UnlockDay, VideoUnlockItem } from '../../lib/videoUnlockSchedule';
-import { fetchScheduledVideos, getScheduledDateForProgramDay, getYouTubeIdFromUrl, saveScheduledVideo, ScheduledVideo, SCHEDULED_VIDEOS_EVENT, toLocalDateKey } from '../../lib/scheduledVideos';
+import { UnlockBlock, UnlockDay } from '../../lib/videoUnlockSchedule';
+import { fetchScheduledVideos, getScheduledDateForProgramDay, getYouTubeIdFromUrl, saveScheduledVideo, ScheduledVideo, ScheduledVideoWorkProfile, SCHEDULED_VIDEOS_EVENT, toLocalDateKey } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
 import { uploadResumableStorageFile } from '../../lib/resumableStorageUpload';
 
@@ -1218,6 +1218,12 @@ const colorEmpresa: Record<string,{bg:string;text:string}> = {
   'Global':        {bg:'#f0fdfa', text:'#0d9488'},
 };
 
+const scheduledProfileLabel = (profile?: ScheduledVideoWorkProfile | null) => {
+  if (profile === 'ADMINISTRATIVO') return 'Administrativo';
+  if (profile === 'OPERATIVO') return 'Operativo';
+  return 'Todos los perfiles';
+};
+
 export const Contenido: React.FC = () => {
   const { empresas } = useEmpresas();
   const opcionesEmpresas = ['Todas las empresas', 'Global', ...empresas.map(e => e.nombre)];
@@ -1234,11 +1240,11 @@ export const Contenido: React.FC = () => {
   const [modalScheduledDate, setModalScheduledDate] = useState(() => toLocalDateKey(hoy));
   const [offsetSem, setOffset]     = useState(0);
   const [empresa, setEmpresa]      = useState('Todas las empresas');
-  const [unlockSchedule, setUnlockSchedule] = useState<VideoUnlockItem[]>(() => loadVideoUnlockSchedule());
   const [modalDay, setModalDay] = useState<UnlockDay>('Lunes');
   const [modalBlock, setModalBlock] = useState<UnlockBlock>('morning');
   const [modalTime, setModalTime] = useState('08:00');
   const [modalCompany, setModalCompany] = useState('Global');
+  const [modalWorkProfile, setModalWorkProfile] = useState<ScheduledVideoWorkProfile | null>(null);
   const [modalVideoUrl, setModalVideoUrl] = useState('');
   const [modalTitle, setModalTitle] = useState('Pausa activa');
   const [modalFile, setModalFile] = useState<File | null>(null);
@@ -1248,18 +1254,6 @@ export const Contenido: React.FC = () => {
   const companyIdForName = (name: string) => (
     name === 'Global' ? null : empresas.find(item => item.nombre === name)?.supabaseId ?? null
   );
-  const selectedScheduleCompanyId = empresa !== 'Todas las empresas'
-    ? companyIdForName(empresa)
-    : null;
-
-  useEffect(() => {
-    const refreshSchedule = () => void fetchVideoUnlockSchedule(selectedScheduleCompanyId).then(setUnlockSchedule);
-    refreshSchedule();
-    const channel = supabase
-      ? supabase.channel('admin-video-unlock-schedule').on('postgres_changes', { event: '*', schema: 'public', table: 'video_unlock_schedule' }, refreshSchedule).subscribe()
-      : null;
-    return () => { if (channel && supabase) void supabase.removeChannel(channel); };
-  }, [selectedScheduleCompanyId]);
 
   useEffect(() => {
     const refreshVideos = () => fetchScheduledVideos().then(setScheduledVideos);
@@ -1276,18 +1270,6 @@ export const Contenido: React.FC = () => {
     };
   }, []);
 
-  const updateUnlockSchedule = (day: UnlockDay, block: UnlockBlock, changes: Partial<VideoUnlockItem>, companyId?: string | null) => {
-    const next = unlockSchedule.map((item) => (
-      item.day === day && item.block === block ? { ...item, ...changes } : item
-    ));
-    setUnlockSchedule(next);
-    const updatedItem = next.find(item => item.day === day && item.block === block);
-    const scheduleToPersist = supabase && updatedItem ? [updatedItem] : next;
-    persistVideoUnlockSchedule(scheduleToPersist, companyId).then((result) => {
-      if (!result.ok) console.error('No se pudo guardar la programación de videos', result.error);
-    });
-  };
-
   const lunes = getLunesOfWeek(hoy, offsetSem);
   const rangoLabel = (() => {
     const v = new Date(lunes); v.setDate(lunes.getDate()+4);
@@ -1301,44 +1283,48 @@ export const Contenido: React.FC = () => {
       const scheduledDate = toLocalDateKey(fecha);
       const videosDelDia = scheduledVideos
         .filter(video => video.scheduledDate === scheduledDate)
-        .filter(video => empresa === 'Todas las empresas' || video.companyName === empresa || video.companyName === 'Global' || empresa === 'Global')
+        .filter(video => (
+          empresa === 'Todas las empresas'
+          || (empresa === 'Global' ? !video.companyId : video.companyName === empresa || !video.companyId)
+        ))
         .map(video => {
-          const unlock = empresa === 'Todas las empresas'
-            ? undefined
-            : unlockSchedule.find(item => item.day === video.day && item.block === video.block);
           return {
             id: video.id,
             turno: video.block === 'morning' ? 'Mañana' : 'Tarde',
             tipo: video.title || 'Pausa activa',
-            horario: unlock?.time ?? video.time,
+            horario: video.time,
             empresa: video.companyName ?? 'Global',
-            estado: unlock?.enabled ? 'programado' : 'borrador',
+            targetWorkProfile: video.targetWorkProfile ?? null,
+            estado: 'programado',
             url: video.url,
           };
         });
       return { ...d, fecha: fmt(fecha), scheduledDate, bloques: videosDelDia };
     });
-  }, [empresa, lunes, scheduledVideos, unlockSchedule]);
+  }, [empresa, lunes, scheduledVideos]);
 
   const calDays = getCalDays(anio, mes);
 
   const eventosMes = useMemo(() => {
-    const result: Record<number, { horario: string; empresa: string; title: string }[]> = {};
+    const result: Record<number, { horario: string; empresa: string; title: string; targetWorkProfile: ScheduledVideoWorkProfile | null }[]> = {};
     scheduledVideos.forEach((video) => {
       const [year, month, day] = video.scheduledDate.split('-').map(Number);
       if (year !== anio || month !== mes + 1 || !day) return;
-      if (empresa !== 'Todas las empresas' && video.companyName !== empresa && video.companyName !== 'Global' && empresa !== 'Global') return;
-      const unlock = empresa === 'Todas las empresas'
-        ? undefined
-        : unlockSchedule.find(item => item.day === video.day && item.block === video.block);
+      if (empresa !== 'Todas las empresas') {
+        const belongsToFilter = empresa === 'Global'
+          ? !video.companyId
+          : video.companyName === empresa || !video.companyId;
+        if (!belongsToFilter) return;
+      }
       (result[day] ??= []).push({
-        horario: unlock?.time ?? video.time,
+        horario: video.time,
         empresa: video.companyName ?? 'Global',
         title: video.title,
+        targetWorkProfile: video.targetWorkProfile ?? null,
       });
     });
     return result;
-  }, [anio, empresa, mes, scheduledVideos, unlockSchedule]);
+  }, [anio, empresa, mes, scheduledVideos]);
 
   const navMes = (dir:1|-1) => {
     if (dir===1 && mes===11) { setMes(0); setAnio(a=>a+1); }
@@ -1369,35 +1355,27 @@ export const Contenido: React.FC = () => {
       ? toLocalDateKey(new Date(anio, mes, dia))
       : getScheduledDateForProgramDay(nextDay, lunes));
     const nextBlock = video?.block ?? modalBlock;
-    const targetCompanyId = video?.companyId ?? companyIdForName(video?.companyName ?? 'Global');
-    const existing = unlockSchedule.find(item => item.day === nextDay && item.block === nextBlock);
     setDiaModal(dia??null);
     setModalScheduledDate(nextDate);
     setModalDay(nextDay);
     setModalBlock(nextBlock);
-    setModalTime(video?.time ?? existing?.time ?? (nextBlock === 'morning' ? '08:00' : '15:00'));
+    setModalTime(video?.time ?? (nextBlock === 'morning' ? '08:00' : '15:00'));
     setModalCompany(video?.companyName ?? 'Global');
+    setModalWorkProfile(video?.targetWorkProfile ?? null);
     setModalVideoUrl(video?.url ?? '');
     setModalFile(null);
     setModalTitle(video?.title ?? 'Pausa activa');
     setEditingScheduledId(video?.id ?? null);
     setTipoLink('link');
     setModal(true);
-    void fetchVideoUnlockSchedule(targetCompanyId).then(schedule => {
-      setUnlockSchedule(schedule);
-      const scoped = schedule.find(item => item.day === nextDay && item.block === nextBlock);
-      setModalTime(video?.time ?? scoped?.time ?? (nextBlock === 'morning' ? '08:00' : '15:00'));
-    });
   };
 
   const handleModalCompanyChange = (companyName: string) => {
     setModalCompany(companyName);
-    const companyId = companyIdForName(companyName);
-    void fetchVideoUnlockSchedule(companyId).then(schedule => {
-      setUnlockSchedule(schedule);
-      const scoped = schedule.find(item => item.day === modalDay && item.block === modalBlock);
-      setModalTime(scoped?.time ?? (modalBlock === 'morning' ? '08:00' : '15:00'));
-    });
+  };
+
+  const closeScheduleModal = () => {
+    setModal(false);
   };
 
   const uploadScheduledFile = async () => {
@@ -1445,6 +1423,7 @@ export const Contenido: React.FC = () => {
         url: finalUrl,
         companyId: targetCompanyId,
         companyName: modalCompany,
+        targetWorkProfile: modalWorkProfile,
         createdAt: new Date().toISOString(),
       });
 
@@ -1453,8 +1432,7 @@ export const Contenido: React.FC = () => {
         return;
       }
 
-      updateUnlockSchedule(exactDay, modalBlock, { enabled: true, time: modalTime }, targetCompanyId);
-      setModal(false);
+      closeScheduleModal();
     } catch (error: any) {
       window.alert(error?.message ?? 'No pudimos subir o guardar el video.');
     } finally {
@@ -1539,52 +1517,6 @@ export const Contenido: React.FC = () => {
         </div>
       </div>
 
-      {/* ══ VISTA SEMANAL ══ */}
-      <section className="card video-unlock-panel" style={{ padding: '1rem', margin: '0 0 1.25rem', borderRadius: '14px', border: '1px solid #ccfbf1', background: 'linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)', boxShadow: '0 4px 16px rgba(15, 118, 110, 0.06)' }}>
-        <div className="video-unlock-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
-          <div>
-            <h3 style={{ margin: 0, color: '#0f172a', fontSize: '0.98rem', fontWeight: 800 }}>Habilitación automática de videos</h3>
-            <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.8rem', lineHeight: 1.45 }}>
-              Activá los bloques que querés liberar. Los usuarios podrán verlos {UNLOCK_LEAD_MINUTES} minuto antes del horario configurado.
-            </p>
-          </div>
-          <span style={{ background: '#ccfbf1', color: '#0f766e', borderRadius: 999, padding: '0.28rem 0.65rem', fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
-            Lunes · Miércoles · Viernes
-          </span>
-        </div>
-
-        <div className="video-unlock-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
-          {(['Lunes', 'Miércoles', 'Viernes'] as UnlockDay[]).map(day => (
-            <div className="video-unlock-day" key={day} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.8rem' }}>
-              <div className="video-unlock-day-title" style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.65rem' }}>{day}</div>
-              {([
-                ['morning', 'Mañana'],
-                ['afternoon', 'Tarde'],
-              ] as [UnlockBlock, string][]).map(([block, label]) => {
-                const item = unlockSchedule.find(entry => entry.day === day && entry.block === block);
-                return (
-                  <label className="video-unlock-row" key={`${day}-${block}`} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 92px', alignItems: 'center', gap: '0.55rem', padding: '0.5rem 0', borderTop: block === 'afternoon' ? '1px solid #f1f5f9' : 'none' }}>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(item?.enabled)}
-                      onChange={(event) => updateUnlockSchedule(day, block, { enabled: event.target.checked })}
-                      style={{ width: 16, height: 16, accentColor: 'var(--primary-color)' }}
-                    />
-                    <span style={{ color: '#334155', fontSize: '0.8rem', fontWeight: 700 }}>{label}</span>
-                    <input
-                      type="time"
-                      value={item?.time ?? '08:00'}
-                      onChange={(event) => updateUnlockSchedule(day, block, { time: event.target.value })}
-                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.35rem', fontSize: '0.78rem', color: '#0f172a' }}
-                    />
-                  </label>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </section>
-
       {vista==='semana' && (
         <>
           {/* Navegación semana */}
@@ -1630,6 +1562,12 @@ export const Contenido: React.FC = () => {
                           <div style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.76rem'}}>
                             <Building2 size={12} color="#64748b"/>
                             <span style={{backgroundColor:col.bg,color:col.text,padding:'0.1rem 0.45rem',borderRadius:'1rem',fontWeight:600,fontSize:'0.7rem'}}>{bloque.empresa}</span>
+                          </div>
+                          <div style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.76rem'}}>
+                            <span style={{color:'#94a3b8',fontSize:'0.68rem'}}>Perfil</span>
+                            <span style={{backgroundColor:'#eef2ff',color:'#4338ca',padding:'0.1rem 0.45rem',borderRadius:'1rem',fontWeight:700,fontSize:'0.68rem'}}>
+                              {scheduledProfileLabel(bloque.targetWorkProfile)}
+                            </span>
                           </div>
                         </div>
                         <div style={{marginTop:'0.65rem',paddingTop:'0.55rem',borderTop:'1px solid #f8fafc',textAlign:'right'}}>
@@ -1689,7 +1627,7 @@ export const Contenido: React.FC = () => {
                         return (
                           <div className="content-calendar-event" key={i} style={{fontSize:'0.62rem',backgroundColor:esHoy?'rgba(255,255,255,0.2)':col.bg,color:esHoy?'white':col.text,borderRadius:'4px',padding:'1px 4px',fontWeight:600,lineHeight:1.4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                             <span className="content-calendar-event-time">{e.horario}</span>
-                            <span className="content-calendar-event-company"> — {e.empresa==='Global'?'General':e.empresa}</span>
+                            <span className="content-calendar-event-company"> — {e.empresa==='Global'?'General':e.empresa} · {scheduledProfileLabel(e.targetWorkProfile)}</span>
                           </div>
                         );
                       })}
@@ -1717,7 +1655,7 @@ export const Contenido: React.FC = () => {
 
       {/* ══ MODAL ══ */}
       {modal && (
-        <div className="video-schedule-backdrop" onClick={e=>{if(e.target===e.currentTarget)setModal(false)}}
+        <div className="video-schedule-backdrop" onClick={e=>{if(e.target===e.currentTarget)closeScheduleModal()}}
           style={{position:'fixed',inset:0,backgroundColor:'rgba(15,23,42,0.35)',backdropFilter:'blur(4px)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <div className="video-schedule-modal" style={{backgroundColor:'white',borderRadius:'16px',padding:'1.75rem',width:'460px',maxWidth:'95vw',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',animation:'fadeIn 0.2s ease-out'}}>
             <div className="video-schedule-head" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1.25rem'}}>
@@ -1727,7 +1665,7 @@ export const Contenido: React.FC = () => {
                   {diaModal?`${diaModal} de ${MESES[mes]}`:'Nuevo contenido'}
                 </p>
               </div>
-              <button onClick={()=>setModal(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8'}}><X size={20}/></button>
+              <button onClick={closeScheduleModal} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8'}}><X size={20}/></button>
             </div>
 
             <div style={{marginBottom:'1rem'}}>
@@ -1778,6 +1716,23 @@ export const Contenido: React.FC = () => {
               </div>
             </div>
 
+            <div style={{marginBottom:'0.9rem'}}>
+              <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Perfil laboral</label>
+              <select
+                className="input-field"
+                value={modalWorkProfile ?? ''}
+                onChange={e => setModalWorkProfile((e.target.value || null) as ScheduledVideoWorkProfile | null)}
+                style={{fontSize:'0.875rem'}}
+              >
+                <option value="">Todos los perfiles</option>
+                <option value="ADMINISTRATIVO">Administrativo</option>
+                <option value="OPERATIVO">Operativo</option>
+              </select>
+              <span style={{display:'block',marginTop:'0.3rem',fontSize:'0.7rem',lineHeight:1.35,color:'#94a3b8'}}>
+                “Todos los perfiles” mantiene el comportamiento actual. Un perfil específico solo llegará a ese sector.
+              </span>
+            </div>
+
             <div className="video-schedule-grid video-schedule-grid-three" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.65rem',marginBottom:'1.25rem'}}>
               <div>
                 <label style={{fontSize:'0.72rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.35rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Fecha</label>
@@ -1793,8 +1748,7 @@ export const Contenido: React.FC = () => {
                 <select className="input-field" value={modalBlock} onChange={e => {
                   const nextBlock = e.target.value as UnlockBlock;
                   setModalBlock(nextBlock);
-                  const existing = unlockSchedule.find(item => item.day === modalDay && item.block === nextBlock);
-                  setModalTime(existing?.time ?? (nextBlock === 'morning' ? '08:00' : '15:00'));
+                  setModalTime(nextBlock === 'morning' ? '08:00' : '15:00');
                 }} style={{fontSize:'0.875rem'}}>
                   <option value="morning">Mañana</option>
                   <option value="afternoon">Tarde</option>
@@ -1812,7 +1766,7 @@ export const Contenido: React.FC = () => {
             </div>
 
             <div className="video-schedule-actions" style={{display:'flex',gap:'0.65rem'}}>
-              <button onClick={()=>setModal(false)} className="btn-secondary" style={{flex:1,fontSize:'0.875rem'}}>Cancelar</button>
+              <button onClick={closeScheduleModal} className="btn-secondary" style={{flex:1,fontSize:'0.875rem'}}>Cancelar</button>
               <button onClick={guardarProgramacionVideo} disabled={savingProgram} className="btn-primary" style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:'0.4rem',fontSize:'0.875rem',opacity:savingProgram?0.7:1}}>
                 <Save size={15}/> {savingProgram ? 'Guardando...' : 'Guardar programación'}
               </button>

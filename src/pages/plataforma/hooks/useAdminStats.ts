@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 
 interface PausaGuardada {
   profileId?: string;
+  workProfile?: 'ADMINISTRATIVO' | 'OPERATIVO';
   dia: string;
   bloque: 'morning' | 'afternoon';
   fecha: string;
@@ -31,6 +32,8 @@ interface PausaGuardada {
     comentario?: string;
   };
 }
+
+export type AnalyticsWorkProfileFilter = 'ALL' | 'ADMINISTRATIVO' | 'OPERATIVO';
 
 export interface AdminStats {
   hayDatos: boolean;
@@ -138,8 +141,51 @@ const isWithinPeriod = (pause: PausaGuardada, periodFrom?: string, periodTo?: st
   return true;
 };
 
-const readPausasFromSupabase = async (companyId?: string, periodFrom?: string, periodTo?: string): Promise<PausaGuardada[] | null> => {
+const readPausasFromSupabase = async (
+  companyId?: string,
+  periodFrom?: string,
+  periodTo?: string,
+  workProfile: AnalyticsWorkProfileFilter = 'ALL',
+  allowLegacyFallback = true,
+): Promise<PausaGuardada[] | null> => {
   if (!supabase) return null;
+
+  const inclusiveStart = periodFrom ? startDayIso(periodFrom) : '';
+  const exclusiveEnd = periodTo ? nextDayIso(periodTo) : '';
+  const { data: scopedRows, error: scopedError } = await supabase.rpc('get_analytics_pause_sessions', {
+    target_company_id: companyId ?? null,
+    target_work_profile: workProfile === 'ALL' ? null : workProfile,
+    period_from: inclusiveStart || null,
+    period_to: exclusiveEnd || null,
+  });
+
+  if (!scopedError && scopedRows) return mapPauseRows(scopedRows as any[]);
+
+  // RR. HH. siempre debe consultar mediante la RPC que fija la empresa desde
+  // auth.uid(). Si esa funcion no esta disponible, es preferible no mostrar
+  // datos antes que recurrir a una consulta heredada menos estricta.
+  if (!allowLegacyFallback) {
+    console.error('No se pudo cargar la vista segura de analiticas para RR. HH.', scopedError);
+    return null;
+  }
+
+  // Compatibilidad mientras una instalacion todavía no aplicó la migración:
+  // conserva la consulta anterior y limita por los perfiles reales visibles.
+  let profileIds: string[] | null = null;
+  if (workProfile !== 'ALL') {
+    let profilesQuery = supabase
+      .from('profiles')
+      .select('id')
+      .eq('work_profile', workProfile);
+    if (companyId) profilesQuery = profilesQuery.eq('company_id', companyId);
+    const { data: profiles, error: profilesError } = await profilesQuery;
+    if (profilesError) {
+      console.error('No se pudieron identificar los perfiles laborales para las métricas', profilesError);
+      return null;
+    }
+    profileIds = (profiles ?? []).map(profile => profile.id);
+    if (profileIds.length === 0) return [];
+  }
 
   let query = supabase
     .from('pause_sessions')
@@ -147,9 +193,8 @@ const readPausasFromSupabase = async (companyId?: string, periodFrom?: string, p
     .order('occurred_at', { ascending: false });
 
   if (companyId) query = query.eq('company_id', companyId);
-  const inclusiveStart = periodFrom ? startDayIso(periodFrom) : '';
+  if (profileIds) query = query.in('profile_id', profileIds);
   if (inclusiveStart) query = query.gte('occurred_at', inclusiveStart);
-  const exclusiveEnd = periodTo ? nextDayIso(periodTo) : '';
   if (exclusiveEnd) query = query.lt('occurred_at', exclusiveEnd);
 
   const { data, error } = await query;
@@ -301,10 +346,18 @@ const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: s
   };
 };
 
-export function useAdminStats(companyId?: string, periodFrom?: string, periodTo?: string): AdminStats {
+export function useAdminStats(
+  companyId?: string,
+  periodFrom?: string,
+  periodTo?: string,
+  workProfile: AnalyticsWorkProfileFilter = 'ALL',
+): AdminStats {
   const { user } = useAuth();
   const isDemo = !!user?.isDemo;
-  const filteredLocalPauses = () => readPausasFromStorage().filter(pause => isWithinPeriod(pause, periodFrom, periodTo));
+  const filteredLocalPauses = () => readPausasFromStorage().filter(pause => (
+    isWithinPeriod(pause, periodFrom, periodTo)
+    && (workProfile === 'ALL' || pause.workProfile === workProfile)
+  ));
   const [stats, setStats] = useState<AdminStats>(() => isDemo ? DEMO_STATS : computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
 
   useEffect(() => {
@@ -315,7 +368,7 @@ export function useAdminStats(companyId?: string, periodFrom?: string, periodTo?
         return;
       }
       setStats(computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
-      readPausasFromSupabase(companyId, periodFrom, periodTo).then((pausas) => {
+      readPausasFromSupabase(companyId, periodFrom, periodTo, workProfile, user?.role !== 'rrhh').then((pausas) => {
         if (mounted && pausas) setStats(computeStats(pausas, periodFrom, periodTo));
       });
     };
@@ -324,7 +377,7 @@ export function useAdminStats(companyId?: string, periodFrom?: string, periodTo?
     window.addEventListener('storage', refresh);
     const channel = supabase && !isDemo
       ? supabase
-          .channel(`admin-stats-${companyId ?? 'all'}-${periodFrom ?? 'start'}-${periodTo ?? 'end'}`)
+          .channel(`admin-stats-${companyId ?? 'all'}-${workProfile}-${periodFrom ?? 'start'}-${periodTo ?? 'end'}`)
           .on('postgres_changes', {
             event: '*',
             schema: 'public',
@@ -339,7 +392,7 @@ export function useAdminStats(companyId?: string, periodFrom?: string, periodTo?
       window.removeEventListener('storage', refresh);
       if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, [companyId, isDemo, periodFrom, periodTo]);
+  }, [companyId, isDemo, periodFrom, periodTo, user?.role, workProfile]);
 
   return stats;
 }

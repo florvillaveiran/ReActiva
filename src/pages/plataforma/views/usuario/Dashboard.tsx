@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { CheckCircle2, Lock, Play, Send, Clock, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
-import { fetchVideoUnlockSchedule, getCurrentProgramDay, getVideoUnlockStatus, loadVideoUnlockSchedule, VIDEO_UNLOCK_SCHEDULE_EVENT } from '../../lib/videoUnlockSchedule';
-import { fetchScheduledVideos, getScheduledDateForProgramDay, getScheduledVideoFor, getVideoThumbnail, getYouTubeIdFromUrl, ScheduledVideo, SCHEDULED_VIDEOS_EVENT } from '../../lib/scheduledVideos';
+import { getCurrentProgramDay, UNLOCK_LEAD_MINUTES } from '../../lib/videoUnlockSchedule';
+import { fetchScheduledVideosForUser, getScheduledDateForProgramDay, getScheduledVideoFor, getVideoThumbnail, getYouTubeIdFromUrl, ScheduledVideo, SCHEDULED_VIDEOS_EVENT, toLocalDateKey } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
 
 // ─── Configuración ──────────────────────────────────────────────────────────
@@ -532,7 +532,6 @@ export const UsuarioDashboard: React.FC = () => {
   const [openVideo, setOpenVideo] = useState<{ dia: string; bloque: 'morning' | 'afternoon' } | null>(null);
   const [videosVistos, setVideosVistos] = useState<Set<string>>(new Set());
   const [today, setToday] = useState(() => user?.isDemo ? 'Lunes' : getCurrentProgramDay());
-  const [unlockSchedule, setUnlockSchedule] = useState(() => loadVideoUnlockSchedule());
   const [scheduledVideos, setScheduledVideos] = useState<ScheduledVideo[]>([]);
   const displayName = user?.name?.trim()?.split(' ')[0] || 'Usuario';
   const companyId = isDemo ? undefined : user?.empresa_id?.toString();
@@ -617,22 +616,7 @@ export const UsuarioDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    const syncSchedule = () => void fetchVideoUnlockSchedule(companyId).then(setUnlockSchedule);
-    syncSchedule();
-    window.addEventListener(VIDEO_UNLOCK_SCHEDULE_EVENT, syncSchedule);
-    window.addEventListener('storage', syncSchedule);
-    const channel = supabase && !isDemo
-      ? supabase.channel('user-video-unlock-schedule').on('postgres_changes', { event: '*', schema: 'public', table: 'video_unlock_schedule' }, syncSchedule).subscribe()
-      : null;
-    return () => {
-      window.removeEventListener(VIDEO_UNLOCK_SCHEDULE_EVENT, syncSchedule);
-      window.removeEventListener('storage', syncSchedule);
-      if (channel && supabase) void supabase.removeChannel(channel);
-    };
-  }, [companyId, isDemo]);
-
-  useEffect(() => {
-    const syncVideos = () => fetchScheduledVideos().then(setScheduledVideos);
+    const syncVideos = () => fetchScheduledVideosForUser(companyId, user?.workProfile).then(setScheduledVideos);
     void syncVideos();
     window.addEventListener(SCHEDULED_VIDEOS_EVENT, syncVideos);
     window.addEventListener('storage', syncVideos);
@@ -644,7 +628,7 @@ export const UsuarioDashboard: React.FC = () => {
       window.removeEventListener('storage', syncVideos);
       if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, [isDemo]);
+  }, [isDemo, companyId, user?.workProfile]);
 
   const isDone = (dia: string, bloque: 'morning' | 'afternoon') => completed.some(r => r.dia === dia && r.bloque === bloque);
 
@@ -695,10 +679,15 @@ export const UsuarioDashboard: React.FC = () => {
         ? { status: 'available' }
         : { status: 'locked', reason: 'Terminá la pausa de la mañana de este día para continuar' };
     }
-    const unlock = getVideoUnlockStatus(unlockSchedule, dia, bloque);
-    if (!unlock.unlocked) return { status: 'locked', reason: unlock.reason };
-    if (dia !== today) {
-      return { status: 'locked', reason: 'Próximamente' };
+    const scheduledDate = getScheduledDateForProgramDay(dia);
+    const video = getScheduledVideoFor(scheduledVideos, dia, bloque, companyId, scheduledDate, user?.workProfile);
+    if (!video) return { status: 'locked', reason: 'Contenido pendiente de programación por ReActiva' };
+    if (scheduledDate !== toLocalDateKey(new Date()) || dia !== today) return { status: 'locked', reason: `Disponible el ${dia}` };
+    const [hours = '0', minutes = '0'] = video.time.split(':');
+    const unlockMinutes = Number(hours) * 60 + Number(minutes) - UNLOCK_LEAD_MINUTES;
+    const now = new Date();
+    if (now.getHours() * 60 + now.getMinutes() < unlockMinutes) {
+      return { status: 'locked', reason: `Disponible desde ${video.time} hs` };
     }
     if (bloque === 'morning') {
       return { status: 'available' };
@@ -713,7 +702,7 @@ export const UsuarioDashboard: React.FC = () => {
     if (!isDone(today, 'morning')) return 'morning';
     if (!isDone(today, 'afternoon')) return 'afternoon';
     return null;
-  }, [completed, today, unlockSchedule]);
+  }, [completed, today, scheduledVideos, companyId, user?.workProfile]);
 
   const totalPausas = completed.length;
   const totalObjetivo = DAYS.length * 2;
@@ -748,8 +737,8 @@ export const UsuarioDashboard: React.FC = () => {
 
   const activeInfo = activeBloque ? PAUSAS[activeBloque] : null;
   const activeStatusObj = activeBloque ? getStatus(today, activeBloque) : null;
-  const activeScheduledVideo = activeBloque ? getScheduledVideoFor(effectiveScheduledVideos, today, activeBloque, companyId, getScheduledDateForProgramDay(today)) : null;
-  const openScheduledVideo = openVideo ? getScheduledVideoFor(effectiveScheduledVideos, openVideo.dia, openVideo.bloque, companyId, getScheduledDateForProgramDay(openVideo.dia)) : null;
+  const activeScheduledVideo = activeBloque ? getScheduledVideoFor(effectiveScheduledVideos, today, activeBloque, companyId, getScheduledDateForProgramDay(today), user?.workProfile) : null;
+  const openScheduledVideo = openVideo ? getScheduledVideoFor(effectiveScheduledVideos, openVideo.dia, openVideo.bloque, companyId, getScheduledDateForProgramDay(openVideo.dia), user?.workProfile) : null;
   const contentLocked = activeStatusObj?.status === 'locked' || (activeStatusObj?.status === 'available' && !activeScheduledVideo);
   const allDoneToday = activeBloque === null;
 
@@ -1020,8 +1009,8 @@ export const UsuarioDashboard: React.FC = () => {
                 {(['morning', 'afternoon'] as const).map(bloque => {
                   const { status } = getStatus(dia, bloque);
                   const isActive = isCurrent && activeBloque === bloque;
-                  const scheduledVideo = getScheduledVideoFor(effectiveScheduledVideos, dia, bloque, companyId, getScheduledDateForProgramDay(dia));
-                  const scheduledTime = unlockSchedule.find(item => item.day === dia && item.block === bloque)?.time;
+                  const scheduledVideo = getScheduledVideoFor(effectiveScheduledVideos, dia, bloque, companyId, getScheduledDateForProgramDay(dia), user?.workProfile);
+                  const scheduledTime = scheduledVideo?.time;
                   return (
                     <WeekPauseRow
                       key={bloque}
