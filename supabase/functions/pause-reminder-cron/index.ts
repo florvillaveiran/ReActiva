@@ -334,6 +334,12 @@ Deno.serve(async (req) => {
             company_id: company.id,
             profile_id: profile.id,
             event_type: 'pause_reminder_sent',
+            template_id: 'pause-reminder',
+            subject,
+            recipient_email: profile.email,
+            sent_at: new Date().toISOString(),
+            provider_message_id: providerResponse?.id ?? null,
+            status: 'sent',
             metadata: {
               dedupeKey,
               scheduleId: schedule.id,
@@ -342,7 +348,6 @@ Deno.serve(async (req) => {
               time: targetTime,
               reminderBeforeUnlockMinutes: schedule.minutesUntilUnlock,
               provider: 'resend',
-              providerResponse,
             },
           });
           sentBeforePause += 1;
@@ -352,13 +357,16 @@ Deno.serve(async (req) => {
             company_id: company.id,
             profile_id: profile.id,
             event_type: 'pause_reminder_failed',
+            template_id: 'pause-reminder',
+            recipient_email: profile.email,
+            status: 'failed',
+            error_message: error.message,
             metadata: {
               dedupeKey,
               scheduleId: schedule.id,
               day: targetDay,
               block: schedule.block,
               time: targetTime,
-              error: error.message,
             },
           });
         }
@@ -479,6 +487,12 @@ Deno.serve(async (req) => {
             company_id: company.id,
             profile_id: profile.id,
             event_type: 'missed_pause_reminder_sent',
+            template_id: 'missed-pause-reminder',
+            subject,
+            recipient_email: profile.email,
+            sent_at: new Date().toISOString(),
+            provider_message_id: providerResponse?.id ?? null,
+            status: 'sent',
             metadata: {
               dedupeKey,
               scheduleId: schedule.id,
@@ -487,7 +501,6 @@ Deno.serve(async (req) => {
               time: targetTime,
               delayMinutes: missedDelayMinutes,
               provider: 'resend',
-              providerResponse,
             },
           });
           sentMissedPause += 1;
@@ -497,6 +510,10 @@ Deno.serve(async (req) => {
             company_id: company.id,
             profile_id: profile.id,
             event_type: 'missed_pause_reminder_failed',
+            template_id: 'missed-pause-reminder',
+            recipient_email: profile.email,
+            status: 'failed',
+            error_message: error.message,
             metadata: {
               dedupeKey,
               scheduleId: schedule.id,
@@ -504,7 +521,6 @@ Deno.serve(async (req) => {
               block: schedule.block,
               time: targetTime,
               delayMinutes: missedDelayMinutes,
-              error: error.message,
             },
           });
         }

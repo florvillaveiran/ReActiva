@@ -256,6 +256,26 @@ const hashToNumericId = (value: string) => {
   return Math.abs(hash) + 10000;
 };
 
+// --- Real event row from Supabase email_events ---
+interface RealEmailEvent {
+  id: string;
+  company_id: string | null;
+  profile_id: string | null;
+  event_type: string;
+  automation_id: string | null;
+  template_id: string | null;
+  work_profile: string | null;
+  subject: string | null;
+  recipient_email: string | null;
+  sent_at: string | null;
+  provider_message_id: string | null;
+  status: string;
+  error_message: string | null;
+  created_at: string;
+}
+
+type PeriodFilter = '7d' | '30d' | '90d';
+
 export const Emails: React.FC = () => {
   const [view, setView] = useState<EmailView>('automatizaciones');
   const [database, setDatabase] = useState<MockDB | null>(null);
@@ -266,6 +286,12 @@ export const Emails: React.FC = () => {
   const [savedNotice, setSavedNotice] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [savingTemplate, setSavingTemplate] = useState(false);
+
+  // Rendimiento — real Supabase data
+  const [realEvents, setRealEvents] = useState<RealEmailEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [filterCompany, setFilterCompany] = useState<string>('all');
+  const [filterPeriod, setFilterPeriod] = useState<PeriodFilter>('30d');
   
   // Wizard State
   const [showWizard, setShowWizard] = useState(false);
@@ -454,8 +480,34 @@ export const Emails: React.FC = () => {
 
   const users = database?.usuarios ?? [];
   const videos = database?.videos ?? [];
-  const events = database?.emailEvents ?? [];
   const activeCount = automations.filter(item => item.active).length + customAutomations.filter(item => item.active).length;
+
+  // Load real email events from Supabase whenever view, filterCompany or filterPeriod change
+  useEffect(() => {
+    if (view !== 'rendimiento' || !supabase) return;
+    const load = async () => {
+      setEventsLoading(true);
+      const periodDays: Record<PeriodFilter, number> = { '7d': 7, '30d': 30, '90d': 90 };
+      const since = new Date();
+      since.setDate(since.getDate() - periodDays[filterPeriod]);
+
+      let query = supabase
+        .from('email_events')
+        .select('id, company_id, profile_id, event_type, automation_id, template_id, work_profile, subject, recipient_email, sent_at, provider_message_id, status, error_message, created_at')
+        .gte('created_at', since.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(2000);
+
+      if (filterCompany !== 'all') {
+        query = query.eq('company_id', filterCompany);
+      }
+
+      const { data, error } = await query;
+      if (!error && data) setRealEvents(data as RealEmailEvent[]);
+      setEventsLoading(false);
+    };
+    void load();
+  }, [view, filterCompany, filterPeriod]);
   const nextVideo = getNextScheduledVideo(videos, 'all');
   const editingDefinition = AUTOMATION_DEFINITIONS.find(item => item.id === editingId);
 
@@ -598,7 +650,6 @@ export const Emails: React.FC = () => {
 
     setSendingId(automation.id);
     const appUrl = `${window.location.origin}/plataforma/login`;
-    const db = getDB();
     let sentCount = 0;
     const errors: string[] = [];
 
@@ -623,22 +674,31 @@ export const Emails: React.FC = () => {
         automationId: automation.id,
       });
 
+      // Persist to Supabase regardless of result so the Rendimiento panel has real data
+      if (supabase) {
+        const companySupabaseId = companies.find(c => c.id === recipient.companyId)?.supabaseId ?? null;
+        await supabase.from('email_events').insert({
+          company_id: companySupabaseId,
+          profile_id: (recipient as any).supabaseId ?? null,
+          event_type: result.ok ? 'email_sent' : 'email_failed',
+          automation_id: automation.id,
+          subject,
+          recipient_email: recipient.email,
+          sent_at: result.ok ? new Date().toISOString() : null,
+          provider_message_id: result.ok ? (result as any).id ?? null : null,
+          status: result.ok ? 'sent' : 'failed',
+          error_message: result.ok ? null : (result.message ?? 'error desconocido'),
+          metadata: { provider: 'resend', automationId: automation.id },
+        });
+      }
+
       if (result.ok) {
         sentCount += 1;
-        db.emailEvents.push({
-          id: `${automation.id}-${Date.now()}-${sentCount}`,
-          automationId: automation.id,
-          companyId: recipient.companyId,
-          userId: recipient.userId,
-          sentAt: new Date().toISOString(),
-        });
       } else {
         errors.push(`${recipient.email}: ${result.message ?? 'error desconocido'}`);
       }
     }
 
-    setDB(db);
-    setDatabase(db);
     setSendingId(null);
 
     if (errors.length) {
@@ -650,26 +710,26 @@ export const Emails: React.FC = () => {
   };
 
   const performance = useMemo(() => {
-    const sent = events.length;
-    const opened = events.filter(event => event.openedAt).length;
-    const clicked = events.filter(event => event.clickedAt).length;
-    const converted = events.filter(event => event.pauseCompletedAt).length;
+    const sent = realEvents.filter(e => e.status === 'sent').length;
+    const failed = realEvents.filter(e => e.status === 'failed').length;
+    const opened = realEvents.filter(e => e.status === 'opened').length;
+    const clicked = realEvents.filter(e => e.status === 'clicked').length;
     return {
       sent,
+      failed,
       openRate: metricPercent(opened, sent),
       clickRate: metricPercent(clicked, sent),
-      conversionRate: metricPercent(converted, sent),
     };
-  }, [events]);
+  }, [realEvents]);
 
   const chartData = useMemo(() => AUTOMATION_DEFINITIONS.map(definition => {
-    const automationEvents = events.filter(event => event.automationId === definition.id);
+    const automationEvents = realEvents.filter(e => e.automation_id === definition.id || e.template_id === definition.id);
     return {
       name: definition.name.replace('Bienvenida ', 'B. ').replace('Reconocimiento por ', ''),
-      enviados: automationEvents.length,
-      pausas: automationEvents.filter(event => event.pauseCompletedAt).length,
+      enviados: automationEvents.filter(e => e.status === 'sent').length,
+      fallidos: automationEvents.filter(e => e.status === 'failed').length,
     };
-  }), [events]);
+  }), [realEvents]);
 
   const startWizard = () => {
     setWizardStep(1);
@@ -1104,45 +1164,142 @@ export const Emails: React.FC = () => {
           <div className="email-performance-head">
             <div>
               <h3>Rendimiento de automatizaciones</h3>
-              <p>Los resultados se calculan únicamente con eventos registrados por la plataforma.</p>
+              <p>Datos reales de Supabase · últimos {filterPeriod === '7d' ? '7 días' : filterPeriod === '30d' ? '30 días' : '90 días'}.</p>
+            </div>
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select
+                id="rendimiento-empresa-filter"
+                className="input-field"
+                style={{ minWidth: 160, fontSize: '0.85rem', padding: '0.4rem 0.7rem' }}
+                value={filterCompany}
+                onChange={e => setFilterCompany(e.target.value)}
+              >
+                <option value="all">Todas las empresas</option>
+                {companies.map(c => (
+                  <option key={c.supabaseId ?? c.id} value={c.supabaseId ?? String(c.id)}>{c.nombre}</option>
+                ))}
+              </select>
+              <select
+                id="rendimiento-period-filter"
+                className="input-field"
+                style={{ minWidth: 120, fontSize: '0.85rem', padding: '0.4rem 0.7rem' }}
+                value={filterPeriod}
+                onChange={e => setFilterPeriod(e.target.value as PeriodFilter)}
+              >
+                <option value="7d">Últimos 7 días</option>
+                <option value="30d">Últimos 30 días</option>
+                <option value="90d">Últimos 90 días</option>
+              </select>
+              <button
+                id="rendimiento-refresh-btn"
+                className="btn-secondary"
+                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                onClick={() => setFilterPeriod(p => p)}
+                disabled={eventsLoading}
+              >
+                <RefreshCw size={14} style={{ animation: eventsLoading ? 'spin 1s linear infinite' : 'none' }} />
+                {eventsLoading ? 'Cargando...' : 'Actualizar'}
+              </button>
             </div>
           </div>
 
-          <div className="email-kpis">
-            {[
-              { label: 'Emails enviados', value: performance.sent, icon: <Send size={18} /> },
-              { label: 'Tasa de apertura', value: `${performance.openRate}%`, icon: <Mail size={18} /> },
-              { label: 'Tasa de clics', value: `${performance.clickRate}%`, icon: <Activity size={18} /> },
-              { label: 'Conversión a pausa', value: `${performance.conversionRate}%`, icon: <CheckCircle2 size={18} /> },
-            ].map(item => (
-              <div key={item.label}>
-                <span>{item.icon}{item.label}</span>
-                <strong>{item.value}</strong>
+          {eventsLoading ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+              <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', marginBottom: '0.75rem' }} />
+              <p>Cargando eventos reales...</p>
+            </div>
+          ) : (
+            <>
+              <div className="email-kpis">
+                {[
+                  { label: 'Emails enviados', value: performance.sent, icon: <Send size={18} /> },
+                  { label: 'Emails fallidos', value: performance.failed, icon: <X size={18} /> },
+                  { label: 'Tasa de apertura', value: `${performance.openRate}%`, icon: <Mail size={18} /> },
+                  { label: 'Tasa de clics', value: `${performance.clickRate}%`, icon: <Activity size={18} /> },
+                ].map(item => (
+                  <div key={item.label}>
+                    <span>{item.icon}{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="email-performance-chart">
-            <h4>Envíos y pausas generadas por automatización</h4>
-            {events.length ? (
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <Tooltip />
-                  <Bar dataKey="enviados" name="Enviados" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="pausas" name="Pausas realizadas" fill="#0db39e" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="email-empty-performance">
-                <BarChart3 size={32} />
-                <strong>Todavía no hay envíos registrados</strong>
-                <p>Las métricas aparecerán cuando las automatizaciones comiencen a ejecutar correos reales.</p>
+              <div className="email-performance-chart">
+                <h4>Envíos por automatización</h4>
+                {realEvents.length ? (
+                  <ResponsiveContainer width="100%" height={320}>
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                      <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                      <Tooltip />
+                      <Bar dataKey="enviados" name="Enviados" fill="#0db39e" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="fallidos" name="Fallidos" fill="#f87171" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="email-empty-performance">
+                    <BarChart3 size={32} />
+                    <strong>Sin envíos en el período seleccionado</strong>
+                    <p>Las métricas aparecerán cuando las automatizaciones ejecuten correos reales. Probá ampliando el período o cambiando la empresa.</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* Recent events table */}
+              {realEvents.length > 0 && (
+                <div style={{ marginTop: '2rem' }}>
+                  <h4 style={{ marginBottom: '1rem', fontSize: '0.95rem', fontWeight: 700 }}>Últimos envíos</h4>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left' }}>
+                          <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Destinatario</th>
+                          <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Asunto</th>
+                          <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Automatización</th>
+                          <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Estado</th>
+                          <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {realEvents.slice(0, 50).map(ev => {
+                          const def = AUTOMATION_DEFINITIONS.find(d => d.id === (ev.automation_id ?? ev.template_id));
+                          const statusColor = ev.status === 'sent' ? '#10b981' : ev.status === 'failed' ? '#ef4444' : ev.status === 'opened' ? '#3b82f6' : '#f59e0b';
+                          return (
+                            <tr key={ev.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '0.55rem 0.75rem', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {ev.recipient_email ?? '—'}
+                              </td>
+                              <td style={{ padding: '0.55rem 0.75rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-color)' }}>
+                                {ev.subject ?? '—'}
+                              </td>
+                              <td style={{ padding: '0.55rem 0.75rem', color: 'var(--text-muted)' }}>
+                                {def?.name ?? ev.automation_id ?? ev.event_type}
+                              </td>
+                              <td style={{ padding: '0.55rem 0.75rem' }}>
+                                <span style={{ background: `${statusColor}18`, color: statusColor, borderRadius: 999, padding: '0.2rem 0.55rem', fontWeight: 700, fontSize: '0.75rem', textTransform: 'capitalize' }}>
+                                  {ev.status}
+                                </span>
+                              </td>
+                              <td style={{ padding: '0.55rem 0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                {new Date(ev.sent_at ?? ev.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    {realEvents.length > 50 && (
+                      <p style={{ textAlign: 'center', marginTop: '0.75rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        Mostrando los últimos 50 de {realEvents.length} eventos. Filtrá por empresa o período para ver más.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </section>
       )}
 

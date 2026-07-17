@@ -1595,6 +1595,11 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* ---- Centro de emails ---- */
 #plataforma-root .email-center {
   animation: plataforma-fadeIn 0.25s ease-out;
@@ -1603,10 +1608,11 @@
 #plataforma-root .email-center-header,
 #plataforma-root .email-performance-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 #plataforma-root .email-center-header p,

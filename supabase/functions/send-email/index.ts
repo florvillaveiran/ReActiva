@@ -123,16 +123,25 @@ const renderHtml = (email: ReturnType<typeof buildEmail>) => `
   </html>
 `;
 
-const logEmailEvent = async (eventType: string, metadata: Record<string, unknown>) => {
+type EmailEventRow = {
+  event_type: string;
+  metadata: Record<string, unknown>;
+  automation_id?: string;
+  subject?: string;
+  recipient_email?: string;
+  sent_at?: string;
+  provider_message_id?: string;
+  status: 'sent' | 'failed';
+  error_message?: string;
+};
+
+const logEmailEvent = async (row: EmailEventRow) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!supabaseUrl || !serviceRoleKey) return;
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
-  await adminClient.from('email_events').insert({
-    event_type: eventType,
-    metadata,
-  });
+  await adminClient.from('email_events').insert(row);
 };
 
 Deno.serve(async (req) => {
@@ -196,21 +205,39 @@ Deno.serve(async (req) => {
   });
 
   const data = await response.json().catch(() => ({}));
-  const eventMetadata = {
-    type: payload.type,
-    automationId: payload.automationId,
-    to: payload.to,
-    subject: email.subject,
-    invitationUrl: payload.invitationUrl,
-    provider: 'resend',
-    providerResponse: data,
-  };
+  const now = new Date().toISOString();
 
   if (!response.ok) {
-    await logEmailEvent('email_failed', eventMetadata);
+    await logEmailEvent({
+      event_type: 'email_failed',
+      automation_id: payload.automationId ?? undefined,
+      subject: email.subject,
+      recipient_email: payload.to,
+      status: 'failed',
+      error_message: data?.message ?? 'No pudimos enviar el email.',
+      metadata: {
+        type: payload.type,
+        invitationUrl: payload.invitationUrl,
+        provider: 'resend',
+        providerResponse: data,
+      },
+    });
     return jsonResponse({ error: data?.message ?? 'No pudimos enviar el email.' }, 502);
   }
 
-  await logEmailEvent('email_sent', eventMetadata);
+  await logEmailEvent({
+    event_type: 'email_sent',
+    automation_id: payload.automationId ?? undefined,
+    subject: email.subject,
+    recipient_email: payload.to,
+    sent_at: now,
+    provider_message_id: data?.id ?? undefined,
+    status: 'sent',
+    metadata: {
+      type: payload.type,
+      invitationUrl: payload.invitationUrl,
+      provider: 'resend',
+    },
+  });
   return jsonResponse({ ok: true, id: data?.id ?? null });
 });
