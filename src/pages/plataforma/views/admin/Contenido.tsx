@@ -1417,6 +1417,7 @@ export const Contenido: React.FC = () => {
   };
 
   const uploadScheduledFile = async () => {
+    if (tipoLink === 'link') return modalVideoUrl.trim();
     if (!modalFile) return modalVideoUrl.trim();
     if (!supabase) throw new Error('Supabase no está configurado para subir videos.');
 
@@ -1431,7 +1432,11 @@ export const Contenido: React.FC = () => {
   };
 
   const guardarProgramacionVideo = async () => {
-    if (!modalVideoUrl.trim() && !modalFile) {
+    if (tipoLink === 'link' && !modalVideoUrl.trim()) {
+      window.alert('Pegá el link del video antes de guardar.');
+      return;
+    }
+    if (tipoLink === 'upload' && !modalFile) {
       window.alert('Agregá un link o subí un video antes de guardar.');
       return;
     }
@@ -1472,7 +1477,12 @@ export const Contenido: React.FC = () => {
 
       closeScheduleModal();
     } catch (error: any) {
-      window.alert(error?.message ?? 'No pudimos subir o guardar el video.');
+      const message = String(error?.message ?? '');
+      if (message.includes('Maximum size exceeded') || message.includes('413')) {
+        window.alert('Este video supera el tamaño máximo permitido para subirlo directo. Podés comprimirlo o usar Link externo con YouTube no listado.');
+      } else {
+        window.alert(error?.message ?? 'No pudimos subir o guardar el video.');
+      }
     } finally {
       setSavingProgram(false);
       setProgramUploadProgress(null);
@@ -1732,7 +1742,12 @@ export const Contenido: React.FC = () => {
               <label style={{fontSize:'0.75rem',fontWeight:600,color:'#475569',display:'block',marginBottom:'0.4rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>Tipo de contenido</label>
               <div style={{display:'flex',gap:'0.5rem'}}>
                 {(['link','upload'] as const).map(t=>(
-                  <button key={t} onClick={()=>setTipoLink(t)} style={{
+                  <button key={t} onClick={() => {
+                    setTipoLink(t);
+                    setProgramUploadProgress(null);
+                    if (t === 'link') setModalFile(null);
+                    if (t === 'upload') setModalVideoUrl('');
+                  }} style={{
                     flex:1,padding:'0.55rem',borderRadius:'8px',cursor:'pointer',
                     border:`1.5px solid ${tipoLink===t?'#0d9488':'#e2e8f0'}`,
                     backgroundColor:tipoLink===t?'#f0fdfa':'white',
