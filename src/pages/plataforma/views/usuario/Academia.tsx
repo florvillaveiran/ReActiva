@@ -45,7 +45,7 @@ export const UsuarioAcademia: React.FC = () => {
   const [category, setCategory] = useState('Todos');
   const [version, setVersion] = useState(0);
   const [selected, setSelected] = useState<AcademyItem | null>(null);
-  const [expandedDemoCategory, setExpandedDemoCategory] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [relatedTips, setRelatedTips] = useState<{id: string, title: string}[]>([]);
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export const UsuarioAcademia: React.FC = () => {
     })
     .sort((left, right) => Number(isPublished(right)) - Number(isPublished(left)));
 
-  const demoCategories = Array.from(
+  const groupedCategories = Array.from(
     filtered.filter(isPublished).reduce((acc, item) => {
       const list = acc.get(item.category) ?? [];
       list.push(item);
@@ -209,41 +209,40 @@ export const UsuarioAcademia: React.FC = () => {
         ))}
       </div>
 
-      {user?.isDemo ? (
-        <section style={{ display: 'grid', gap: '0.85rem' }}>
-          {demoCategories.map(([name, list]) => {
-            const open = expandedDemoCategory === name;
-            return (
-              <div key={name} className="card" style={{ margin: 0, padding: 0, overflow: 'hidden', borderRadius: 14 }}>
-                <button
-                  type="button"
-                  onClick={() => setExpandedDemoCategory(open ? null : name)}
-                  style={{ width: '100%', minHeight: 76, padding: '1rem 1.25rem', border: 'none', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', cursor: 'pointer', textAlign: 'left' }}
-                >
-                  <span>
-                    <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.02rem', marginBottom: 4 }}>{name}</strong>
-                    <span style={{ color: '#64748b', fontWeight: 800, fontSize: '0.84rem' }}>{list.length} {list.length === 1 ? 'video' : 'videos'} <span style={{ color: '#cbd5e1', margin: '0 0.4rem' }}>-</span><span style={{ color: 'var(--primary-color)' }}>Activa</span></span>
-                  </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--primary-color)', fontWeight: 900, fontSize: '0.86rem' }}>
-                    Ver videos <ChevronRight size={18} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.18s ease' }} />
-                  </span>
-                </button>
-                {open && (
-                  <div style={{ borderTop: '1px solid #eef2f7', padding: '1rem 1.25rem 1.25rem', background: '#f8fafc' }}>
-                    <div className="user-academy-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
-                      {list.map(renderAcademyCard)}
-                    </div>
+      <section style={{ display: 'grid', gap: '0.85rem' }}>
+        {groupedCategories.map(([name, list]) => {
+          const open = expandedCategory === name;
+          return (
+            <div key={name} className="card" style={{ margin: 0, padding: 0, overflow: 'hidden', borderRadius: 14 }}>
+              <button
+                type="button"
+                onClick={() => setExpandedCategory(open ? null : name)}
+                style={{ width: '100%', minHeight: 76, padding: '1rem 1.25rem', border: 'none', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <span>
+                  <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.02rem', marginBottom: 4 }}>{name}</strong>
+                  <span style={{ color: '#64748b', fontWeight: 800, fontSize: '0.84rem' }}>{list.length} {list.length === 1 ? 'video' : 'videos'} <span style={{ color: '#cbd5e1', margin: '0 0.4rem' }}>-</span><span style={{ color: 'var(--primary-color)' }}>Activa</span></span>
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--primary-color)', fontWeight: 900, fontSize: '0.86rem' }}>
+                  Ver videos <ChevronRight size={18} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.18s ease' }} />
+                </span>
+              </button>
+              {open && (
+                <div style={{ borderTop: '1px solid #eef2f7', padding: '1rem 1.25rem 1.25rem', background: '#f8fafc' }}>
+                  <div className="user-academy-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
+                    {list.map(renderAcademyCard)}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </section>
-      ) : (
-        <section className="user-academy-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(245px, 1fr))', gap: '1rem' }}>
-          {filtered.map(renderAcademyCard)}
-        </section>
-      )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {groupedCategories.length === 0 && (
+          <div className="card" style={{ margin: 0, padding: '1.25rem', borderRadius: 14, color: '#64748b' }}>
+            No hay talleres publicados para esta búsqueda.
+          </div>
+        )}
+      </section>
 
       {selected && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>

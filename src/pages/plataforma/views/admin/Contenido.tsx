@@ -1259,9 +1259,11 @@ export const Contenido: React.FC = () => {
 
   const [adminSection, setAdminSection] = useState<AdminSection>('micro');
   const hoy = new Date();
+  const semanaInicial = new Date(hoy);
+  if (semanaInicial.getDay() === 0) semanaInicial.setDate(semanaInicial.getDate() + 1);
   const [vista, setVista]          = useState<'semana'|'mes'>('semana');
-  const [mes, setMes]              = useState(hoy.getMonth());
-  const [anio, setAnio]            = useState(hoy.getFullYear());
+  const [mes, setMes]              = useState(semanaInicial.getMonth());
+  const [anio, setAnio]            = useState(semanaInicial.getFullYear());
   const [modal, setModal]          = useState(false);
   const [tipoLink, setTipoLink]    = useState<'link'|'upload'>('link');
   const [diaModal, setDiaModal]    = useState<number|null>(null);
@@ -1278,6 +1280,7 @@ export const Contenido: React.FC = () => {
   const [modalFile, setModalFile] = useState<File | null>(null);
   const [editingScheduledId, setEditingScheduledId] = useState<string | null>(null);
   const [savingProgram, setSavingProgram] = useState(false);
+  const [programUploadProgress, setProgramUploadProgress] = useState<number | null>(null);
   const [scheduledVideos, setScheduledVideos] = useState<ScheduledVideo[]>([]);
   const companyIdForName = (name: string) => (
     name === 'Global' ? null : empresas.find(item => item.nombre === name)?.supabaseId ?? null
@@ -1298,7 +1301,7 @@ export const Contenido: React.FC = () => {
     };
   }, []);
 
-  const lunes = getLunesOfWeek(hoy, offsetSem);
+  const lunes = getLunesOfWeek(semanaInicial, offsetSem);
   const rangoLabel = (() => {
     const v = new Date(lunes); v.setDate(lunes.getDate()+4);
     return `${lunes.getDate()} – ${v.getDate()} ${MESES[v.getMonth()]} ${v.getFullYear()}`;
@@ -1409,6 +1412,7 @@ export const Contenido: React.FC = () => {
   };
 
   const closeScheduleModal = () => {
+    if (savingProgram) return;
     setModal(false);
   };
 
@@ -1418,13 +1422,12 @@ export const Contenido: React.FC = () => {
 
     const safeName = modalFile.name.replace(/[^a-zA-Z0-9._-]/g, '-');
     const path = `scheduled-videos/${Date.now()}-${safeName}`;
-    const { error: uploadError } = await supabase.storage
-      .from('reactiva-media')
-      .upload(path, modalFile, { upsert: true, contentType: modalFile.type });
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage.from('reactiva-media').getPublicUrl(path);
-    return data.publicUrl;
+    return uploadResumableStorageFile({
+      bucket: 'reactiva-media',
+      path,
+      file: modalFile,
+      onProgress: setProgramUploadProgress,
+    });
   };
 
   const guardarProgramacionVideo = async () => {
@@ -1439,6 +1442,7 @@ export const Contenido: React.FC = () => {
     }
 
     setSavingProgram(true);
+    setProgramUploadProgress(modalFile ? 0 : null);
     try {
       const finalUrl = await uploadScheduledFile();
       const title = modalTitle.trim() || `Pausa ${modalBlock === 'morning' ? 'mañana' : 'tarde'}`;
@@ -1471,6 +1475,7 @@ export const Contenido: React.FC = () => {
       window.alert(error?.message ?? 'No pudimos subir o guardar el video.');
     } finally {
       setSavingProgram(false);
+      setProgramUploadProgress(null);
     }
   };
 
@@ -1720,7 +1725,7 @@ export const Contenido: React.FC = () => {
                   {diaModal?`${diaModal} de ${MESES[mes]}`:'Nuevo contenido'}
                 </p>
               </div>
-              <button onClick={closeScheduleModal} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8'}}><X size={20}/></button>
+              <button onClick={closeScheduleModal} disabled={savingProgram} style={{background:'none',border:'none',cursor:savingProgram?'not-allowed':'pointer',color:'#94a3b8',opacity:savingProgram?0.5:1}}><X size={20}/></button>
             </div>
 
             <div style={{marginBottom:'1rem'}}>
@@ -1821,9 +1826,9 @@ export const Contenido: React.FC = () => {
             </div>
 
             <div className="video-schedule-actions" style={{display:'flex',gap:'0.65rem'}}>
-              <button onClick={closeScheduleModal} className="btn-secondary" style={{flex:1,fontSize:'0.875rem'}}>Cancelar</button>
+              <button onClick={closeScheduleModal} disabled={savingProgram} className="btn-secondary" style={{flex:1,fontSize:'0.875rem',opacity:savingProgram?0.6:1,cursor:savingProgram?'not-allowed':'pointer'}}>Cancelar</button>
               <button onClick={guardarProgramacionVideo} disabled={savingProgram} className="btn-primary" style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:'0.4rem',fontSize:'0.875rem',opacity:savingProgram?0.7:1}}>
-                <Save size={15}/> {savingProgram ? 'Guardando...' : 'Guardar programación'}
+                <Save size={15}/> {savingProgram ? (programUploadProgress !== null ? `Subiendo ${programUploadProgress}%` : 'Guardando...') : 'Guardar programación'}
               </button>
             </div>
           </div>
