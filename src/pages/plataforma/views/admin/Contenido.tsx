@@ -3,7 +3,7 @@ import { Clock, Video, Building2, CheckCircle2, CircleDashed, ChevronLeft, Chevr
 import { AcademyItem, CoachItem, deleteAcademyItem, deleteCoachItem, fetchAcademyCategories, fetchContentLibrary, getContentLibrary, isAcademyVideoReady, normalizeAcademyCategory, normalizeAcademyVideoUrl, removeAcademyCategory, removeContentItemFromSupabase, renameAcademyCategory, saveAcademyCategory, saveAcademyItem, saveCoachItem } from '../../data/contentLibrary';
 import { useEmpresas } from '../../context/EmpresasContext';
 import { UnlockBlock, UnlockDay } from '../../lib/videoUnlockSchedule';
-import { fetchScheduledVideos, getScheduledDateForProgramDay, getYouTubeIdFromUrl, saveScheduledVideo, ScheduledVideo, ScheduledVideoWorkProfile, SCHEDULED_VIDEOS_EVENT, toLocalDateKey } from '../../lib/scheduledVideos';
+import { deleteScheduledVideo, fetchScheduledVideos, getScheduledDateForProgramDay, getYouTubeIdFromUrl, saveScheduledVideo, ScheduledVideo, ScheduledVideoWorkProfile, SCHEDULED_VIDEOS_EVENT, toLocalDateKey } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
 import { uploadResumableStorageFile } from '../../lib/resumableStorageUpload';
 
@@ -87,6 +87,34 @@ const AdminCoachPanel: React.FC = () => {
   const [items, setItems] = useState(() => getContentLibrary().coach);
   const [editing, setEditing] = useState<CoachItem | null>(null);
   const reload = () => setItems(getContentLibrary().coach);
+  const createCoachItem = () => {
+    const now = Date.now();
+    setEditing({
+      id: `coach-custom-${now}`,
+      sourceId: `coach-custom-${now}`,
+      category: 'General',
+      title: 'Nuevo consejo',
+      description: '',
+      recommendation: '',
+      detailTitle: '',
+      subtitle: '',
+      time: '2 min',
+      difficulty: 'Básico',
+      benefit: '',
+      why: '',
+      evidence: '',
+      steps: [],
+      signals: [],
+      challenge: '',
+      related: '',
+      tags: [],
+      targetWorkProfile: 'ALL',
+      recommendedWorkProfile: 'ALL',
+      companyId: null,
+      active: true,
+      isNew: true,
+    });
+  };
   useEffect(() => {
     const refresh = () => void fetchContentLibrary().then(library => setItems(library.coach));
     refresh();
@@ -114,9 +142,9 @@ const AdminCoachPanel: React.FC = () => {
           <h2 className="header-title" style={{ marginBottom: '0.25rem' }}>ReActiva Tips</h2>
           <p className="text-muted" style={{ margin: 0 }}>Mismos consejos que ve el usuario.</p>
         </div>
-        <div style={{ width: 44, height: 44, borderRadius: 14, background: '#ecfdf5', color: 'var(--primary-color)', border: '1px solid #99f6e4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Sparkles size={21} />
-        </div>
+        <button type="button" className="btn-primary" onClick={createCoachItem} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.72rem 1rem', whiteSpace: 'nowrap' }}>
+          <Plus size={17} /> Agregar nuevo
+        </button>
       </div>
       <section className="coach-featured" style={{ background: '#f0fdf9', border: '1px solid #bbf7d0', borderRadius: 18, padding: '0.95rem 1.15rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)', fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
@@ -160,7 +188,7 @@ const AdminCoachPanel: React.FC = () => {
       {editing && (
         <div className="coach-editor-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="card coach-editor-modal" style={{ width: 720, maxWidth: '94vw', maxHeight: '88vh', overflowY: 'auto', margin: 0, padding: '1.25rem', borderRadius: 16 }}>
-            <h3 style={{ marginTop: 0 }}>Editar consejo</h3>
+            <h3 style={{ marginTop: 0 }}>{editing.id.startsWith('coach-custom-') ? 'Nuevo consejo' : 'Editar consejo'}</h3>
             <label style={fieldLabelStyle}>Categoría / nombre del consejo</label>
             <input className="input-field" value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} style={{ marginBottom: '0.7rem' }} />
             <label style={fieldLabelStyle}>Descripción de la tarjeta</label>
@@ -1287,9 +1315,15 @@ export const Contenido: React.FC = () => {
           empresa === 'Todas las empresas'
           || (empresa === 'Global' ? !video.companyId : video.companyName === empresa || !video.companyId)
         ))
+        .sort((first, second) => (
+          (first.block === 'morning' ? 0 : 1) - (second.block === 'morning' ? 0 : 1)
+          || first.time.localeCompare(second.time)
+          || (first.companyName ?? 'Global').localeCompare(second.companyName ?? 'Global')
+        ))
         .map(video => {
           return {
             id: video.id,
+            block: video.block,
             turno: video.block === 'morning' ? 'Mañana' : 'Tarde',
             tipo: video.title || 'Pausa activa',
             horario: video.time,
@@ -1440,6 +1474,16 @@ export const Contenido: React.FC = () => {
     }
   };
 
+  const eliminarProgramacionVideo = async (video: ScheduledVideo) => {
+    const label = `${video.title || 'Pausa activa'} (${video.time} hs)`;
+    if (!window.confirm(`¿Eliminar este horario?\n\n${label}`)) return;
+
+    const result = await deleteScheduledVideo(video.id);
+    if (!result.ok) {
+      window.alert(result.error?.message ?? 'No pudimos eliminar el horario.');
+    }
+  };
+
   const btnNav = (onClick:()=>void, children:React.ReactNode) => (
     <button onClick={onClick} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'0.35rem 0.6rem',cursor:'pointer',color:'#475569',display:'flex',alignItems:'center'}}>
       {children}
@@ -1578,6 +1622,17 @@ export const Contenido: React.FC = () => {
                           )}
                           <button onClick={()=>abrirModal(undefined, scheduledVideos.find(video => video.id === bloque.id))} style={{background:'none',border:'none',color:'#0d9488',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem'}}>
                             <Video size={12}/> Editar
+                          </button>
+                          <button
+                            onClick={() => {
+                              const video = scheduledVideos.find(item => item.id === bloque.id);
+                              if (video) void eliminarProgramacionVideo(video);
+                            }}
+                            title="Eliminar horario"
+                            aria-label="Eliminar horario"
+                            style={{background:'none',border:'none',color:'#ef4444',fontSize:'0.76rem',fontWeight:600,cursor:'pointer',padding:0,display:'inline-flex',alignItems:'center',gap:'0.2rem',marginLeft:'0.75rem'}}
+                          >
+                            <Trash2 size={13}/>
                           </button>
                         </div>
                       </div>

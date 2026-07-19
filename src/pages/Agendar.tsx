@@ -1,7 +1,7 @@
 import React from 'react';
 import { CalendarCheck, Clock, Sparkles } from 'lucide-react';
 
-const CALENDLY_EVENT_URL = 'https://calendly.com/tohmefrancisco/30min?locale=es&hide_event_type_details=1&hide_gdpr_banner=1&primary_color=00bfa6';
+const CALENDLY_EVENT_URL = 'https://calendly.com/tohmefrancisco/30min?hide_event_type_details=1&hide_gdpr_banner=1&locale=es-ES&primary_color=00bfa6';
 
 export const Agendar = () => {
   return (
@@ -45,12 +45,19 @@ export const Agendar = () => {
             </div>
           </section>
 
-          <section className="h-[735px] overflow-hidden rounded-[1.35rem] bg-white p-2 shadow-xl shadow-black/25">
+          <section className="h-[560px] overflow-hidden rounded-[1.35rem] bg-white shadow-xl shadow-black/25">
             <iframe
               title="Agendar reunión con ReActiva"
               src={CALENDLY_EVENT_URL}
-              className="block h-[735px] w-full rounded-2xl"
-              style={{ border: 0 }}
+              className="block rounded-[1.35rem]"
+              scrolling="no"
+              style={{
+                border: 0,
+                height: 660,
+                width: '126%',
+                transform: 'scale(0.85)',
+                transformOrigin: 'top left',
+              }}
             />
           </section>
         </div>

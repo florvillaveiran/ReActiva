@@ -207,6 +207,22 @@ export const saveScheduledVideo = async (video: ScheduledVideo) => {
   return { ok: !error, error };
 };
 
+export const deleteScheduledVideo = async (videoId: string) => {
+  if (!supabase) {
+    saveScheduledVideosLocal(readStoredVideos().filter(item => item.id !== videoId));
+    return { ok: true };
+  }
+
+  const { error } = await supabase
+    .from('content_items')
+    .update({ active: false })
+    .eq('id', videoId)
+    .eq('kind', 'video');
+
+  if (!error) await fetchScheduledVideos();
+  return { ok: !error, error };
+};
+
 export const getYouTubeIdFromUrl = (url: string) => {
   const value = url.trim();
   if (!value) return null;
