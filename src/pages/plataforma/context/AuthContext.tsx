@@ -42,7 +42,7 @@ const DEMO_USERS: DevUser[] = [
 
 const DEMO_SESSION_KEY = 'reactiva_demo_user';
 
-const getStoredDemoUser = () => sessionStorage.getItem(DEMO_SESSION_KEY);
+const getStoredDemoUser = () => localStorage.getItem(DEMO_SESSION_KEY);
 const clearStoredDemoUser = () => {
   sessionStorage.removeItem(DEMO_SESSION_KEY);
   localStorage.removeItem(DEMO_SESSION_KEY);
@@ -153,7 +153,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const init = async () => {
       const storedDemoUser = getStoredDemoUser();
-      localStorage.removeItem(DEMO_SESSION_KEY);
       if (storedDemoUser && mounted) {
         setUser(JSON.parse(storedDemoUser));
         setIsLoading(false);
@@ -205,8 +204,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         empresa_id: demoUser.role === 'rrhh' ? 'demo-company' : undefined,
         isDemo: true,
       };
-      sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user));
-      localStorage.removeItem(DEMO_SESSION_KEY);
+      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user));
+      sessionStorage.removeItem(DEMO_SESSION_KEY);
       setUser(user);
       return true;
     }

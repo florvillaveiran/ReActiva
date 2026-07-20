@@ -1107,7 +1107,7 @@ export const Analiticas: React.FC = () => {
 
           <div className="analytics-spacer" style={{ flexGrow: 1 }} />
 
-          {(user?.role === 'admin' || user?.role === 'rrhh') && (
+          {user?.role === 'admin' && (
             <ReportGenerator
               currentData={data}
               currentEmpresaLabel={currentEmpresaLabel}

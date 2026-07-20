@@ -53,6 +53,7 @@ export interface AdminStats {
   zonasDolorChart: { name: string; valor: number }[]; // valor en %
   tensionDistribucion: { name: string; valor: number }[]; // valor en %
   evolucion: { name: string; energia: number; satisfaccion: number; participacion: number }[];
+  comentarios: { txt: string; role: string }[];
 }
 
 const DAYS = ['Lunes', 'Miércoles', 'Viernes'];
@@ -91,6 +92,11 @@ const DEMO_STATS: AdminStats = {
     { name: 'Sem 2', energia: 3.7, satisfaccion: 74, participacion: 77 },
     { name: 'Sem 3', energia: 3.9, satisfaccion: 81, participacion: 80 },
     { name: 'Sem 4', energia: 4.1, satisfaccion: 87, participacion: 83 },
+  ],
+  comentarios: [
+    { txt: 'Me ayudó muchísimo a cortar la jornada.', role: 'Administrativo' },
+    { txt: 'Los ejercicios para cuello me sirvieron.', role: 'Administrativo' },
+    { txt: 'Los viernes se me hace difícil participar.', role: 'Operativo' }
   ],
 };
 const FEELING_TO_SCORE: Record<string, number> = {
@@ -329,6 +335,14 @@ const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: s
     participacion: participacionGeneral,
   }));
 
+  const comentarios = pausas
+    .filter(p => !!getCampo(p, 'comentario') && String(getCampo(p, 'comentario')).length > 3)
+    .map(p => ({
+      txt: String(getCampo(p, 'comentario')),
+      role: p.workProfile === 'ADMINISTRATIVO' ? 'Administrativo' : p.workProfile === 'OPERATIVO' ? 'Operativo' : 'Colaborador',
+    }))
+    .reverse();
+
   return {
     hayDatos,
     usuariosCount,
@@ -343,6 +357,7 @@ const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: s
     zonasDolorChart,
     tensionDistribucion,
     evolucion,
+    comentarios,
   };
 };
 
