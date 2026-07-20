@@ -44,7 +44,7 @@ const DEMO_SESSION_KEY = 'reactiva_demo_user';
 
 const getStoredDemoUser = () => localStorage.getItem(DEMO_SESSION_KEY);
 const clearStoredDemoUser = () => {
-  sessionStorage.removeItem(DEMO_SESSION_KEY);
+  // Only clear localStorage; keep demo data across tabs
   localStorage.removeItem(DEMO_SESSION_KEY);
 };
 
@@ -205,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isDemo: true,
       };
       localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user));
-      sessionStorage.removeItem(DEMO_SESSION_KEY);
+      // Removed sessionStorage cleanup to keep demo data across tabs
       setUser(user);
       return true;
     }

@@ -475,7 +475,14 @@ const loadPausasFromStorage = (email?: string): PauseRecord[] => {
   try {
     const all: any[] = JSON.parse(localStorage.getItem(userStorageKey('reactiva_pausas', email)) || '[]');
     const map = new Map<string, PauseRecord>();
+    
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+    startOfWeek.setHours(0, 0, 0, 0);
+
     for (const p of all) {
+      if (p?.fecha && new Date(p.fecha) < startOfWeek) continue;
       if (p?.dia && p?.bloque) map.set(`${p.dia}__${p.bloque}`, p as PauseRecord);
     }
     return Array.from(map.values());
@@ -564,21 +571,36 @@ export const UsuarioDashboard: React.FC = () => {
   }, []);
   const scheduledDateFor = (dia: string) => getScheduledDateForProgramDay(dia, programWeekReference);
 
+  // When the week reference changes, reset demo progress (completed pauses and videos vistos)
+  useEffect(() => {
+    if (isDemo) {
+      setCompleted([]);
+      setVideosVistos(new Set());
+    }
+  }, [programWeekReference]);
+
   useEffect(() => {
     let mounted = true;
     const refreshProgress = async () => {
       if (!supabase || isDemo) {
         if (mounted) {
+          // Load persisted data only for real users; demo data resets each week
           setCompleted(loadPausasFromStorage(user?.email));
           setVideosVistos(loadVideosVistos(user?.email));
         }
         return;
       }
 
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+      startOfWeek.setHours(0, 0, 0, 0);
+
       const [{ data: pauses, error: pausesError }, { data: views, error: viewsError }] = await Promise.all([
         supabase
           .from('pause_sessions')
           .select('day_label, block, energy, feeling, has_pain, pain_zone, answers, occurred_at')
+          .gte('occurred_at', startOfWeek.toISOString())
           .order('occurred_at', { ascending: true }),
         supabase
           .from('user_content_progress')
@@ -644,7 +666,18 @@ export const UsuarioDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    const syncVideos = () => fetchScheduledVideosForUser(companyId, user?.workProfile, programWeekReference).then(setScheduledVideos);
+    const syncVideos = async () => {
+      const videos = await fetchScheduledVideosForUser(companyId, user?.workProfile, programWeekReference);
+      // Keep only videos that belong to the current week (Monday‑Sunday)
+      const weekStart = programWeekReference;
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const filtered = videos.filter(v => {
+        const vDate = new Date(v.scheduledDate);
+        return vDate >= weekStart && vDate <= weekEnd;
+      });
+      setScheduledVideos(filtered);
+    };
     void syncVideos();
     window.addEventListener(SCHEDULED_VIDEOS_EVENT, syncVideos);
     window.addEventListener('storage', syncVideos);
@@ -657,7 +690,6 @@ export const UsuarioDashboard: React.FC = () => {
       if (channel && supabase) void supabase.removeChannel(channel);
     };
   }, [isDemo, companyId, user?.workProfile, programWeekReference]);
-
   const isDone = (dia: string, bloque: 'morning' | 'afternoon') => completed.some(r => r.dia === dia && r.bloque === bloque);
 
   // Auto-avanzar de día en la demo cuando se completa la tarde
