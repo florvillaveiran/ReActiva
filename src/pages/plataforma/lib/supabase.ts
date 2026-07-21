@@ -16,9 +16,12 @@ if (!isSupabaseConfigured) {
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
-        persistSession: true,
+        // Disable storage persistence to keep each browser tab isolated
+        persistSession: false,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        // Use sessionStorage for temporary storage (per‑tab) if needed
+        storage: sessionStorage,
       },
     })
   : null;
