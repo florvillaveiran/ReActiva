@@ -59,6 +59,8 @@ export interface AdminStats {
 const DAYS = ['Lunes', 'Miércoles', 'Viernes'];
 const DAYS_SHORT: Record<string, string> = { Lunes: 'Lun', Miércoles: 'Mié', Viernes: 'Vie' };
 
+const ANALYTICS_REAL_START_DATE = '2026-07-20';
+
 const DEMO_STATS: AdminStats = {
   hayDatos: true,
   usuariosCount: 48,
@@ -147,6 +149,11 @@ const isWithinPeriod = (pause: PausaGuardada, periodFrom?: string, periodTo?: st
   return true;
 };
 
+const clampAnalyticsStart = (periodFrom?: string) => {
+  if (!periodFrom) return ANALYTICS_REAL_START_DATE;
+  return periodFrom < ANALYTICS_REAL_START_DATE ? ANALYTICS_REAL_START_DATE : periodFrom;
+};
+
 const readPausasFromSupabase = async (
   companyId?: string,
   periodFrom?: string,
@@ -212,6 +219,29 @@ const readPausasFromSupabase = async (
 
   return mapPauseRows(data);
 };
+
+const readEligibleUserCountFromSupabase = async (
+  companyId?: string,
+  workProfile: AnalyticsWorkProfileFilter = 'ALL',
+): Promise<number | null> => {
+  if (!supabase) return null;
+
+  let query = supabase
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('role', 'usuario')
+    .or('status.is.null,status.neq.inactive');
+
+  if (companyId) query = query.eq('company_id', companyId);
+  if (workProfile !== 'ALL') query = query.eq('work_profile', workProfile);
+
+  const { count, error } = await query;
+  if (error) {
+    console.error('No se pudo calcular la cantidad de usuarios esperados para métricas', error);
+    return null;
+  }
+  return count ?? 0;
+};
 const AYUDA_TO_SATISF: Record<string, number> = {
   'Sí, mucho': 90, 'Sí, un poco': 55, No: 15,
 };
@@ -233,6 +263,57 @@ const getCampo = <T,>(p: PausaGuardada, campo: keyof PausaGuardada | keyof NonNu
   return (p[campo] ?? (p.respuestas as any)?.[campo] ?? fallback) as T | undefined;
 };
 
+const toLocalDayStart = (value: string | Date) => {
+  const date = typeof value === 'string' ? new Date(`${value}T00:00:00`) : new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const defaultPeriodRange = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - day + (day === 0 ? -6 : 1));
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { start: monday, end: sunday };
+};
+
+const selectedPeriodRange = (periodFrom?: string, periodTo?: string) => {
+  if (periodFrom && periodTo) {
+    const start = toLocalDayStart(periodFrom);
+    const end = toLocalDayStart(periodTo);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  }
+  return defaultPeriodRange();
+};
+
+const toDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const countProgramBlocksInRange = (start: Date, end: Date) => {
+  let count = 0;
+  const cursor = toLocalDayStart(start);
+  const final = toLocalDayStart(end);
+  while (cursor <= final) {
+    const day = cursor.getDay();
+    if (day === 1 || day === 3 || day === 5) count += 2;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+};
+
+const average = (values: number[]) => values.length
+  ? values.reduce((acc, value) => acc + value, 0) / values.length
+  : 0;
+
 const evolutionLabelsForPeriod = (periodFrom?: string, periodTo?: string) => {
   if (!periodFrom || !periodTo) return ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
   const start = new Date(`${periodFrom}T00:00:00.000Z`);
@@ -244,12 +325,53 @@ const evolutionLabelsForPeriod = (periodFrom?: string, periodTo?: string) => {
   return ['Inicio', 'Periodo 2', 'Periodo 3', 'Cierre'];
 };
 
-const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: string): AdminStats => {
+const buildEvolution = (
+  pausas: PausaGuardada[],
+  labels: string[],
+  periodFrom?: string,
+  periodTo?: string,
+  expectedUsers = 1,
+) => {
+  const { start, end } = selectedPeriodRange(periodFrom, periodTo);
+  const totalMs = Math.max(1, end.getTime() - start.getTime() + 1);
+
+  return labels.map((name, index) => {
+    const bucketStart = new Date(start.getTime() + Math.floor((totalMs * index) / labels.length));
+    const bucketEnd = new Date(start.getTime() + Math.floor((totalMs * (index + 1)) / labels.length) - 1);
+    bucketStart.setHours(0, 0, 0, 0);
+    bucketEnd.setHours(23, 59, 59, 999);
+
+    const bucketPausas = pausas.filter((pause) => {
+      const date = new Date(pause.fecha);
+      return !Number.isNaN(date.getTime()) && date >= bucketStart && date <= bucketEnd;
+    });
+    const expectedBlocks = Math.max(1, countProgramBlocksInRange(bucketStart, bucketEnd) * Math.max(1, expectedUsers));
+    const energyValues = bucketPausas
+      .map(p => getCampo<number>(p, 'energia'))
+      .filter((n): n is number => typeof n === 'number' && n > 0);
+    const satisfactionValues = bucketPausas
+      .map(p => {
+        const ayuda = p.respuestas?.ayuda;
+        return ayuda ? AYUDA_TO_SATISF[ayuda] : undefined;
+      })
+      .filter((n): n is number => typeof n === 'number');
+
+    return {
+      name,
+      energia: Math.round(average(energyValues) * 10) / 10,
+      satisfaccion: Math.round(average(satisfactionValues)),
+      participacion: Math.min(100, Math.round((bucketPausas.length / expectedBlocks) * 100)),
+    };
+  });
+};
+
+const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: string, expectedUsersOverride?: number | null): AdminStats => {
   const totalPausas = pausas.length;
-  const totalObjetivo = DAYS.length * 2;
   const hayDatos = totalPausas > 0;
   const usuariosUnicos = new Set(pausas.map(p => p.profileId).filter(Boolean));
-  const usuariosCount = usuariosUnicos.size > 0 ? usuariosUnicos.size : hayDatos ? 1 : 0;
+  const usuariosCount = expectedUsersOverride ?? (usuariosUnicos.size > 0 ? usuariosUnicos.size : hayDatos ? 1 : 0);
+  const { start, end } = selectedPeriodRange(periodFrom, periodTo);
+  const totalObjetivo = Math.max(1, countProgramBlocksInRange(start, end) * Math.max(1, usuariosCount));
   const adherencia = Math.min(100, Math.round((totalPausas / totalObjetivo) * 100));
 
   // Estado físico
@@ -323,17 +445,7 @@ const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: s
       .filter((n): n is number => typeof n === 'number' && n > 0);
     return arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
   })();
-  const satisfaccion = semanal?.respuestas?.ayuda
-    ? AYUDA_TO_SATISF[semanal.respuestas.ayuda] ?? 0
-    : 0;
-  const participacionGeneral = adherencia;
-
-  const evolucion = evolutionLabelsForPeriod(periodFrom, periodTo).map(name => ({
-    name,
-    energia: Math.round(energiaPromedio * 10) / 10,
-    satisfaccion,
-    participacion: participacionGeneral,
-  }));
+  const evolucion = buildEvolution(pausas, evolutionLabelsForPeriod(periodFrom, periodTo), periodFrom, periodTo, usuariosCount || 1);
 
   const comentarios = pausas
     .filter(p => !!getCampo(p, 'comentario') && String(getCampo(p, 'comentario')).length > 3)
@@ -369,11 +481,16 @@ export function useAdminStats(
 ): AdminStats {
   const { user } = useAuth();
   const isDemo = !!user?.isDemo;
+  const requestedRange = selectedPeriodRange(periodFrom, periodTo);
+  const requestedPeriodFrom = periodFrom || toDateKey(requestedRange.start);
+  const requestedPeriodTo = periodTo || toDateKey(requestedRange.end);
+  const effectivePeriodFrom = clampAnalyticsStart(requestedPeriodFrom);
+  const effectivePeriodTo = requestedPeriodTo;
   const filteredLocalPauses = () => readPausasFromStorage().filter(pause => (
-    isWithinPeriod(pause, periodFrom, periodTo)
+    isWithinPeriod(pause, effectivePeriodFrom, effectivePeriodTo)
     && (workProfile === 'ALL' || pause.workProfile === workProfile)
   ));
-  const [stats, setStats] = useState<AdminStats>(() => isDemo ? DEMO_STATS : computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
+  const [stats, setStats] = useState<AdminStats>(() => isDemo ? DEMO_STATS : computeStats(supabase ? [] : filteredLocalPauses(), effectivePeriodFrom, effectivePeriodTo));
 
   useEffect(() => {
     let mounted = true;
@@ -382,9 +499,12 @@ export function useAdminStats(
         setStats(DEMO_STATS);
         return;
       }
-      setStats(computeStats(supabase ? [] : filteredLocalPauses(), periodFrom, periodTo));
-      readPausasFromSupabase(companyId, periodFrom, periodTo, workProfile, user?.role !== 'rrhh').then((pausas) => {
-        if (mounted && pausas) setStats(computeStats(pausas, periodFrom, periodTo));
+      setStats(computeStats(supabase ? [] : filteredLocalPauses(), effectivePeriodFrom, effectivePeriodTo));
+      Promise.all([
+        readPausasFromSupabase(companyId, effectivePeriodFrom, effectivePeriodTo, workProfile, user?.role !== 'rrhh'),
+        readEligibleUserCountFromSupabase(companyId, workProfile),
+      ]).then(([pausas, expectedUsers]) => {
+        if (mounted && pausas) setStats(computeStats(pausas, effectivePeriodFrom, effectivePeriodTo, expectedUsers));
       });
     };
     refresh();
@@ -399,6 +519,12 @@ export function useAdminStats(
             table: 'pause_sessions',
             ...(companyId ? { filter: `company_id=eq.${companyId}` } : {}),
           }, refresh)
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'profiles',
+            ...(companyId ? { filter: `company_id=eq.${companyId}` } : {}),
+          }, refresh)
           .subscribe()
       : null;
     return () => {
@@ -407,7 +533,7 @@ export function useAdminStats(
       window.removeEventListener('storage', refresh);
       if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, [companyId, isDemo, periodFrom, periodTo, user?.role, workProfile]);
+  }, [companyId, effectivePeriodFrom, effectivePeriodTo, isDemo, user?.role, workProfile]);
 
   return stats;
 }

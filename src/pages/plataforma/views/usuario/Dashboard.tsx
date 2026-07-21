@@ -56,6 +56,20 @@ const PAUSAS = {
   },
 };
 
+const parseLocalDateKey = (dateKey: string) => {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1, 0, 0, 0, 0);
+};
+
+const buildLocalDateTime = (dateKey: string, time: string) => {
+  const date = parseLocalDateKey(dateKey);
+  const [hours = '0', minutes = '0'] = time.split(':');
+  date.setHours(Number(hours), Number(minutes), 0, 0);
+  return date;
+};
+
+const PAUSE_AVAILABILITY_HOURS = 24;
+
 // ─── Mini Formulario (Lunes y Miércoles Tarde) ────────────────────────────────
 const MiniForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void; onSubmit: (r: Omit<PauseRecord, 'dia'>) => void; }> = ({ bloque, onClose, onSubmit }) => {
   const [energia, setEnergia] = useState(0);
@@ -567,6 +581,9 @@ export const UsuarioDashboard: React.FC = () => {
     if (reference.getDay() === 0) {
       reference.setDate(reference.getDate() + 1);
     }
+    const day = reference.getDay();
+    reference.setDate(reference.getDate() + (day === 0 ? 1 : 1 - day));
+    reference.setHours(0, 0, 0, 0);
     return reference;
   }, []);
   const scheduledDateFor = (dia: string) => getScheduledDateForProgramDay(dia, programWeekReference);
@@ -669,11 +686,13 @@ export const UsuarioDashboard: React.FC = () => {
     const syncVideos = async () => {
       const videos = await fetchScheduledVideosForUser(companyId, user?.workProfile, programWeekReference);
       // Keep only videos that belong to the current week (Monday‑Sunday)
-      const weekStart = programWeekReference;
+      const weekStart = new Date(programWeekReference);
+      weekStart.setHours(0, 0, 0, 0);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
       const filtered = videos.filter(v => {
-        const vDate = new Date(v.scheduledDate);
+        const vDate = parseLocalDateKey(v.scheduledDate);
         return vDate >= weekStart && vDate <= weekEnd;
       });
       setScheduledVideos(filtered);
@@ -742,12 +761,21 @@ export const UsuarioDashboard: React.FC = () => {
     const scheduledDate = scheduledDateFor(dia);
     const video = getScheduledVideoFor(scheduledVideos, dia, bloque, companyId, scheduledDate, user?.workProfile);
     if (!video) return { status: 'locked', reason: 'Contenido pendiente de programación por ReActiva' };
-    if (scheduledDate !== toLocalDateKey(new Date()) || dia !== today) return { status: 'locked', reason: `Disponible el ${dia}` };
-    const [hours = '0', minutes = '0'] = video.time.split(':');
-    const unlockMinutes = Number(hours) * 60 + Number(minutes) - UNLOCK_LEAD_MINUTES;
     const now = new Date();
-    if (now.getHours() * 60 + now.getMinutes() < unlockMinutes) {
-      return { status: 'locked', reason: `Disponible desde ${video.time} hs` };
+    const scheduledAt = buildLocalDateTime(scheduledDate, video.time);
+    const unlockAt = buildLocalDateTime(scheduledDate, video.time);
+    unlockAt.setMinutes(unlockAt.getMinutes() - UNLOCK_LEAD_MINUTES);
+    const expiresAt = new Date(scheduledAt);
+    expiresAt.setHours(expiresAt.getHours() + PAUSE_AVAILABILITY_HOURS);
+    if (now < unlockAt) {
+      const todayKey = toLocalDateKey(now);
+      return {
+        status: 'locked',
+        reason: scheduledDate === todayKey ? `Disponible desde ${video.time} hs` : `Disponible el ${dia}`,
+      };
+    }
+    if (now > expiresAt) {
+      return { status: 'locked', reason: 'Esta pausa ya venció' };
     }
     if (bloque === 'morning') {
       return { status: 'available' };

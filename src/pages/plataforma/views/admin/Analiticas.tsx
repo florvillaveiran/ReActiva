@@ -363,6 +363,30 @@ const PERIODO_LABELS: Record<PeriodoKey, string> = {
   personalizado: 'Personalizado',
 };
 
+const MONTH_OPTIONS_2026 = [
+  'Enero 2026',
+  'Febrero 2026',
+  'Marzo 2026',
+  'Abril 2026',
+  'Mayo 2026',
+  'Junio 2026',
+  'Julio 2026',
+  'Agosto 2026',
+  'Septiembre 2026',
+  'Octubre 2026',
+  'Noviembre 2026',
+  'Diciembre 2026',
+];
+
+const WEEK_OPTIONS_2026 = [
+  { label: 'Semana del 20 al 26 de julio', from: '2026-07-20', to: '2026-07-26' },
+  { label: 'Semana del 27 de julio al 2 de agosto', from: '2026-07-27', to: '2026-08-02' },
+  { label: 'Semana del 3 al 9 de agosto', from: '2026-08-03', to: '2026-08-09' },
+  { label: 'Semana del 10 al 16 de agosto', from: '2026-08-10', to: '2026-08-16' },
+  { label: 'Semana del 17 al 23 de agosto', from: '2026-08-17', to: '2026-08-23' },
+  { label: 'Semana del 24 al 30 de agosto', from: '2026-08-24', to: '2026-08-30' },
+];
+
 const formatReportDate = (value: string) => {
   const date = new Date(`${value}T00:00:00`);
   return Number.isNaN(date.getTime())
@@ -391,12 +415,8 @@ const resolveReportRange = (
     const lastDay = new Date(Number(year), Number(month), 0).getDate();
     return { from: `${year}-${month}-01`, to: `${year}-${month}-${String(lastDay).padStart(2, '0')}` };
   }
-  const weeklyRanges: Record<string, { from: string; to: string }> = {
-    'Semana del 7 al 13 de julio': { from: '2026-07-07', to: '2026-07-13' },
-    'Semana del 30 al 6 de julio': { from: '2026-06-30', to: '2026-07-06' },
-    'Semana del 23 al 29 de junio': { from: '2026-06-23', to: '2026-06-29' },
-  };
-  return weeklyRanges[semanaSel] ?? { from: '', to: '' };
+  const selectedWeek = WEEK_OPTIONS_2026.find(week => week.label === semanaSel);
+  return selectedWeek ? { from: selectedWeek.from, to: selectedWeek.to } : { from: '', to: '' };
 };
 
 const EMPTY_ANALYTICS = enrichSet({ zonas: [], tension: [], evolucion: [] });
@@ -587,7 +607,7 @@ export const Analiticas: React.FC = () => {
   const [periodo, setPeriodo] = useState<PeriodoKey>('mensual');
   
   // Selectores secundarios condicionales
-  const [semanaSel, setSemanaSel] = useState('Semana del 7 al 13 de julio');
+  const [semanaSel, setSemanaSel] = useState(WEEK_OPTIONS_2026[0].label);
   const [mesSel, setMesSel] = useState('Julio 2026');
   const [anioSel, setAnioSel] = useState('2026');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -682,9 +702,7 @@ export const Analiticas: React.FC = () => {
             </select>
             {periodo === 'mensual' && (
               <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={mesSel} onChange={(event) => setMesSel(event.target.value)}>
-                <option value="Julio 2026">Julio 2026</option>
-                <option value="Junio 2026">Junio 2026</option>
-                <option value="Mayo 2026">Mayo 2026</option>
+                {MONTH_OPTIONS_2026.map(month => <option key={month} value={month}>{month}</option>)}
               </select>
             )}
             {periodo === 'personalizado' && (
@@ -839,9 +857,7 @@ export const Analiticas: React.FC = () => {
               <option value="personalizado">Personalizado</option>
             </select>
             {periodo === 'mensual' && <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={mesSel} onChange={(event) => setMesSel(event.target.value)}>
-              <option value="Julio 2026">Julio 2026</option>
-              <option value="Junio 2026">Junio 2026</option>
-              <option value="Mayo 2026">Mayo 2026</option>
+              {MONTH_OPTIONS_2026.map(month => <option key={month} value={month}>{month}</option>)}
             </select>}
             {periodo === 'personalizado' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -989,7 +1005,7 @@ export const Analiticas: React.FC = () => {
               <option value="all">Todas</option>
               {user?.isDemo && <option value="demo-company">Empresa Demo</option>}
               {empresas.map(emp => (
-                <option key={emp.id} value={emp.id.toString()}>{emp.nombre}</option>
+                <option key={emp.supabaseId ?? emp.id} value={emp.supabaseId ?? emp.id.toString()}>{emp.nombre}</option>
               ))}
             </select>
           </div>
@@ -1053,9 +1069,7 @@ export const Analiticas: React.FC = () => {
                 value={semanaSel}
                 onChange={(e) => setSemanaSel(e.target.value)}
               >
-                <option value="Semana del 7 al 13 de julio">Semana del 7 al 13 de julio</option>
-                <option value="Semana del 30 al 6 de julio">Semana del 30 al 6 de julio</option>
-                <option value="Semana del 23 al 29 de junio">Semana del 23 al 29 de junio</option>
+                {WEEK_OPTIONS_2026.map(week => <option key={week.label} value={week.label}>{week.label}</option>)}
               </select>
             </div>
           )}
@@ -1068,9 +1082,7 @@ export const Analiticas: React.FC = () => {
                 value={mesSel}
                 onChange={(e) => setMesSel(e.target.value)}
               >
-                <option value="Julio 2026">Julio 2026</option>
-                <option value="Junio 2026">Junio 2026</option>
-                <option value="Mayo 2026">Mayo 2026</option>
+                {MONTH_OPTIONS_2026.map(month => <option key={month} value={month}>{month}</option>)}
               </select>
               <label className="analytics-compare" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-color)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} style={{ accentColor: 'var(--primary-color)' }} />

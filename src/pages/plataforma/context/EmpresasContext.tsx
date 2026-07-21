@@ -31,9 +31,13 @@ export const EmpresasProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .eq('role', 'usuario'),
     ]);
 
-    if (companiesError || profilesError || !companies) {
-      console.error('No se pudieron cargar empresas desde Supabase', companiesError ?? profilesError);
+    if (companiesError || !companies) {
+      console.error('No se pudieron cargar empresas desde Supabase', companiesError);
       return;
+    }
+
+    if (profilesError) {
+      console.warn('No se pudieron cargar empleados por empresa, se mostrarán empresas sin conteo de empleados', profilesError);
     }
 
     const employeeCount = new Map<string, number>();
