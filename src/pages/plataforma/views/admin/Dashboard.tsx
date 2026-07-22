@@ -4,14 +4,9 @@ import { Activity, AlertTriangle, Building2, CheckCircle2, Lightbulb, Target, Tr
 import { useEmpresas } from '../../context/EmpresasContext';
 import { useAdminStats } from '../../hooks/useAdminStats';
 import { buildDashboardActions, buildDashboardInsights, buildImpactMetrics } from '../../lib/dashboardIntelligence';
+import { getDashboardPeriodRanges, type DashboardPeriod } from '../../lib/dashboardPeriods';
 import { supabase } from '../../lib/supabase';
-
-const isoDate = (date: Date) => date.toISOString().slice(0, 10);
-const daysAgo = (days: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return isoDate(date);
-};
+import { TeamCommentsModal } from './TeamCommentsModal';
 
 const statusFor = (participacion: number, molestias: number) => {
   if (participacion >= 75 && molestias <= 25) return { label: 'Excelente', color: '#059669', bg: '#ecfdf5', icon: <CheckCircle2 size={24} /> };
@@ -87,20 +82,22 @@ export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { empresas } = useEmpresas();
   const [empresaId, setEmpresaId] = useState('all');
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<DashboardPeriod>('semanal');
   const [selectedDetail, setSelectedDetail] = useState<DetailKey | null>(null);
   const [profileDetails, setProfileDetails] = useState<DashboardProfileDetail[]>([]);
   const [showActionPlan, setShowActionPlan] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   const selectedEmpresa = empresaId === 'all'
     ? undefined
     : empresas.find(e => e.id.toString() === empresaId || e.supabaseId === empresaId);
   const statsCompanyId = empresaId === 'all' ? undefined : selectedEmpresa?.supabaseId;
-  const today = isoDate(new Date());
-  const from = daysAgo(30);
-  const stats = useAdminStats(statsCompanyId, from, today, 'ALL');
-  const previousStats = useAdminStats(statsCompanyId, daysAgo(60), daysAgo(31), 'ALL');
-  const administrativeStats = useAdminStats(statsCompanyId, from, today, 'ADMINISTRATIVO');
-  const operativeStats = useAdminStats(statsCompanyId, from, today, 'OPERATIVO');
+  const periodRanges = useMemo(() => getDashboardPeriodRanges(analyticsPeriod), [analyticsPeriod]);
+  const { from, to } = periodRanges.current;
+  const stats = useAdminStats(statsCompanyId, from, to, 'ALL');
+  const previousStats = useAdminStats(statsCompanyId, periodRanges.previous.from, periodRanges.previous.to, 'ALL');
+  const administrativeStats = useAdminStats(statsCompanyId, from, to, 'ADMINISTRATIVO');
+  const operativeStats = useAdminStats(statsCompanyId, from, to, 'OPERATIVO');
 
   useEffect(() => {
     let mounted = true;
@@ -134,7 +131,7 @@ export const AdminDashboard: React.FC = () => {
           .select('profile_id, occurred_at')
           .in('profile_id', profileIds)
           .gte('occurred_at', `${from}T00:00:00.000Z`)
-          .lt('occurred_at', `${today}T23:59:59.999Z`)
+          .lt('occurred_at', `${to}T23:59:59.999Z`)
           .order('occurred_at', { ascending: false });
 
         if (!pausesError) {
@@ -175,7 +172,7 @@ export const AdminDashboard: React.FC = () => {
       mounted = false;
       if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, [empresas, from, statsCompanyId, today]);
+  }, [empresas, from, statsCompanyId, to]);
 
   const status = statusFor(stats.adherencia, stats.reportanMolestias);
   const insights = useMemo(
@@ -210,8 +207,8 @@ export const AdminDashboard: React.FC = () => {
   };
   const reactivaIndex = calculateReactivaIndex();
 
-  const analyzeCommentsPattern = (comentarios: { txt: string; role: string }[]) => {
-    if (comentarios.length === 0) return "Aún no hay suficientes comentarios esta semana.";
+  const analyzeCommentsPattern = (comentarios: typeof stats.comentarios) => {
+    if (comentarios.length === 0) return `Aún no hay suficientes comentarios ${analyticsPeriod === 'semanal' ? 'esta semana' : 'este mes'}.`;
     const text = comentarios.map(c => c.txt.toLowerCase()).join(' ');
     if (text.includes('cuello') || text.includes('cervical')) return 'La mayoría de los comentarios son positivos respecto a la movilidad cervical.';
     if (text.includes('espalda') || text.includes('lumbar')) return 'Se detecta un patrón de alivio en la zona lumbar y espalda baja.';
@@ -221,13 +218,17 @@ export const AdminDashboard: React.FC = () => {
   };
   const iaDetection = analyzeCommentsPattern(stats.comentarios);
 
+  const openComments = () => {
+    setShowComments(true);
+  };
+
   const formatShortDate = (value?: string) => {
     if (!value) return 'Sin pausas';
     return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(new Date(value));
   };
 
   const detailTitle: Record<DetailKey, string> = {
-    participacion: 'Detalle de participación semanal',
+    participacion: `Detalle de participación ${analyticsPeriod === 'semanal' ? 'semanal' : 'mensual'}`,
     usuarios: 'Usuarios con actividad',
     empresas: 'Empresas registradas',
     estado: 'Por qué el estado es atención',
@@ -239,26 +240,32 @@ export const AdminDashboard: React.FC = () => {
     <div className="admin-dashboard-page" style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', height: '100%', gap: '0.75rem', padding: '0.5rem 0' }}>
       
       {/* TOOLBAR */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: '#0f172a' }}>Dashboard Admin</h2>
-        <select
-          className="input-field"
-          style={{ width: 220, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: 'var(--bg-color)', fontWeight: 600, margin: 0 }}
-          value={empresaId}
-          onChange={(e) => {
-            setEmpresaId(e.target.value);
-            setSelectedDetail(null);
-          }}
-        >
-          <option value="all">Todas las empresas</option>
-          {empresas.map(emp => <option key={emp.id} value={emp.id.toString()}>{emp.nombre}</option>)}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          <select className="input-field" aria-label="Período del dashboard" style={{ width: 140, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: 'var(--bg-color)', fontWeight: 600, margin: 0 }} value={analyticsPeriod} onChange={(e) => setAnalyticsPeriod(e.target.value as DashboardPeriod)}>
+            <option value="semanal">Semanal</option>
+            <option value="mensual">Mensual</option>
+          </select>
+          <select
+            className="input-field"
+            style={{ width: 220, padding: '0.4rem 0.8rem', fontSize: '0.85rem', backgroundColor: 'var(--bg-color)', fontWeight: 600, margin: 0 }}
+            value={empresaId}
+            onChange={(e) => {
+              setEmpresaId(e.target.value);
+              setSelectedDetail(null);
+            }}
+          >
+            <option value="all">Todas las empresas</option>
+            {empresas.map(emp => <option key={emp.id} value={emp.id.toString()}>{emp.nombre}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* FILA 1: KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
         <Card icon={<TrendingUp size={16} />} label="Participación" value={`${stats.adherencia}%`} helper={`${stats.totalPausas} pausas hechas`} color="#0f766e" bg="#ccfbf1" active={selectedDetail === 'participacion'} onClick={() => setSelectedDetail(selectedDetail === 'participacion' ? null : 'participacion')} />
-        <Card icon={<Users size={16} />} label="Usuarios activos" value={String(stats.usuariosCount)} helper="Con actividad semanal" color="#1d4ed8" bg="#dbeafe" active={selectedDetail === 'usuarios'} onClick={() => setSelectedDetail(selectedDetail === 'usuarios' ? null : 'usuarios')} />
+        <Card icon={<Users size={16} />} label="Usuarios activos" value={String(stats.usuariosCount)} helper={`Con actividad ${periodRanges.label}`} color="#1d4ed8" bg="#dbeafe" active={selectedDetail === 'usuarios'} onClick={() => setSelectedDetail(selectedDetail === 'usuarios' ? null : 'usuarios')} />
         <Card icon={<Building2 size={16} />} label="Empresas" value={String(empresas.length)} helper={`${activeCompanies} activas`} color="#6d28d9" bg="#ede9fe" active={selectedDetail === 'empresas'} onClick={() => setSelectedDetail(selectedDetail === 'empresas' ? null : 'empresas')} />
         
         {/* Índice ReActiva */}
@@ -338,7 +345,7 @@ export const AdminDashboard: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
               <div style={{ padding: '0.75rem', borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
                 <strong style={{ color: '#9a3412', fontSize: '0.8rem' }}>Participación</strong>
-                <p style={{ margin: '0.25rem 0 0', color: '#0f172a', fontSize: '0.9rem' }}>{stats.adherencia}% semanal</p>
+                <p style={{ margin: '0.25rem 0 0', color: '#0f172a', fontSize: '0.9rem' }}>{stats.adherencia}% {analyticsPeriod === 'semanal' ? 'semanal' : 'mensual'}</p>
               </div>
               <div style={{ padding: '0.75rem', borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
                 <strong style={{ color: '#0f172a', fontSize: '0.8rem' }}>Energía</strong>
@@ -433,13 +440,13 @@ export const AdminDashboard: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {stats.comentarios.length > 0 ? stats.comentarios.slice(0, 3).map((c, i) => (
-                <div key={i} style={{ padding: '0.6rem', borderRadius: 10, background: '#fff', border: '1px solid #f3e8ff' }}>
+                <button type="button" onClick={openComments} key={i} style={{ width: '100%', padding: '0.6rem', borderRadius: 10, background: '#fff', border: '1px solid #f3e8ff', cursor: 'pointer', textAlign: 'left' }}>
                   <p style={{ margin: '0 0 0.2rem', color: '#4c1d95', fontSize: '0.76rem', fontWeight: 600, fontStyle: 'italic' }}>"{c.txt}"</p>
-                  <p style={{ margin: 0, color: '#a855f7', fontSize: '0.65rem' }}>{c.role}</p>
-                </div>
+                  <p style={{ margin: 0, color: '#a855f7', fontSize: '0.65rem', fontWeight: 700 }}>{c.author} · {c.role}</p>
+                </button>
               )) : (
                 <div style={{ padding: '0.6rem', borderRadius: 10, background: '#fff', border: '1px solid #f3e8ff' }}>
-                  <p style={{ margin: 0, color: '#a855f7', fontSize: '0.75rem' }}>Aún no hay comentarios esta semana.</p>
+                  <p style={{ margin: 0, color: '#a855f7', fontSize: '0.75rem' }}>Aún no hay comentarios {analyticsPeriod === 'semanal' ? 'esta semana' : 'este mes'}.</p>
                 </div>
               )}
             </div>
@@ -450,6 +457,13 @@ export const AdminDashboard: React.FC = () => {
                 {iaDetection}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={openComments}
+              style={{ background: 'transparent', border: 'none', color: '#7e22ce', padding: '0.2rem 0', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', textAlign: 'right' }}
+            >
+              Ver y ordenar todos los comentarios →
+            </button>
           </div>
         </Panel>
 
@@ -466,6 +480,15 @@ export const AdminDashboard: React.FC = () => {
         </div>
         <button type="button" onClick={() => setShowActionPlan(true)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Ver plan de acción sugerido →</button>
       </div>
+
+      {showComments && (
+        <TeamCommentsModal
+          empresas={empresas}
+          initialCompanyId={empresaId}
+          initialPeriod={analyticsPeriod}
+          onClose={() => setShowComments(false)}
+        />
+      )}
 
       {/* MODAL PLAN DE ACCIÓN */}
       {showActionPlan && (

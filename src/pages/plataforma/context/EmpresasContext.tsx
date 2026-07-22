@@ -99,11 +99,16 @@ export const EmpresasProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .subscribe()
       : null;
 
+    const { data: authListener } = supabase?.auth.onAuthStateChange(() => {
+      queueMicrotask(() => void refreshEmpresas());
+    }) ?? { data: null };
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('reactiva_db_update', handleLocalUpdate);
       window.removeEventListener('reactiva-companies-updated', handleLocalUpdate);
       if (channel && supabase) void supabase.removeChannel(channel);
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 

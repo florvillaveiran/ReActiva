@@ -499,10 +499,10 @@ export const saveAcademyItem = async (item: AcademyItem) => {
   const normalizedItem = normalizeAcademyItem(item);
   if (!supabase) {
     updateAcademyItem(normalizedItem);
-    return { ok: true };
+    return { ok: true, error: null, id: normalizedItem.id };
   }
 
-  const { error } = await supabase.rpc('save_content_item', {
+  const { data, error } = await supabase.rpc('save_content_item', {
     item_id: isUuid(normalizedItem.id) ? normalizedItem.id : null,
     item_kind: 'workshop',
     item_title: normalizedItem.title,
@@ -526,10 +526,12 @@ export const saveAcademyItem = async (item: AcademyItem) => {
     item_recommended_work_profile: normalizedItem.recommendedWorkProfile ?? 'ALL',
   });
 
-  if (error) return { ok: false, error };
+  if (error) return { ok: false, error, id: null };
+  const savedId = data as string;
+  normalizedItem.id = savedId;
   updateAcademyItem(normalizedItem);
   await fetchContentLibrary();
-  return { ok: true, error: null };
+  return { ok: true, error: null, id: savedId };
 };
 
 export const removeContentItemFromSupabase = async (id: string) => {

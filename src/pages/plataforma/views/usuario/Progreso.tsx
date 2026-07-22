@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckCircle2, Calendar, Award, Zap, Target, HeartPulse, PieChart, Sparkles, Inbox, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
-import { usePausasStats } from '../../hooks/usePausasStats';
+import { usePausasStats, type PausasPeriod } from '../../hooks/usePausasStats';
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────
 const KpiCard: React.FC<{
@@ -105,7 +105,28 @@ const ChartCard: React.FC<{
 
 // ─── Vista Mi Progreso ────────────────────────────────────────────────────
 export const UsuarioProgreso: React.FC = () => {
-  const stats = usePausasStats();
+  const [periodo, setPeriodo] = useState<PausasPeriod>('semanal');
+  const stats = usePausasStats(periodo);
+  const periodoLabel = periodo === 'semanal' ? 'Esta semana' : 'Este mes';
+  const periodoAdjective = periodo === 'semanal' ? 'semanal' : 'mensual';
+
+  const periodSelector = (
+    <label style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginLeft: 'auto' }}>
+      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Ver progreso</span>
+      <select
+        value={periodo}
+        onChange={(event) => setPeriodo(event.target.value as PausasPeriod)}
+        aria-label="Período del progreso"
+        style={{
+          border: '1px solid #dbe2ea', borderRadius: '10px', padding: '0.55rem 2rem 0.55rem 0.75rem',
+          backgroundColor: 'white', color: 'var(--text-color)', fontWeight: 700, cursor: 'pointer',
+        }}
+      >
+        <option value="semanal">Semanal</option>
+        <option value="mensual">Mensual</option>
+      </select>
+    </label>
+  );
 
   // Adherencia label dinámica
   const adherenciaLabel =
@@ -130,13 +151,14 @@ export const UsuarioProgreso: React.FC = () => {
         display: 'flex', flexDirection: 'column', gap: '1.25rem',
         minHeight: 'calc(100vh - 3rem)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-color)' }}>Mi Progreso</h1>
           <span style={{
             padding: '0.3rem 0.85rem', borderRadius: '20px',
             backgroundColor: '#ecfdf5', color: '#059669',
             fontSize: '0.78rem', fontWeight: 600, border: '1px solid #a7f3d0',
-          }}>Esta Semana</span>
+          }}>{periodoLabel}</span>
+          {periodSelector}
         </div>
 
         <div style={{
@@ -169,7 +191,7 @@ export const UsuarioProgreso: React.FC = () => {
       minHeight: 'calc(100vh - 3rem)',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-color)' }}>Mi Progreso</h1>
         <span style={{
           padding: '0.3rem 0.85rem',
@@ -179,7 +201,8 @@ export const UsuarioProgreso: React.FC = () => {
           fontSize: '0.78rem',
           fontWeight: 600,
           border: '1px solid #a7f3d0',
-        }}>Esta Semana</span>
+        }}>{periodoLabel}</span>
+        {periodSelector}
       </div>
 
       {/* KPIs */}
@@ -189,14 +212,14 @@ export const UsuarioProgreso: React.FC = () => {
           iconBg="#ecfdf5"
           iconColor="#059669"
           value={`${stats.totalPausas} ${stats.totalPausas === 1 ? 'Pausa' : 'Pausas'}`}
-          label="completadas esta semana 🙌"
+          label={`completadas ${periodo === 'semanal' ? 'esta semana' : 'este mes'} 🙌`}
         />
         <KpiCard
           icon={<Calendar size={22} />}
           iconBg="#fff7ed"
           iconColor="#f97316"
           value={`${stats.diasActivos} ${stats.diasActivos === 1 ? 'Día' : 'Días'}`}
-          label="activos de lunes a viernes"
+          label={`activos ${periodo === 'semanal' ? 'esta semana' : 'este mes'}`}
         />
         <KpiCard
           icon={<Award size={22} />}
@@ -226,7 +249,7 @@ export const UsuarioProgreso: React.FC = () => {
           iconBg="#dbeafe"
           iconColor="#2563eb"
           titulo="Nivel de Foco"
-          subtitulo="Tu concentración semanal"
+          subtitulo={`Tu concentración ${periodoAdjective}`}
           promedio={focoPct != null ? `${focoPct}%` : '—'}
           promedioColor="#2563eb"
           data={focoChartData}

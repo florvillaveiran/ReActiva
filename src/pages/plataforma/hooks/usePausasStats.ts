@@ -42,33 +42,89 @@ export interface PausasStats {
   hayDatos: boolean;
 }
 
+export type PausasPeriod = 'semanal' | 'mensual';
+
 const DAYS = ['Lunes', 'Miércoles', 'Viernes'];
 const DAYS_SHORT: Record<string, string> = { Lunes: 'Lun', Miércoles: 'Mié', Viernes: 'Vie' };
 const FEELING_TO_SCORE: Record<string, number> = {
   'Mal': 1, 'Regular': 2, 'Bien': 3, 'Muy bien': 4, 'Genial': 5,
 };
 
-const readPausas = (email?: string): PausaGuardada[] => {
+const startOfDay = (date: Date) => {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+const endOfDay = (date: Date) => {
+  const result = new Date(date);
+  result.setHours(23, 59, 59, 999);
+  return result;
+};
+
+const getPeriodRange = (period: PausasPeriod, now = new Date()) => {
+  if (period === 'mensual') {
+    return {
+      from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)),
+      to: endOfDay(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+    };
+  }
+
+  const from = startOfDay(now);
+  const day = from.getDay();
+  from.setDate(from.getDate() - (day === 0 ? 6 : day - 1));
+  const to = endOfDay(new Date(from));
+  to.setDate(to.getDate() + 6);
+  return { from, to };
+};
+
+const validDate = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const deduplicateAndFilter = (
+  pausas: PausaGuardada[],
+  period: PausasPeriod,
+  now = new Date(),
+) => {
+  const { from, to } = getPeriodRange(period, now);
+  const map = new Map<string, PausaGuardada>();
+
+  for (const pausa of pausas) {
+    const date = validDate(pausa.fecha);
+    if (!date || date < from || date > to) continue;
+    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    const key = `${dateKey}__${pausa.bloque}`;
+    const previous = map.get(key);
+    if (!previous || new Date(previous.fecha) < date) map.set(key, pausa);
+  }
+
+  return Array.from(map.values()).sort(
+    (left, right) => new Date(right.fecha).getTime() - new Date(left.fecha).getTime(),
+  );
+};
+
+const readPausas = (period: PausasPeriod, email?: string): PausaGuardada[] => {
   try {
     const key = email ? `reactiva_pausas:${email.trim().toLowerCase()}` : 'reactiva_pausas';
     const all: PausaGuardada[] = JSON.parse(localStorage.getItem(key) || '[]');
-    // Deduplicar por (dia, bloque) — quedarse con la más reciente
-    const map = new Map<string, PausaGuardada>();
-    for (const p of all) {
-      map.set(`${p.dia}__${p.bloque}`, p);
-    }
-    return Array.from(map.values());
+    return deduplicateAndFilter(all, period);
   } catch {
     return [];
   }
 };
 
-const readPausasFromSupabase = async (): Promise<PausaGuardada[] | null> => {
+const readPausasFromSupabase = async (period: PausasPeriod): Promise<PausaGuardada[] | null> => {
   if (!supabase) return null;
+
+  const { from, to } = getPeriodRange(period);
 
   const { data, error } = await supabase
     .from('pause_sessions')
     .select('day_label, block, occurred_at, energy, feeling, has_pain, pain_zone, answers')
+    .gte('occurred_at', from.toISOString())
+    .lte('occurred_at', to.toISOString())
     .order('occurred_at', { ascending: false });
 
   if (error || !data) {
@@ -76,7 +132,7 @@ const readPausasFromSupabase = async (): Promise<PausaGuardada[] | null> => {
     return null;
   }
 
-  return data.map((row: any) => ({
+  return deduplicateAndFilter(data.map((row: any) => ({
     dia: row.day_label,
     bloque: row.block,
     fecha: row.occurred_at,
@@ -95,7 +151,7 @@ const readPausasFromSupabase = async (): Promise<PausaGuardada[] | null> => {
       ayuda: row.answers?.ayuda,
       comentario: row.answers?.comentario ?? row.answers?.mejora,
     },
-  }));
+  })), period);
 };
 
 const avg = (nums: number[]): number | null => {
@@ -103,33 +159,66 @@ const avg = (nums: number[]): number | null => {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 };
 
-const computeStats = (pausas: PausaGuardada[]): PausasStats => {
+const getMonthlyBuckets = (now = new Date()) => {
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  return Array.from({ length: Math.ceil(lastDay / 7) }, (_, index) => ({
+    label: `Sem ${index + 1}`,
+    fromDay: (index * 7) + 1,
+    toDay: Math.min((index + 1) * 7, lastDay),
+  }));
+};
+
+const expectedSessions = (period: PausasPeriod, now = new Date()) => {
+  if (period === 'semanal') return DAYS.length * 2;
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  let scheduledDays = 0;
+  for (let day = 1; day <= lastDay; day += 1) {
+    const weekday = new Date(now.getFullYear(), now.getMonth(), day).getDay();
+    if (weekday === 1 || weekday === 3 || weekday === 5) scheduledDays += 1;
+  }
+  return scheduledDays * 2;
+};
+
+const computeStats = (pausas: PausaGuardada[], period: PausasPeriod): PausasStats => {
   const totalPausas = pausas.length;
-  const totalObjetivo = DAYS.length * 2;
-  const adherencia = Math.round((totalPausas / totalObjetivo) * 100);
+  const totalObjetivo = expectedSessions(period);
 
-  const diasUnicos = new Set(pausas.map(p => p.dia));
+  const diasUnicos = new Set(pausas.map(p => {
+    const date = validDate(p.fecha);
+    return date ? `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}` : p.dia;
+  }));
   const diasActivos = diasUnicos.size;
+  const adherencia = Math.min(100, Math.round((totalPausas / totalObjetivo) * 100));
 
-  // Energía por día — promedio (cada pausa puede tener energia, o respuestas.energia para semanal)
-  const energiaPorDia = DAYS.map(dia => {
-    const pausasDelDia = pausas.filter(p => p.dia === dia);
+  const chartGroups = period === 'semanal'
+    ? DAYS.map(dia => ({ label: DAYS_SHORT[dia], matches: (p: PausaGuardada) => p.dia === dia }))
+    : getMonthlyBuckets().map(bucket => ({
+        label: bucket.label,
+        matches: (p: PausaGuardada) => {
+          const date = validDate(p.fecha);
+          return !!date && date.getDate() >= bucket.fromDay && date.getDate() <= bucket.toDay;
+        },
+      }));
+
+  // Energía por día o semana — promedio de las respuestas del período.
+  const energiaPorDia = chartGroups.map(group => {
+    const pausasDelDia = pausas.filter(group.matches);
     const valores: number[] = pausasDelDia
       .map(p => p.energia ?? p.respuestas?.energia)
       .filter((v): v is number => typeof v === 'number' && v > 0);
-    return { dia: DAYS_SHORT[dia], valor: avg(valores) };
+    return { dia: group.label, valor: avg(valores) };
   });
   const energiaPromedio = avg(energiaPorDia.map(e => e.valor).filter((v): v is number => v !== null));
 
   // Foco por día — derivado del feeling (1-5)
-  const focoPorDia = DAYS.map(dia => {
-    const pausasDelDia = pausas.filter(p => p.dia === dia);
+  const focoPorDia = chartGroups.map(group => {
+    const pausasDelDia = pausas.filter(group.matches);
     const valores: number[] = pausasDelDia
       .map(p => p.feeling ?? p.respuestas?.feeling)
       .filter((v): v is string => !!v)
       .map(f => FEELING_TO_SCORE[f])
       .filter((v): v is number => typeof v === 'number');
-    return { dia: DAYS_SHORT[dia], valor: avg(valores) };
+    return { dia: group.label, valor: avg(valores) };
   });
   const focoPromedio = avg(focoPorDia.map(f => f.valor).filter((v): v is number => v !== null));
 
@@ -205,18 +294,21 @@ const computeStats = (pausas: PausaGuardada[]): PausasStats => {
   };
 };
 
-export function usePausasStats(): PausasStats {
+export function usePausasStats(period: PausasPeriod = 'semanal'): PausasStats {
   const { user } = useAuth();
   const isDemo = !!user?.isDemo;
-  const [stats, setStats] = useState<PausasStats>(() => computeStats(isDemo || !supabase ? readPausas(user?.email) : []));
+  const [stats, setStats] = useState<PausasStats>(() => computeStats(
+    isDemo || !supabase ? readPausas(period, user?.email) : [],
+    period,
+  ));
 
   useEffect(() => {
     let mounted = true;
     const refresh = () => {
-      setStats(computeStats(isDemo || !supabase ? readPausas(user?.email) : []));
+      setStats(computeStats(isDemo || !supabase ? readPausas(period, user?.email) : [], period));
       if (isDemo) return;
-      readPausasFromSupabase().then((pausas) => {
-        if (mounted && pausas) setStats(computeStats(pausas));
+      readPausasFromSupabase(period).then((pausas) => {
+        if (mounted && pausas) setStats(computeStats(pausas, period));
       });
     };
     refresh();
@@ -227,7 +319,7 @@ export function usePausasStats(): PausasStats {
       window.removeEventListener('reactiva-pausas-updated', refresh);
       window.removeEventListener('storage', refresh);
     };
-  }, [isDemo, user?.email]);
+  }, [isDemo, period, user?.email]);
 
   return stats;
 }

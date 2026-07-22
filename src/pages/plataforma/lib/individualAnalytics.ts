@@ -107,6 +107,15 @@ const addDays = (date: Date, amount: number) => {
   return result;
 };
 
+const expectedProgramSessions = (from: Date, to: Date) => {
+  let total = 0;
+  for (let date = startOfDay(from); date <= to; date = addDays(date, 1)) {
+    const weekday = date.getDay();
+    if (weekday === 1 || weekday === 3 || weekday === 5) total += 2;
+  }
+  return total;
+};
+
 const shortDay = (date: Date) => new Intl.DateTimeFormat('es-AR', { weekday: 'short' })
   .format(date)
   .replace('.', '');
@@ -123,18 +132,23 @@ const createBuckets = (
 ): TimeBucket[] => {
   if (period === 'semanal') {
     const today = startOfDay(now);
+    const weekday = today.getDay();
+    const monday = addDays(today, -(weekday === 0 ? 6 : weekday - 1));
     return Array.from({ length: 7 }, (_, index) => {
-      const from = addDays(today, index - 6);
-      return { name: shortDay(from), from, to: endOfDay(from), expectedSessions: 2 };
+      const from = addDays(monday, index);
+      const expectedSessions = [1, 3, 5].includes(from.getDay()) ? 2 : 0;
+      return { name: shortDay(from), from, to: endOfDay(from), expectedSessions };
     });
   }
 
   if (period === 'mensual') {
-    const today = endOfDay(now);
-    return Array.from({ length: 4 }, (_, index) => {
-      const from = startOfDay(addDays(today, -27 + (index * 7)));
-      const to = index === 3 ? today : endOfDay(addDays(from, 6));
-      return { name: `Sem ${index + 1}`, from, to, expectedSessions: 6 };
+    const monthStart = startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+    const monthEnd = endOfDay(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    const bucketCount = Math.ceil(monthEnd.getDate() / 7);
+    return Array.from({ length: bucketCount }, (_, index) => {
+      const from = addDays(monthStart, index * 7);
+      const to = index === bucketCount - 1 ? monthEnd : endOfDay(addDays(from, 6));
+      return { name: `Sem ${index + 1}`, from, to, expectedSessions: expectedProgramSessions(from, to) };
     });
   }
 
@@ -233,9 +247,15 @@ export const calculateIndividualAnalytics = (
   fromValue?: string,
   toValue?: string,
   now = new Date(),
+  eligibleFromValue?: string,
 ): IndividualAnalytics => {
   const sessions = uniqueSessions(rawSessions);
   const buckets = createBuckets(period, fromValue, toValue, now);
+  const eligibleFrom = eligibleFromValue ? validDate(eligibleFromValue) : null;
+  const expectedForBucket = (bucket: TimeBucket) => {
+    const from = eligibleFrom && eligibleFrom > bucket.from ? startOfDay(eligibleFrom) : bucket.from;
+    return from <= bucket.to ? expectedProgramSessions(from, bucket.to) : 0;
+  };
   const inRange = sessions.filter((session) => {
     const date = validDate(session.occurredAt);
     return date && buckets.some(bucket => date >= bucket.from && date <= bucket.to);
@@ -250,10 +270,13 @@ export const calculateIndividualAnalytics = (
     const painValues = bucketSessions.map(getPain).filter((value): value is boolean => value !== null);
     const focusValues = bucketSessions.map(getFocusScore).filter((value): value is number => value !== null);
     const impactValues = bucketSessions.map(getImpactScore).filter((value): value is number => value !== null);
+    const expected = expectedForBucket(bucket);
 
     return {
       name: bucket.name,
-      participacion: clamp((bucketSessions.length / bucket.expectedSessions) * 100),
+      participacion: expected
+        ? clamp((bucketSessions.length / expected) * 100)
+        : 0,
       energiaPct: clamp((average(energyValues) ?? 0) * 20),
       dolor: painValues.length ? clamp((painValues.filter(Boolean).length / painValues.length) * 100) : 0,
       foco: clamp(average(focusValues) ?? 0),
@@ -265,7 +288,7 @@ export const calculateIndividualAnalytics = (
   const painValues = inRange.map(getPain).filter((value): value is boolean => value !== null);
   const focusValues = inRange.map(getFocusScore).filter((value): value is number => value !== null);
   const impactValues = inRange.map(getImpactScore).filter((value): value is number => value !== null);
-  const expected = buckets.reduce((total, bucket) => total + bucket.expectedSessions, 0);
+  const expected = buckets.reduce((total, bucket) => total + expectedForBucket(bucket), 0);
 
   // Los niveles "actuales" usan las últimas cuatro semanas. Así evolucionan
   // con la actividad reciente y no quedan anclados a registros muy antiguos.
@@ -279,9 +302,12 @@ export const calculateIndividualAnalytics = (
     .map(getFeeling)
     .filter((value): value is string => value !== null)
     .map(value => FEELING_SCORE[value]);
+  const currentWeekBuckets = createBuckets('semanal', undefined, undefined, now);
+  const currentWeekFrom = currentWeekBuckets[0].from;
+  const currentWeekTo = currentWeekBuckets[currentWeekBuckets.length - 1].to;
   const completedLastWeek = recent.filter((session) => {
     const date = validDate(session.occurredAt);
-    return date && date >= addDays(startOfDay(now), -6);
+    return date && date >= currentWeekFrom && date <= currentWeekTo;
   }).length;
   const energyAverage = average(recentEnergy);
   const feelingAverage = average(recentFeeling);

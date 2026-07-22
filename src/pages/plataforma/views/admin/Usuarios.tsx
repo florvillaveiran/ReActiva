@@ -138,7 +138,7 @@ const UsuarioDetalle: React.FC<{
   onWorkProfileChange?: (workProfile: WorkProfile) => Promise<void>;
 }> = ({ usuario, empresa, onBack, canEditWorkProfile = false, onWorkProfileChange }) => {
   const [activeTab, setActiveTab] = useState<'resumen' | 'analiticas'>('resumen');
-  const [periodo, setPeriodo] = useState<AnalyticsPeriod>('mensual');
+  const [periodo, setPeriodo] = useState<AnalyticsPeriod>('semanal');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [generandoPDF, setGenerandoPDF] = useState(false);
@@ -237,17 +237,17 @@ const UsuarioDetalle: React.FC<{
   }, [usuario.email, usuario.supabaseId]);
 
   const analiticasData = useMemo(
-    () => calculateIndividualAnalytics(pauseSessions, periodo, fechaDesde, fechaHasta),
-    [pauseSessions, periodo, fechaDesde, fechaHasta],
+    () => calculateIndividualAnalytics(pauseSessions, periodo, fechaDesde, fechaHasta, new Date(), usuario.fechaIngreso),
+    [pauseSessions, periodo, fechaDesde, fechaHasta, usuario.fechaIngreso],
   );
   const topIndividualTension = useMemo(
     () => [...analiticasData.tension].filter(item => item.valor > 0).sort((left, right) => right.valor - left.valor)[0] ?? null,
     [analiticasData.tension],
   );
   const individualPeriodLabel = periodo === 'semanal'
-    ? 'Última semana'
+    ? 'Esta semana'
     : periodo === 'mensual'
-      ? 'Último mes'
+      ? 'Este mes'
       : periodo === 'anual'
         ? 'Último año'
         : fechaDesde && fechaHasta
@@ -415,8 +415,8 @@ const UsuarioDetalle: React.FC<{
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   <Calendar size={18} color="var(--text-muted)" />
                   <select className="input-field" value={periodo} onChange={(e) => setPeriodo(e.target.value as AnalyticsPeriod)} style={{ width: '180px', backgroundColor: 'white' }}>
-                    <option value="semanal">Última Semana</option>
-                    <option value="mensual">Último Mes</option>
+                    <option value="semanal">Esta Semana</option>
+                    <option value="mensual">Este Mes</option>
                     <option value="anual">Último Año</option>
                     <option value="personalizado">Personalizado</option>
                   </select>
@@ -735,7 +735,7 @@ export const Usuarios: React.FC = () => {
     const supabaseUsers: Usuario[] = profiles.map((profile: any) => {
       const company = companyBySupabaseId.get(profile.company_id);
       const sessions = sessionsByProfile.get(profile.id) ?? [];
-      const monthlyAnalytics = calculateIndividualAnalytics(sessions, 'mensual');
+      const monthlyAnalytics = calculateIndividualAnalytics(sessions, 'mensual', undefined, undefined, new Date(), profile.created_at);
       const latestSession = sessions.reduce<string | undefined>(
         (latest, session) => latestIso(latest, session.occurredAt),
         undefined,

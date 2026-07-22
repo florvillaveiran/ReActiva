@@ -6989,3 +6989,30 @@
     appearance: none;
   }
 }
+
+/* Acciones de pausa: exactamente dos botones, estables en escritorio y móvil. */
+#plataforma-root .user-pause-buttons {
+  min-width: 285px;
+}
+
+@media (max-width: 768px) {
+  #plataforma-root .user-dashboard-page .user-pause-action {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-buttons {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-buttons > button {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 380px) {
+  #plataforma-root .user-dashboard-page .user-pause-buttons {
+    grid-template-columns: 1fr !important;
+  }
+}

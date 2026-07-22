@@ -35,6 +35,19 @@ interface PausaGuardada {
 
 export type AnalyticsWorkProfileFilter = 'ALL' | 'ADMINISTRATIVO' | 'OPERATIVO';
 
+export interface AdminComment {
+  txt: string;
+  role: string;
+  author: string;
+  email?: string;
+  companyId?: string;
+  fecha: string;
+  energia?: number;
+  feeling?: string;
+  hasPain?: boolean;
+  painZone?: string;
+}
+
 export interface AdminStats {
   hayDatos: boolean;
   // KPIs de cabecera
@@ -53,13 +66,11 @@ export interface AdminStats {
   zonasDolorChart: { name: string; valor: number }[]; // valor en %
   tensionDistribucion: { name: string; valor: number }[]; // valor en %
   evolucion: { name: string; energia: number; satisfaccion: number; participacion: number }[];
-  comentarios: { txt: string; role: string }[];
+  comentarios: AdminComment[];
 }
 
 const DAYS = ['Lunes', 'Miércoles', 'Viernes'];
 const DAYS_SHORT: Record<string, string> = { Lunes: 'Lun', Miércoles: 'Mié', Viernes: 'Vie' };
-
-const ANALYTICS_REAL_START_DATE = '2026-07-20';
 
 const DEMO_STATS: AdminStats = {
   hayDatos: true,
@@ -96,9 +107,9 @@ const DEMO_STATS: AdminStats = {
     { name: 'Sem 4', energia: 4.1, satisfaccion: 87, participacion: 83 },
   ],
   comentarios: [
-    { txt: 'Me ayudó muchísimo a cortar la jornada.', role: 'Administrativo' },
-    { txt: 'Los ejercicios para cuello me sirvieron.', role: 'Administrativo' },
-    { txt: 'Los viernes se me hace difícil participar.', role: 'Operativo' }
+    { txt: 'Me ayudó muchísimo a cortar la jornada.', role: 'Administrativo', author: 'María González', fecha: '2026-07-20T14:30:00.000Z' },
+    { txt: 'Los ejercicios para cuello me sirvieron.', role: 'Administrativo', author: 'Juan Pérez', fecha: '2026-07-18T11:00:00.000Z' },
+    { txt: 'Los viernes se me hace difícil participar.', role: 'Operativo', author: 'Sofía Martínez', fecha: '2026-07-17T16:15:00.000Z' }
   ],
 };
 const FEELING_TO_SCORE: Record<string, number> = {
@@ -147,11 +158,6 @@ const isWithinPeriod = (pause: PausaGuardada, periodFrom?: string, periodTo?: st
   const exclusiveEnd = periodTo ? nextDayIso(periodTo) : '';
   if (exclusiveEnd && date >= new Date(exclusiveEnd)) return false;
   return true;
-};
-
-const clampAnalyticsStart = (periodFrom?: string) => {
-  if (!periodFrom) return ANALYTICS_REAL_START_DATE;
-  return periodFrom < ANALYTICS_REAL_START_DATE ? ANALYTICS_REAL_START_DATE : periodFrom;
 };
 
 const readPausasFromSupabase = async (
@@ -220,27 +226,42 @@ const readPausasFromSupabase = async (
   return mapPauseRows(data);
 };
 
-const readEligibleUserCountFromSupabase = async (
+interface EligibleUser {
+  id?: string;
+  createdAt?: string;
+  fullName?: string;
+  email?: string;
+  workProfile?: string;
+  companyId?: string;
+}
+
+const readEligibleUsers = async (
   companyId?: string,
   workProfile: AnalyticsWorkProfileFilter = 'ALL',
-): Promise<number | null> => {
+  periodTo?: string,
+): Promise<EligibleUser[] | null> => {
   if (!supabase) return null;
-
   let query = supabase
     .from('profiles')
-    .select('id', { count: 'exact', head: true })
+    .select('id, created_at, full_name, email, work_profile, company_id')
     .eq('role', 'usuario')
     .or('status.is.null,status.neq.inactive');
-
   if (companyId) query = query.eq('company_id', companyId);
   if (workProfile !== 'ALL') query = query.eq('work_profile', workProfile);
-
-  const { count, error } = await query;
+  if (periodTo) query = query.lt('created_at', nextDayIso(periodTo));
+  const { data, error } = await query;
   if (error) {
-    console.error('No se pudo calcular la cantidad de usuarios esperados para métricas', error);
+    console.error('No se pudieron cargar los usuarios asignados para participación', error);
     return null;
   }
-  return count ?? 0;
+  return (data ?? []).map(profile => ({
+    id: profile.id ?? undefined,
+    createdAt: profile.created_at ?? undefined,
+    fullName: profile.full_name ?? undefined,
+    email: profile.email ?? undefined,
+    workProfile: profile.work_profile ?? undefined,
+    companyId: profile.company_id ?? undefined,
+  }));
 };
 const AYUDA_TO_SATISF: Record<string, number> = {
   'Sí, mucho': 90, 'Sí, un poco': 55, No: 15,
@@ -251,7 +272,9 @@ const readPausasFromStorage = (): PausaGuardada[] => {
     const all: PausaGuardada[] = JSON.parse(localStorage.getItem('reactiva_pausas') || '[]');
     const map = new Map<string, PausaGuardada>();
     for (const p of all) {
-      if (p?.dia && p?.bloque) map.set(`${p.dia}__${p.bloque}`, p);
+      if (!p?.dia || !p?.bloque) continue;
+      const pauseDate = p.fecha ? toDateKey(new Date(p.fecha)) : 'sin-fecha';
+      map.set(`${p.profileId ?? 'local'}__${pauseDate}__${p.dia}__${p.bloque}`, p);
     }
     return Array.from(map.values());
   } catch {
@@ -298,80 +321,107 @@ const toDateKey = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const countProgramBlocksInRange = (start: Date, end: Date) => {
-  let count = 0;
-  const cursor = toLocalDayStart(start);
-  const final = toLocalDayStart(end);
-  while (cursor <= final) {
-    const day = cursor.getDay();
-    if (day === 1 || day === 3 || day === 5) count += 2;
-    cursor.setDate(cursor.getDate() + 1);
+const deduplicatePauses = (pausas: PausaGuardada[]) => {
+  const unique = new Map<string, PausaGuardada>();
+  pausas.forEach((pause) => {
+    const date = new Date(pause.fecha);
+    if (Number.isNaN(date.getTime())) return;
+    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    const key = `${pause.profileId ?? 'local'}:${dateKey}:${pause.bloque}`;
+    const previous = unique.get(key);
+    if (!previous || new Date(previous.fecha) < date) unique.set(key, pause);
+  });
+  return Array.from(unique.values());
+};
+
+const scheduledSlotsByDay = (periodFrom?: string, periodTo?: string) => {
+  const slots: Record<string, number> = { Lunes: 0, Miércoles: 0, Viernes: 0 };
+  if (!periodFrom || !periodTo) {
+    DAYS.forEach(day => { slots[day] = 2; });
+    return slots;
   }
-  return count;
+  const from = new Date(`${periodFrom}T00:00:00`);
+  const to = new Date(`${periodTo}T00:00:00`);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return slots;
+  const dayByWeekday: Record<number, string> = { 1: 'Lunes', 3: 'Miércoles', 5: 'Viernes' };
+  for (let date = from; date <= to; date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)) {
+    const label = dayByWeekday[date.getDay()];
+    if (label) slots[label] += 2;
+  }
+  return slots;
 };
 
-const average = (values: number[]) => values.length
-  ? values.reduce((acc, value) => acc + value, 0) / values.length
-  : 0;
+const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-const evolutionLabelsForPeriod = (periodFrom?: string, periodTo?: string) => {
-  if (!periodFrom || !periodTo) return ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-  const start = new Date(`${periodFrom}T00:00:00.000Z`);
-  const end = new Date(`${periodTo}T00:00:00.000Z`);
-  const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1);
-  if (days <= 9) return ['Inicio', 'Mitad', 'Cierre'];
-  if (days <= 45) return ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-  if (days >= 300) return ['T1', 'T2', 'T3', 'T4'];
-  return ['Inicio', 'Periodo 2', 'Periodo 3', 'Cierre'];
-};
-
-const buildEvolution = (
-  pausas: PausaGuardada[],
-  labels: string[],
+const populationSlotsByDay = (
+  eligibleUsers: EligibleUser[] | null | undefined,
+  fallbackUsers: number,
   periodFrom?: string,
   periodTo?: string,
-  expectedUsers = 1,
 ) => {
-  const { start, end } = selectedPeriodRange(periodFrom, periodTo);
-  const totalMs = Math.max(1, end.getTime() - start.getTime() + 1);
-
-  return labels.map((name, index) => {
-    const bucketStart = new Date(start.getTime() + Math.floor((totalMs * index) / labels.length));
-    const bucketEnd = new Date(start.getTime() + Math.floor((totalMs * (index + 1)) / labels.length) - 1);
-    bucketStart.setHours(0, 0, 0, 0);
-    bucketEnd.setHours(23, 59, 59, 999);
-
-    const bucketPausas = pausas.filter((pause) => {
-      const date = new Date(pause.fecha);
-      return !Number.isNaN(date.getTime()) && date >= bucketStart && date <= bucketEnd;
-    });
-    const expectedBlocks = Math.max(1, countProgramBlocksInRange(bucketStart, bucketEnd) * Math.max(1, expectedUsers));
-    const energyValues = bucketPausas
-      .map(p => getCampo<number>(p, 'energia'))
-      .filter((n): n is number => typeof n === 'number' && n > 0);
-    const satisfactionValues = bucketPausas
-      .map(p => {
-        const ayuda = p.respuestas?.ayuda;
-        return ayuda ? AYUDA_TO_SATISF[ayuda] : undefined;
-      })
-      .filter((n): n is number => typeof n === 'number');
-
-    return {
-      name,
-      energia: Math.round(average(energyValues) * 10) / 10,
-      satisfaccion: Math.round(average(satisfactionValues)),
-      participacion: Math.min(100, Math.round((bucketPausas.length / expectedBlocks) * 100)),
-    };
-  });
+  const base = scheduledSlotsByDay(periodFrom, periodTo);
+  if (eligibleUsers == null) {
+    return Object.fromEntries(Object.entries(base).map(([day, slots]) => [day, slots * fallbackUsers])) as Record<string, number>;
+  }
+  return eligibleUsers.reduce<Record<string, number>>((totals, profile) => {
+    const joinedAt = profile.createdAt ? new Date(profile.createdAt) : null;
+    const joinedKey = joinedAt && !Number.isNaN(joinedAt.getTime()) ? dateKey(joinedAt) : undefined;
+    const effectiveFrom = periodFrom && joinedKey && joinedKey > periodFrom ? joinedKey : periodFrom;
+    const profileSlots = scheduledSlotsByDay(effectiveFrom, periodTo);
+    DAYS.forEach(day => { totals[day] += profileSlots[day]; });
+    return totals;
+  }, { Lunes: 0, Miércoles: 0, Viernes: 0 });
 };
 
-const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: string, expectedUsersOverride?: number | null): AdminStats => {
+const createEvolutionBuckets = (periodFrom?: string, periodTo?: string) => {
+  if (!periodFrom || !periodTo) return [{ name: 'Actual', from: periodFrom, to: periodTo }];
+  const start = new Date(`${periodFrom}T00:00:00`);
+  const end = new Date(`${periodTo}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [{ name: 'Actual', from: periodFrom, to: periodTo }];
+  const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1);
+
+  if (days <= 9) {
+    const dayLabels: Record<number, string> = { 1: 'Lun', 3: 'Mié', 5: 'Vie' };
+    const buckets = [];
+    for (let date = start; date <= end; date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)) {
+      const name = dayLabels[date.getDay()];
+      if (name) buckets.push({ name, from: dateKey(date), to: dateKey(date) });
+    }
+    return buckets;
+  }
+
+  const bucketCount = days >= 300 ? 12 : Math.min(8, Math.ceil(days / 7));
+  const daysPerBucket = Math.ceil(days / bucketCount);
+  return Array.from({ length: bucketCount }, (_, index) => {
+    const from = new Date(start);
+    from.setDate(from.getDate() + (index * daysPerBucket));
+    const to = new Date(from);
+    to.setDate(to.getDate() + daysPerBucket - 1);
+    if (to > end) to.setTime(end.getTime());
+    return {
+      name: days >= 300
+        ? from.toLocaleDateString('es-AR', { month: 'short' }).replace('.', '')
+        : `Sem ${index + 1}`,
+      from: dateKey(from),
+      to: dateKey(to),
+    };
+  }).filter(bucket => bucket.from <= periodTo);
+};
+
+const computeStats = (
+  rawPauses: PausaGuardada[],
+  periodFrom?: string,
+  periodTo?: string,
+  eligibleUsers?: EligibleUser[] | null,
+): AdminStats => {
+  const pausas = deduplicatePauses(rawPauses);
   const totalPausas = pausas.length;
   const hayDatos = totalPausas > 0;
   const usuariosUnicos = new Set(pausas.map(p => p.profileId).filter(Boolean));
-  const usuariosCount = expectedUsersOverride ?? (usuariosUnicos.size > 0 ? usuariosUnicos.size : hayDatos ? 1 : 0);
-  const { start, end } = selectedPeriodRange(periodFrom, periodTo);
-  const totalObjetivo = Math.max(1, countProgramBlocksInRange(start, end) * Math.max(1, usuariosCount));
+  const participatingUsers = usuariosUnicos.size > 0 ? usuariosUnicos.size : hayDatos ? 1 : 0;
+  const usuariosCount = eligibleUsers == null ? participatingUsers : eligibleUsers.length;
+  const slotsByDay = populationSlotsByDay(eligibleUsers, participatingUsers, periodFrom, periodTo);
+  const totalObjetivo = Math.max(1, Object.values(slotsByDay).reduce((total, slots) => total + slots, 0));
   const adherencia = Math.min(100, Math.round((totalPausas / totalObjetivo) * 100));
 
   // Estado físico
@@ -406,17 +456,26 @@ const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: s
   // Participación por día
   const participacionPorDia = DAYS.map(dia => {
     const delDia = pausas.filter(p => p.dia === dia);
-    const pct = Math.round((delDia.length / 2) * 100); // 2 bloques por día
+    const objective = Math.max(1, slotsByDay[dia]);
+    const pct = Math.round((delDia.length / objective) * 100);
     return { name: DAYS_SHORT[dia], participacion: Math.min(100, pct) };
   });
 
   // Foco: del campo trabajo en weekly. Si solo hay 1 respuesta, ese trabajo es 100%.
-  const semanal = pausas.find(p => p.tipo === 'semanal-completo');
-  const trabajo = semanal?.respuestas?.trabajo;
-  let foco = { enfocado: 0, normal: 0, disperso: 0 };
-  if (trabajo === 'Enfocado') foco = { enfocado: 100, normal: 0, disperso: 0 };
-  else if (trabajo === 'Normal') foco = { enfocado: 0, normal: 100, disperso: 0 };
-  else if (trabajo === 'Disperso') foco = { enfocado: 0, normal: 0, disperso: 100 };
+  const weeklyAnswers = pausas.filter(p => p.tipo === 'semanal-completo' || p.respuestas?.trabajo);
+  const focusCounts = { Enfocado: 0, Normal: 0, Disperso: 0 };
+  weeklyAnswers.forEach(pause => {
+    const value = pause.respuestas?.trabajo;
+    if (value === 'Enfocado' || value === 'Normal' || value === 'Disperso') focusCounts[value] += 1;
+  });
+  const focusTotal = Object.values(focusCounts).reduce((total, count) => total + count, 0);
+  const foco = focusTotal
+    ? {
+        enfocado: Math.round((focusCounts.Enfocado / focusTotal) * 100),
+        normal: Math.round((focusCounts.Normal / focusTotal) * 100),
+        disperso: Math.round((focusCounts.Disperso / focusTotal) * 100),
+      }
+    : { enfocado: 0, normal: 0, disperso: 0 };
 
   // Distribución de Tensión
   const tensionCount = new Map<string, number>();
@@ -445,15 +504,47 @@ const computeStats = (pausas: PausaGuardada[], periodFrom?: string, periodTo?: s
       .filter((n): n is number => typeof n === 'number' && n > 0);
     return arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
   })();
-  const evolucion = buildEvolution(pausas, evolutionLabelsForPeriod(periodFrom, periodTo), periodFrom, periodTo, usuariosCount || 1);
+  const evolucion = createEvolutionBuckets(periodFrom, periodTo).map(bucket => {
+    const bucketPauses = pausas.filter(pause => isWithinPeriod(pause, bucket.from, bucket.to));
+    const bucketParticipants = new Set(bucketPauses.map(pause => pause.profileId).filter(Boolean)).size || (bucketPauses.length ? 1 : 0);
+    const bucketSlots = populationSlotsByDay(eligibleUsers, bucketParticipants, bucket.from, bucket.to);
+    const bucketObjective = Math.max(1, Object.values(bucketSlots).reduce((total, slots) => total + slots, 0));
+    const energies = bucketPauses
+      .map(pause => getCampo<number>(pause, 'energia'))
+      .filter((value): value is number => typeof value === 'number' && value > 0);
+    const helps = bucketPauses
+      .map(pause => pause.respuestas?.ayuda)
+      .filter((value): value is string => typeof value === 'string' && value in AYUDA_TO_SATISF)
+      .map(value => AYUDA_TO_SATISF[value]);
+    return {
+      name: bucket.name,
+      energia: energies.length ? Math.round((energies.reduce((sum, value) => sum + value, 0) / energies.length) * 10) / 10 : 0,
+      satisfaccion: helps.length ? Math.round(helps.reduce((sum, value) => sum + value, 0) / helps.length) : 0,
+      participacion: Math.min(100, Math.round((bucketPauses.length / bucketObjective) * 100)),
+    };
+  });
 
-  const comentarios = pausas
+  const eligibleUserById = new Map((eligibleUsers ?? []).filter(user => user.id).map(user => [user.id as string, user]));
+  const comentarios = [...pausas]
+    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
     .filter(p => !!getCampo(p, 'comentario') && String(getCampo(p, 'comentario')).length > 3)
-    .map(p => ({
-      txt: String(getCampo(p, 'comentario')),
-      role: p.workProfile === 'ADMINISTRATIVO' ? 'Administrativo' : p.workProfile === 'OPERATIVO' ? 'Operativo' : 'Colaborador',
-    }))
-    .reverse();
+    .map(p => {
+      const profile = p.profileId ? eligibleUserById.get(p.profileId) : undefined;
+      const profileWork = profile?.workProfile ?? p.workProfile;
+      const email = profile?.email;
+      return {
+        txt: String(getCampo(p, 'comentario')),
+        role: profileWork === 'ADMINISTRATIVO' ? 'Administrativo' : profileWork === 'OPERATIVO' ? 'Operativo' : 'Sin perfil asignado',
+        author: profile?.fullName?.trim() || email?.split('@')[0] || 'Usuario sin nombre',
+        email,
+        companyId: profile?.companyId,
+        fecha: p.fecha,
+        energia: getCampo<number>(p, 'energia'),
+        feeling: getCampo<string>(p, 'feeling'),
+        hasPain: getCampo<boolean>(p, 'dolor'),
+        painZone: getCampo<string>(p, 'zona'),
+      };
+    });
 
   return {
     hayDatos,
@@ -484,7 +575,7 @@ export function useAdminStats(
   const requestedRange = selectedPeriodRange(periodFrom, periodTo);
   const requestedPeriodFrom = periodFrom || toDateKey(requestedRange.start);
   const requestedPeriodTo = periodTo || toDateKey(requestedRange.end);
-  const effectivePeriodFrom = clampAnalyticsStart(requestedPeriodFrom);
+  const effectivePeriodFrom = requestedPeriodFrom;
   const effectivePeriodTo = requestedPeriodTo;
   const filteredLocalPauses = () => readPausasFromStorage().filter(pause => (
     isWithinPeriod(pause, effectivePeriodFrom, effectivePeriodTo)
@@ -502,9 +593,9 @@ export function useAdminStats(
       setStats(computeStats(supabase ? [] : filteredLocalPauses(), effectivePeriodFrom, effectivePeriodTo));
       Promise.all([
         readPausasFromSupabase(companyId, effectivePeriodFrom, effectivePeriodTo, workProfile, user?.role !== 'rrhh'),
-        readEligibleUserCountFromSupabase(companyId, workProfile),
-      ]).then(([pausas, expectedUsers]) => {
-        if (mounted && pausas) setStats(computeStats(pausas, effectivePeriodFrom, effectivePeriodTo, expectedUsers));
+        readEligibleUsers(companyId, workProfile, effectivePeriodTo),
+      ]).then(([pausas, eligibleUsers]) => {
+        if (mounted && pausas) setStats(computeStats(pausas, effectivePeriodFrom, effectivePeriodTo, eligibleUsers));
       });
     };
     refresh();

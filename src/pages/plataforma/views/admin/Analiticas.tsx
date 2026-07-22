@@ -378,6 +378,20 @@ const MONTH_OPTIONS_2026 = [
   'Diciembre 2026',
 ];
 
+const MONTH_NAMES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+const previousMonthLabel = (selectedMonth: string) => {
+  const [monthName, yearText] = selectedMonth.split(' ');
+  const monthIndex = MONTH_NAMES.indexOf(monthName);
+  const year = Number(yearText);
+  if (monthIndex < 0 || !Number.isFinite(year)) return '';
+  const previousDate = new Date(year, monthIndex - 1, 1);
+  return `${MONTH_NAMES[previousDate.getMonth()]} ${previousDate.getFullYear()}`;
+};
+
 const WEEK_OPTIONS_2026 = [
   { label: 'Semana del 20 al 26 de julio', from: '2026-07-20', to: '2026-07-26' },
   { label: 'Semana del 27 de julio al 2 de agosto', from: '2026-07-27', to: '2026-08-02' },
@@ -604,7 +618,7 @@ export const Analiticas: React.FC = () => {
   const [filtro, setFiltro] = useState<string>('all');
   const [workProfileFilter, setWorkProfileFilter] = useState<AnalyticsWorkProfileFilter>('ALL');
   const [compareWorkProfiles, setCompareWorkProfiles] = useState(false);
-  const [periodo, setPeriodo] = useState<PeriodoKey>('mensual');
+  const [periodo, setPeriodo] = useState<PeriodoKey>('semanal');
   
   // Selectores secundarios condicionales
   const [semanaSel, setSemanaSel] = useState(WEEK_OPTIONS_2026[0].label);
@@ -644,6 +658,11 @@ export const Analiticas: React.FC = () => {
     () => resolveReportRange(periodo, semanaSel, mesSel, anioSel, fechaDesde, fechaHasta),
     [anioSel, fechaDesde, fechaHasta, mesSel, periodo, semanaSel],
   );
+  const previousMonth = useMemo(() => previousMonthLabel(mesSel), [mesSel]);
+  const previousMonthRange = useMemo(
+    () => resolveReportRange('mensual', semanaSel, previousMonth, anioSel, '', ''),
+    [anioSel, previousMonth, semanaSel],
+  );
   const allStats = useAdminStats(statsCompanyId, reportRange.from || undefined, reportRange.to || undefined, 'ALL');
   const administrativeStats = useAdminStats(statsCompanyId, reportRange.from || undefined, reportRange.to || undefined, 'ADMINISTRATIVO');
   const operativeStats = useAdminStats(statsCompanyId, reportRange.from || undefined, reportRange.to || undefined, 'OPERATIVO');
@@ -652,8 +671,32 @@ export const Analiticas: React.FC = () => {
     : workProfileFilter === 'OPERATIVO'
       ? operativeStats
       : allStats;
+  const previousStats = useAdminStats(
+    statsCompanyId,
+    previousMonthRange.from || undefined,
+    previousMonthRange.to || undefined,
+    workProfileFilter,
+  );
 
   const data = useMemo<AnaliticaSet>(() => analyticsSetFromStats(stats), [stats]);
+  const previousData = useMemo<AnaliticaSet>(() => analyticsSetFromStats(previousStats), [previousStats]);
+  const comparisonActive = periodo === 'mensual' && comparar;
+  const comparisonHasData = comparisonActive && previousStats.hayDatos;
+  const comparisonEvolution = useMemo(() => {
+    const pointCount = Math.max(data.evolucion.length, comparisonHasData ? previousData.evolucion.length : 0);
+    return Array.from({ length: pointCount }, (_, index) => {
+      const current = data.evolucion[index];
+      const previous = comparisonHasData ? previousData.evolucion[index] : undefined;
+      return {
+        ...current,
+        name: current?.name ?? previous?.name ?? `Sem ${index + 1}`,
+        participacionAnterior: previous?.participacion,
+        focoAnterior: previous?.foco,
+        impactoAnterior: previous?.impacto,
+        energiaAnterior: previous?.energiaPct,
+      };
+    });
+  }, [comparisonHasData, data.evolucion, previousData.evolucion]);
   const allReportData = useMemo<AnaliticaSet>(() => analyticsSetFromStats(allStats), [allStats]);
   const administrativeReportData = useMemo<AnaliticaSet>(() => analyticsSetFromStats(administrativeStats), [administrativeStats]);
   const operativeReportData = useMemo<AnaliticaSet>(() => analyticsSetFromStats(operativeStats), [operativeStats]);
@@ -700,6 +743,11 @@ export const Analiticas: React.FC = () => {
               <option value="anual">Anual</option>
               <option value="personalizado">Personalizado</option>
             </select>
+            {periodo === 'semanal' && (
+              <select className="input-field" style={{ width: 220, backgroundColor: 'white' }} value={semanaSel} onChange={(event) => setSemanaSel(event.target.value)}>
+                {WEEK_OPTIONS_2026.map(week => <option key={week.label} value={week.label}>{week.label}</option>)}
+              </select>
+            )}
             {periodo === 'mensual' && (
               <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={mesSel} onChange={(event) => setMesSel(event.target.value)}>
                 {MONTH_OPTIONS_2026.map(month => <option key={month} value={month}>{month}</option>)}
@@ -856,6 +904,9 @@ export const Analiticas: React.FC = () => {
               <option value="anual">Anual</option>
               <option value="personalizado">Personalizado</option>
             </select>
+            {periodo === 'semanal' && <select className="input-field" style={{ width: 220, backgroundColor: 'white' }} value={semanaSel} onChange={(event) => setSemanaSel(event.target.value)}>
+              {WEEK_OPTIONS_2026.map(week => <option key={week.label} value={week.label}>{week.label}</option>)}
+            </select>}
             {periodo === 'mensual' && <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={mesSel} onChange={(event) => setMesSel(event.target.value)}>
               {MONTH_OPTIONS_2026.map(month => <option key={month} value={month}>{month}</option>)}
             </select>}
@@ -1149,14 +1200,30 @@ export const Analiticas: React.FC = () => {
 
       <div style={{ display: compareWorkProfiles ? 'none' : undefined }}>
 
+        {comparisonActive && (
+          <div
+            role="status"
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem',
+              marginBottom: '1rem', padding: '0.8rem 1rem', borderRadius: 10,
+              background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontSize: '0.84rem',
+            }}
+          >
+            <strong style={{ color: '#0f172a' }}>Comparando {mesSel} con {previousMonth}</strong>
+            {comparisonHasData
+              ? <span><i style={{ display: 'inline-block', width: 18, borderTop: '2px dashed #94a3b8', marginRight: 6, verticalAlign: 'middle' }} />Línea / barra gris: {previousMonth}</span>
+              : <span>El mes anterior no tiene datos disponibles para estos filtros.</span>}
+          </div>
+        )}
+
         {/* ─── KPIs (5 mini cards) ─────────────────────────────────────────── */}
         <div className="analytics-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
           {[
-            { label: 'Participación', value: data.kpis.participacion, color: 'var(--primary-color)', bg: '#f0fdfa' },
-            { label: 'Foco',          value: data.kpis.foco,          color: '#3b82f6',              bg: '#eff6ff' },
-            { label: 'Impacto Pausa', value: data.kpis.impacto,       color: '#9333ea',              bg: '#faf5ff' },
-            { label: 'Dolor',         value: data.kpis.dolor,         color: '#f43f5e',              bg: '#fff1f2' },
-            { label: 'Energía',       value: data.kpis.energia,       color: '#f59e0b',              bg: '#fffbeb' },
+            { label: 'Participación', value: data.kpis.participacion, previous: previousData.kpis.participacion, color: 'var(--primary-color)', bg: '#f0fdfa' },
+            { label: 'Foco',          value: data.kpis.foco,          previous: previousData.kpis.foco,          color: '#3b82f6',              bg: '#eff6ff' },
+            { label: 'Impacto Pausa', value: data.kpis.impacto,       previous: previousData.kpis.impacto,       color: '#9333ea',              bg: '#faf5ff' },
+            { label: 'Dolor',         value: data.kpis.dolor,         previous: previousData.kpis.dolor,         color: '#f43f5e',              bg: '#fff1f2', inverse: true },
+            { label: 'Energía',       value: data.kpis.energia,       previous: previousData.kpis.energia,       color: '#f59e0b',              bg: '#fffbeb' },
           ].map(kpi => (
             <div key={kpi.label} className="card" style={{ padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{kpi.label}</p>
@@ -1164,6 +1231,18 @@ export const Analiticas: React.FC = () => {
               <div style={{ width: '100%', height: '4px', backgroundColor: kpi.bg, borderRadius: '3px', overflow: 'hidden' }}>
                 <div style={{ width: `${kpi.value}%`, height: '100%', backgroundColor: kpi.color, borderRadius: '3px' }} />
               </div>
+              {comparisonActive && (
+                comparisonHasData ? (
+                  <p style={{ margin: '0.55rem 0 0', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    Anterior: {kpi.previous}% ·{' '}
+                    <strong style={{
+                      color: (kpi.inverse ? kpi.value <= kpi.previous : kpi.value >= kpi.previous) ? '#059669' : '#dc2626',
+                    }}>
+                      {kpi.value - kpi.previous > 0 ? '+' : ''}{kpi.value - kpi.previous} pp
+                    </strong>
+                  </p>
+                ) : <p style={{ margin: '0.55rem 0 0', color: 'var(--text-muted)', fontSize: '0.75rem' }}>Anterior: sin datos</p>
+              )}
             </div>
           ))}
         </div>
@@ -1175,12 +1254,13 @@ export const Analiticas: React.FC = () => {
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Participación</h3>
             <div style={{ height: '180px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <BarChart data={comparisonEvolution} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
                   <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }} />
-                  <Bar dataKey="participacion" name="Participación (%)" fill="var(--primary-color)" radius={[4, 4, 0, 0]} barSize={28} />
+                  <Bar dataKey="participacion" name={`${mesSel} (%)`} fill="var(--primary-color)" radius={[4, 4, 0, 0]} barSize={comparisonHasData ? 16 : 28} />
+                  {comparisonHasData && <Bar dataKey="participacionAnterior" name={`${previousMonth} (%)`} fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={16} />}
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1194,7 +1274,7 @@ export const Analiticas: React.FC = () => {
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Foco</h3>
             <div style={{ height: '180px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <AreaChart data={comparisonEvolution} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorFoco" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -1206,6 +1286,7 @@ export const Analiticas: React.FC = () => {
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
                   <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }} />
                   <Area type="monotone" dataKey="foco" name="Foco (%)" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorFoco)" />
+                  {comparisonHasData && <Area type="monotone" dataKey="focoAnterior" name={`Foco ${previousMonth} (%)`} stroke="#94a3b8" strokeDasharray="5 4" strokeWidth={2} fillOpacity={0} fill="transparent" />}
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -1218,7 +1299,7 @@ export const Analiticas: React.FC = () => {
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Impacto Pausa</h3>
             <div style={{ height: '180px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <AreaChart data={comparisonEvolution} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorImpacto" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#9333ea" stopOpacity={0.3}/>
@@ -1230,6 +1311,7 @@ export const Analiticas: React.FC = () => {
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
                   <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }} />
                   <Area type="monotone" dataKey="impacto" name="Impacto (%)" stroke="#9333ea" strokeWidth={2.5} fillOpacity={1} fill="url(#colorImpacto)" />
+                  {comparisonHasData && <Area type="monotone" dataKey="impactoAnterior" name={`Impacto ${previousMonth} (%)`} stroke="#94a3b8" strokeDasharray="5 4" strokeWidth={2} fillOpacity={0} fill="transparent" />}
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -1240,7 +1322,7 @@ export const Analiticas: React.FC = () => {
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.85rem', color: 'var(--text-color)' }}>Energía</h3>
             <div style={{ height: '180px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.evolucion} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <AreaChart data={comparisonEvolution} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorEnergia" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
@@ -1252,6 +1334,7 @@ export const Analiticas: React.FC = () => {
                   <YAxis domain={[0, 100]} axisLine={false} tickLine={false} fontSize={11} fill="var(--text-muted)" />
                   <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '0.8rem' }} />
                   <Area type="monotone" dataKey="energiaPct" name="Energía (%)" stroke="#f59e0b" strokeWidth={2.5} fillOpacity={1} fill="url(#colorEnergia)" />
+                  {comparisonHasData && <Area type="monotone" dataKey="energiaAnterior" name={`Energía ${previousMonth} (%)`} stroke="#94a3b8" strokeDasharray="5 4" strokeWidth={2} fillOpacity={0} fill="transparent" />}
                 </AreaChart>
               </ResponsiveContainer>
             </div>

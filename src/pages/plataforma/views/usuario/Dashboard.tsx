@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { CheckCircle2, Lock, Play, Send, Clock, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
@@ -325,6 +325,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
 // ─── Modal de Video (YouTube embed) ──────────────────────────────────────────
 const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => void; onWatched?: () => void }> = ({ videoUrl, titulo, onClose, onWatched }) => {
   const youtubeId = getYouTubeIdFromUrl(videoUrl);
+  const youtubeFrameRef = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -334,6 +335,27 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
       document.body.style.overflow = '';
     };
   }, [onClose]);
+
+  useEffect(() => {
+    if (!youtubeId || !onWatched) return;
+    const handleMessage = (event: MessageEvent) => {
+      if (event.source !== youtubeFrameRef.current?.contentWindow) return;
+      let payload = event.data;
+      if (typeof payload === 'string') {
+        try { payload = JSON.parse(payload); } catch { return; }
+      }
+      if (payload?.event === 'onStateChange' && payload?.info === 0) onWatched();
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onWatched, youtubeId]);
+
+  const registerYouTubeEvents = () => {
+    const player = youtubeFrameRef.current?.contentWindow;
+    if (!player) return;
+    player.postMessage(JSON.stringify({ event: 'listening', id: 'reactiva-youtube-player' }), 'https://www.youtube.com');
+    player.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }), 'https://www.youtube.com');
+  };
 
   return (
     <div
@@ -381,10 +403,12 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
         <div style={{ position: 'relative', paddingTop: '56.25%' }}>
           {youtubeId ? (
             <iframe
-              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`}
+              ref={youtubeFrameRef}
+              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
               title={titulo}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+              onLoad={registerYouTubeEvents}
               style={{
                 position: 'absolute', top: 0, left: 0,
                 width: '100%', height: '100%', border: 'none',
@@ -404,25 +428,6 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
             />
           )}
         </div>
-        {youtubeId && (
-          <div style={{ padding: '1rem 1.25rem', backgroundColor: '#0f172a', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-            <button
-              type="button"
-              onClick={onWatched}
-              style={{
-                border: 'none',
-                borderRadius: 999,
-                backgroundColor: 'var(--primary-color)',
-                color: 'white',
-                cursor: 'pointer',
-                fontWeight: 800,
-                padding: '0.75rem 1.1rem',
-              }}
-            >
-              Ya vi el video
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -830,13 +835,15 @@ export const UsuarioDashboard: React.FC = () => {
   const contentLocked = activeStatusObj?.status === 'locked' || (activeStatusObj?.status === 'available' && !activeScheduledVideo);
   const allDoneToday = activeBloque === null;
 
-  const handleActiveAction = () => {
+  const handleWatchActiveVideo = () => {
+    if (!activeBloque || activeStatusObj?.status !== 'available' || !activeScheduledVideo) return;
+    setOpenVideo({ dia: today, bloque: activeBloque });
+  };
+
+  const handleCompleteActivePause = () => {
     if (!activeBloque || activeStatusObj?.status !== 'available' || !activeScheduledVideo) return;
     const videoKey = `${today}__${activeBloque}`;
-    if (!videosVistos.has(videoKey)) {
-      setOpenVideo({ dia: today, bloque: activeBloque });
-      return;
-    }
+    if (!videosVistos.has(videoKey)) return;
     if (activeBloque === 'morning') {
       handleFormSubmit({ bloque: 'morning', tipo: 'sin-form' });
     } else {
@@ -847,6 +854,13 @@ export const UsuarioDashboard: React.FC = () => {
   const handleVideoWatched = () => {
     if (!openVideo) return;
     markVideoVisto(openVideo.dia, openVideo.bloque);
+    setOpenVideo(null);
+  };
+
+  const handleVideoClose = () => {
+    if (openVideo && openScheduledVideo && getYouTubeIdFromUrl(openScheduledVideo.url)) {
+      markVideoVisto(openVideo.dia, openVideo.bloque);
+    }
     setOpenVideo(null);
   };
 
@@ -1023,17 +1037,16 @@ export const UsuarioDashboard: React.FC = () => {
             {/* Barra de acción inferior */}
             {!allDoneToday && (() => {
               const videoKey = activeBloque ? `${today}__${activeBloque}` : '';
-              const requiereVideo = !!activeScheduledVideo;
               const videoVisto = videoKey ? videosVistos.has(videoKey) : false;
               const isAvailable = activeStatusObj?.status === 'available' && !!activeScheduledVideo;
-              const puedeAccionar = isAvailable && !!activeScheduledVideo;
-              const puedeCompletar = isAvailable && (!requiereVideo || videoVisto);
+              const puedeVerVideo = isAvailable && !!activeScheduledVideo;
+              const puedeCompletar = isAvailable && videoVisto;
 
               let prompt: string;
               if (activeStatusObj?.status === 'available' && !activeScheduledVideo) prompt = 'Contenido pendiente de carga por ReActiva.';
               else if (!isAvailable) prompt = activeStatusObj?.reason || 'Pausa bloqueada';
-              else if (requiereVideo && !videoVisto) prompt = 'Mirá el video y después marcá la pausa como hecha.';
-              else prompt = '¿Ya realizaste esta pausa?';
+              else if (!videoVisto) prompt = 'Primero mirá el video completo. Después vas a poder completar la pausa.';
+              else prompt = 'Video finalizado. Ya podés completar tu pausa.';
 
               return (
                 <div className="user-pause-action" style={{
@@ -1041,32 +1054,35 @@ export const UsuarioDashboard: React.FC = () => {
                   gap: '1rem', padding: '1.1rem 1.5rem',
                 }}>
                   <p style={{ fontSize: '0.95rem', color: 'var(--text-color)', fontWeight: 500 }}>{prompt}</p>
-                  <button
-                    onClick={handleActiveAction}
-                    disabled={!puedeAccionar}
-                    title={!puedeAccionar ? undefined : !puedeCompletar ? 'Abrir video' : 'Completar pausa'}
-                    style={{
-                      padding: '0.85rem 2.2rem',
-                      borderRadius: '999px',
-                      border: 'none',
-                      backgroundColor: puedeAccionar ? (puedeCompletar ? 'var(--primary-color)' : '#0f172a') : '#cbd5e1',
-                      color: 'white', fontWeight: 700, fontSize: '0.92rem',
-                      cursor: puedeAccionar ? 'pointer' : 'not-allowed',
-                      transition: 'all 0.2s',
-                      boxShadow: puedeAccionar ? '0 4px 12px rgba(15, 23, 42, 0.18)' : 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {!isAvailable ? (
-                      activeStatusObj?.status === 'locked' ? <><Lock size={14} style={{ marginRight: 6 }} />Bloqueada</> : 'Hecha'
-                    ) : (!videoVisto && requiereVideo) ? (
-                      <><Play size={14} style={{ marginRight: 6, fill: 'white' }} />Mirá el video</>
-                    ) : 'Completar pausa'}
-                  </button>
+                  <div className="user-pause-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.65rem', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={handleWatchActiveVideo}
+                      disabled={!puedeVerVideo}
+                      style={{
+                        padding: '0.85rem 1.3rem', borderRadius: 999, border: 'none',
+                        backgroundColor: puedeVerVideo ? '#0f172a' : '#cbd5e1', color: 'white',
+                        fontWeight: 700, fontSize: '0.88rem', cursor: puedeVerVideo ? 'pointer' : 'not-allowed',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Play size={14} style={{ marginRight: 6, fill: 'white' }} />Ver video
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCompleteActivePause}
+                      disabled={!puedeCompletar}
+                      title={!videoVisto && isAvailable ? 'Disponible al finalizar el video' : undefined}
+                      style={{
+                        padding: '0.85rem 1.3rem', borderRadius: 999, border: 'none',
+                        backgroundColor: puedeCompletar ? 'var(--primary-color)' : '#cbd5e1', color: 'white',
+                        fontWeight: 700, fontSize: '0.88rem', cursor: puedeCompletar ? 'pointer' : 'not-allowed',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {activeStatusObj?.status === 'locked' && <Lock size={14} style={{ marginRight: 6 }} />}Completar pausa
+                    </button>
+                  </div>
                 </div>
               );
             })()}
@@ -1135,7 +1151,7 @@ export const UsuarioDashboard: React.FC = () => {
         <VideoModal
           videoUrl={openScheduledVideo.url}
           titulo={`${openScheduledVideo.title || PAUSAS[openVideo.bloque].titulo} · ${openVideo.dia} ${openVideo.bloque === 'morning' ? 'mañana' : 'tarde'}`}
-          onClose={() => setOpenVideo(null)}
+          onClose={handleVideoClose}
           onWatched={handleVideoWatched}
         />
       )}
