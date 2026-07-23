@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { invitationPath, makeShortInvitationCode } from '../../lib/invitationLinks';
 import { sendTransactionalEmail } from '../../lib/emailSender';
+import { ReactivaScoreSettingsPanel } from '../../components/ReactivaScoreSettingsPanel';
 
 const hashToNumericId = (value: string) => {
   let hash = 0;
@@ -33,13 +34,10 @@ const Badge: React.FC<{ label: string; color?: string; bg?: string }> = ({ label
   </span>
 );
 
-const InfoCard: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: string }> = ({ icon, label, value, accent = '#10b981' }) => (
-  <div className="company-info-card" style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0', flex: 1, minWidth: '140px' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-      <span style={{ color: accent }}>{icon}</span>
-      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
-    </div>
-    <p style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>{value}</p>
+const CompanyStatCard: React.FC<{ icon: React.ReactNode; label: string; value: string; tone?: 'green' | 'orange' }> = ({ icon, label, value, tone = 'green' }) => (
+  <div className={`company-stat-card ${tone}`}>
+    <div><span>{icon}</span><small>{label}</small></div>
+    <strong>{value}</strong>
   </div>
 );
 
@@ -57,7 +55,7 @@ const getRiesgo = (data: any): { nivel: string; color: string; bg: string; descr
 };
 
 // ── Company Detail View ──────────────────────────────────────────
-const EmpresaDetalle: React.FC<{ empresa: Empresa; onBack: () => void }> = ({ empresa, onBack }) => {
+const EmpresaDetalle: React.FC<{ empresa: Empresa; onBack: () => void; canConfigureScore?: boolean; showBack?: boolean }> = ({ empresa, onBack, canConfigureScore, showBack = true }) => {
   const data = empresa.onboardingData;
   const estado = empresa.estado || 'Pendiente onboarding';
   const estilo = ESTADO_STYLES[estado] || ESTADO_STYLES['Pendiente onboarding'];
@@ -65,13 +63,13 @@ const EmpresaDetalle: React.FC<{ empresa: Empresa; onBack: () => void }> = ({ em
   const fechaFmt = empresa.fechaOnboarding ? new Date(empresa.fechaOnboarding).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : null;
 
   return (
-    <div className="company-detail-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+    <div className={`company-detail-page ${showBack ? '' : 'company-detail-direct'}`} style={{ animation: 'fadeIn 0.3s ease-out' }}>
       {/* Header */}
-      <div className="company-detail-back" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+      {showBack && <div className="company-detail-back" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <button onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', border: 'none', padding: '0.5rem 0', background: 'none' }}>
           <ChevronLeft size={20} /> Volver
         </button>
-      </div>
+      </div>}
 
       {/* Empresa Header Card */}
       <div className="card company-detail-hero" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
@@ -111,77 +109,57 @@ const EmpresaDetalle: React.FC<{ empresa: Empresa; onBack: () => void }> = ({ em
 
       {/* Executive Summary – only when Activa with data */}
       {estado === 'Activa' && data && (
-        <>
-          {/* KPI Row */}
-          <div className="company-detail-kpis" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-            <InfoCard icon={<Users size={16} />} label="Empleados" value={`${empresa.empleados.length}`} />
-            <InfoCard icon={<Clock size={16} />} label="Onboarding" value={fechaFmt || '—'} />
-            <InfoCard icon={<Briefcase size={16} />} label="Modalidad" value={data.modalidad || '—'} />
-            <InfoCard icon={<Clock size={16} />} label="Horas sentado/día" value={data.horasSentado || '—'} accent="#f59e0b" />
+        <div className="company-onboarding-summary">
+          <div className="company-detail-kpis">
+            <CompanyStatCard icon={<Users size={16} />} label="Empleados" value={`${empresa.empleados.length}`} />
+            <CompanyStatCard icon={<Clock size={16} />} label="Onboarding" value={fechaFmt || '—'} />
+            <CompanyStatCard icon={<Briefcase size={16} />} label="Modalidad" value={data.modalidad || 'Sin respuesta'} />
+            <CompanyStatCard icon={<Clock size={16} />} label="Horas sentado/día" value={data.horasSentado || 'Sin respuesta'} tone="orange" />
           </div>
 
-          {/* Diagnóstico Inicial */}
-          <div className="card" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Briefcase size={18} color="#10b981" /> Diagnóstico inicial
-            </h3>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '160px' }}>
-                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Tipo de tareas</p>
-                <p style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.95rem' }}>{data.tareas || '—'}</p>
-              </div>
-              <div style={{ flex: 1, minWidth: '160px' }}>
-                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Estilo preferido</p>
-                <p style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.95rem' }}>{data.estilo || '—'}</p>
-              </div>
+          <section className="card company-onboarding-section company-diagnosis-card">
+            <h3><Briefcase size={18} /> Diagnóstico inicial</h3>
+            <div className="company-diagnosis-grid">
+              <div><span>Tipo de tareas</span><strong>{data.tareas || 'Sin respuesta'}</strong></div>
+              <div><span>Estilo preferido</span><strong>{data.estilo || 'Sin respuesta'}</strong></div>
             </div>
-          </div>
+          </section>
 
-          {/* Desafíos */}
-          <div className="card" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <AlertCircle size={18} color="#f59e0b" /> Principales desafíos
-            </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+          <section className="card company-onboarding-section">
+            <h3 className="orange"><AlertCircle size={18} /> Principales desafíos</h3>
+            <div className="company-onboarding-badges">
               {data.desafios?.length > 0
-                ? data.desafios.map((d: string) => <Badge key={d} label={d} bg="#fffbeb" color="#92400e" />)
-                : <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Sin datos</span>
-              }
+                ? data.desafios.map((d: string) => <Badge key={d} label={d} bg="#fff7ed" color="#9a3412" />)
+                : <span className="company-empty-value">Sin respuestas</span>}
             </div>
-          </div>
+          </section>
 
-          {/* Objetivos */}
-          <div className="card" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Target size={18} color="#10b981" /> Objetivos de la empresa
-            </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+          <section className="card company-onboarding-section">
+            <h3><Target size={18} /> Objetivos de la empresa</h3>
+            <div className="company-onboarding-badges">
               {data.objetivos?.length > 0
                 ? data.objetivos.map((o: string) => <Badge key={o} label={o} bg="#ecfdf5" color="#065f46" />)
-                : <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Sin datos</span>
-              }
+                : <span className="company-empty-value">Sin respuestas</span>}
             </div>
-          </div>
+          </section>
 
-          {/* Perfil de Riesgo / Oportunidad */}
-          <div className="card" style={{ padding: '1.75rem', borderLeft: `4px solid ${riesgo.color}` }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <TrendingUp size={18} color={riesgo.color} /> Perfil de Riesgo / Oportunidad
-            </h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-              <div style={{ padding: '0.75rem 1.5rem', borderRadius: '12px', backgroundColor: riesgo.bg, display: 'inline-flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Zap size={22} color={riesgo.color} />
-                <div>
-                  <p style={{ fontSize: '0.72rem', fontWeight: 700, color: riesgo.color, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Riesgo sedentario</p>
-                  <p style={{ fontSize: '1.25rem', fontWeight: 800, color: riesgo.color, margin: 0 }}>{riesgo.nivel}</p>
-                </div>
+          <section className="card company-risk-section" style={{ borderLeft: `4px solid ${riesgo.color}` }}>
+            <h3><TrendingUp size={18} color={riesgo.color} /> Perfil de Riesgo / Oportunidad</h3>
+            <div className="company-risk-section-content">
+              <div style={{ color: riesgo.color, background: riesgo.bg }}>
+                <Zap size={20} />
+                <span><small>Riesgo sedentario</small><strong>{riesgo.nivel}</strong></span>
               </div>
-              <p style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6, flex: 1, minWidth: '200px', margin: 0 }}>
-                {riesgo.descripcion}
-              </p>
+              <p>{riesgo.descripcion}</p>
             </div>
-          </div>
-        </>
+          </section>
+        </div>
+      )}
+
+      {canConfigureScore && empresa.supabaseId && (
+        <div style={{ marginTop: '1.5rem' }}>
+          <ReactivaScoreSettingsPanel companyId={empresa.supabaseId} />
+        </div>
       )}
     </div>
   );
@@ -254,8 +232,23 @@ export const Empresas: React.FC = () => {
 
   useEffect(() => { void loadEmpresas(); }, []);
 
-  if (selected) {
-    return <EmpresaDetalle empresa={selected} onBack={() => { void loadEmpresas(); setSelected(null); }} />;
+  const directRrhhEmpresa = user?.role === 'rrhh'
+    ? (rrhhEmpresaId
+        ? empresas.find(empresa => empresa.supabaseId === rrhhEmpresaId.toString() || empresa.id.toString() === rrhhEmpresaId.toString())
+        : undefined)
+      ?? empresas.find(empresa => empresa.rrhhEmail?.toLowerCase() === user.email.toLowerCase())
+    : undefined;
+  const detailEmpresa = selected ?? directRrhhEmpresa;
+
+  if (detailEmpresa) {
+    return (
+      <EmpresaDetalle
+        empresa={detailEmpresa}
+        canConfigureScore={user?.role === 'admin'}
+        showBack={user?.role !== 'rrhh'}
+        onBack={() => { void loadEmpresas(); setSelected(null); }}
+      />
+    );
   }
 
   const filtered = empresas.filter(e =>

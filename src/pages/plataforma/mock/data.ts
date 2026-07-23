@@ -76,6 +76,7 @@ export interface EmailAutomation {
   subject: string;
   body: string;
   attachReport?: boolean;
+  includeReactivaStreak?: boolean;
 }
 
 export interface EmailEvent {

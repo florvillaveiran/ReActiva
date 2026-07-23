@@ -4,6 +4,7 @@ import {
   getMissedReminderWindowStatus,
   getReminderWindowStatus,
 } from './reminder-window.ts';
+import { reactivaStreakEmailMessage } from '../_shared/reactiva-streak-message.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,7 @@ const missedReminderRecoveryWindowMinutes = Number(
 const fallbackTemplate = {
   subject: 'Tu pausa activa estara disponible en {{minutos}} minutos',
   body: 'Hola {{nombre}},\n\nTu pausa activa de {{empresa}} estara disponible en {{minutos}} minutos. Horario programado: {{hora}} hs.\n\nIngresa a ReActiva para comenzar.',
+  include_reactiva_streak: false,
 };
 const fallbackMissedTemplate = {
   subject: 'Tu pausa activa sigue disponible',
@@ -108,7 +110,7 @@ const escapeHtml = (value: string) => value
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-const renderHtml = (subject: string, body: string) => `
+const renderHtml = (subject: string, body: string, streakMessage = '') => `
   <!doctype html>
   <html>
     <head>
@@ -132,6 +134,15 @@ const renderHtml = (subject: string, body: string) => `
                   <p style="font-size:16px;line-height:1.6;margin:0;color:#475569;">${escapeHtml(body).replaceAll('\n', '<br />')}</p>
                 </td>
               </tr>
+              ${streakMessage ? `
+              <tr>
+                <td style="padding:14px 32px 2px;">
+                  <div style="padding:14px 16px;border:1px solid #99f6e4;border-radius:14px;background:#f0fdfa;color:#115e59;font-size:15px;line-height:1.5;font-weight:700;">
+                    ${escapeHtml(streakMessage)}
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
               <tr>
                 <td style="padding:26px 32px 12px;text-align:center;">
                   <a href="${appUrl}" style="display:inline-block;background:#10bfa7;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 26px;border-radius:14px;">Ir a ReActiva</a>
@@ -205,7 +216,7 @@ Deno.serve(async (req) => {
   ));
   const { data: templateRows, error: templatesError } = await admin
     .from('email_automation_templates')
-    .select('id, subject, body, active, delay_minutes')
+    .select('id, subject, body, active, delay_minutes, include_reactiva_streak')
     .in('id', ['pause-reminder', 'missed-pause-reminder']);
 
   if (templatesError) return jsonResponse({ error: templatesError.message }, 500);
@@ -315,6 +326,15 @@ Deno.serve(async (req) => {
         if (existing?.length) continue;
 
         try {
+          let streakMessage = '';
+          if (pauseTemplate.include_reactiva_streak === true) {
+            const { data: streakState, error: streakError } = await admin.rpc(
+              'get_reactiva_email_streak_state',
+              { target_profile_id: profile.id, as_of_date: reminderDate },
+            );
+            if (streakError) throw new Error(`No se pudo resolver la racha: ${streakError.message}`);
+            streakMessage = reactivaStreakEmailMessage(streakState);
+          }
           const templateValues = {
             nombre: profile.full_name || profile.email.split('@')[0],
             empresa: company.name,
@@ -327,7 +347,7 @@ Deno.serve(async (req) => {
             from: Deno.env.get('EMAIL_FROM') ?? 'ReActiva <onboarding@metodoreactiva.com>',
             to: [profile.email],
             subject,
-            html: renderHtml(subject, body),
+            html: renderHtml(subject, body, streakMessage),
           });
 
           await admin.from('email_events').insert({
@@ -347,6 +367,7 @@ Deno.serve(async (req) => {
               block: schedule.block,
               time: targetTime,
               reminderBeforeUnlockMinutes: schedule.minutesUntilUnlock,
+              includedReactivaStreak: pauseTemplate.include_reactiva_streak === true,
               provider: 'resend',
             },
           });

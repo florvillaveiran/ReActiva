@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { CheckCircle2, Lock, Play, Send, Clock, X } from 'lucide-react';
+import { CheckCircle2, Lock, Play, Send, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
 import { getCurrentProgramDay, UNLOCK_LEAD_MINUTES } from '../../lib/videoUnlockSchedule';
-import { fetchScheduledVideosForUser, getScheduledDateForProgramDay, getScheduledVideoFor, getVideoThumbnail, getYouTubeIdFromUrl, ScheduledVideo, SCHEDULED_VIDEOS_EVENT, toLocalDateKey } from '../../lib/scheduledVideos';
+import { fetchScheduledVideosForUser, getScheduledDateForProgramDay, getScheduledVideoFor, getYouTubeIdFromUrl, ScheduledVideo, SCHEDULED_VIDEOS_EVENT, toLocalDateKey } from '../../lib/scheduledVideos';
 import { supabase } from '../../lib/supabase';
+import { recordReactivaScoreEvent } from '../../lib/reactivaScore';
+import { ReactivaScoreCard } from '../../components/ReactivaScoreCard';
 
 // ─── Configuración ──────────────────────────────────────────────────────────
 const fireConfetti = () => {
@@ -30,6 +32,15 @@ interface PauseRecord {
 
 const DAYS = ['Lunes', 'Miércoles', 'Viernes'];
 const DAY_INITIAL: Record<string, string> = { Lunes: 'L', Miércoles: 'M', Viernes: 'V' };
+const PROGRAM_DAY_BY_WEEKDAY: Record<number, string | null> = {
+  0: null,
+  1: 'Lunes',
+  2: null,
+  3: 'Miércoles',
+  4: null,
+  5: 'Viernes',
+  6: null,
+};
 const DEMO_SEQUENCE = DAYS.flatMap(dia => ([
   { dia, bloque: 'morning' as const },
   { dia, bloque: 'afternoon' as const },
@@ -39,20 +50,12 @@ const PAUSAS = {
   morning: {
     label: 'Pausa Mañana',
     hora: '08:00 AM',
-    horaNum: 8,
-    duracion: '9 min',
-    img: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1400',
-    titulo: 'Respiración consciente',
-    subtitulo: '9 min de bienestar para tu cuerpo',
+    titulo: 'Pausa de la mañana',
   },
   afternoon: {
     label: 'Pausa Tarde',
     hora: '03:00 PM',
-    horaNum: 15,
-    duracion: '8 min',
-    img: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=1400',
-    titulo: 'Relaja tu mente',
-    subtitulo: '8 min de relajación para tu mente',
+    titulo: 'Pausa de la tarde',
   },
 };
 
@@ -69,6 +72,7 @@ const buildLocalDateTime = (dateKey: string, time: string) => {
 };
 
 const PAUSE_AVAILABILITY_HOURS = 24;
+const DEFAULT_VIDEO_POSTER = '/logo-reactiva-white.png';
 
 // ─── Mini Formulario (Lunes y Miércoles Tarde) ────────────────────────────────
 const MiniForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => void; onSubmit: (r: Omit<PauseRecord, 'dia'>) => void; }> = ({ bloque, onClose, onSubmit }) => {
@@ -323,7 +327,7 @@ const WeeklyForm: React.FC<{ bloque: 'morning' | 'afternoon'; onClose: () => voi
 };
 
 // ─── Modal de Video (YouTube embed) ──────────────────────────────────────────
-const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => void; onWatched?: () => void }> = ({ videoUrl, titulo, onClose, onWatched }) => {
+const VideoModal: React.FC<{ videoUrl: string; titulo: string; posterUrl?: string; onClose: () => void; onWatched?: () => void }> = ({ videoUrl, titulo, posterUrl, onClose, onWatched }) => {
   const youtubeId = getYouTubeIdFromUrl(videoUrl);
   const youtubeFrameRef = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
@@ -417,6 +421,7 @@ const VideoModal: React.FC<{ videoUrl: string; titulo: string; onClose: () => vo
           ) : (
             <video
               src={videoUrl}
+              poster={posterUrl || DEFAULT_VIDEO_POSTER}
               controls
               autoPlay
               onEnded={onWatched}
@@ -447,39 +452,39 @@ const WeekPauseRow: React.FC<{
     <div className="user-week-pause-row" style={{
       display: 'flex',
       alignItems: 'center',
-      gap: '0.75rem',
-      padding: '0.75rem 0.9rem',
-      borderRadius: '14px',
+      gap: '0.5rem',
+      padding: '0.48rem 0.58rem',
+      borderRadius: '11px',
       border: `1.5px solid ${showActive ? 'var(--primary-color)' : '#eef0f3'}`,
       backgroundColor: 'white',
-      marginBottom: '0.6rem',
+      marginBottom: '0.32rem',
       opacity: status === 'locked' ? 0.85 : 1,
       transition: 'all 0.2s',
     }}>
       <div style={{
-        width: 38, height: 38, borderRadius: '10px',
+        width: 30, height: 30, borderRadius: '9px',
         backgroundColor: status === 'done' ? 'var(--primary-color)' : status === 'available' ? 'var(--primary-light)' : '#f1f5f9',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}>
-        {status === 'done' && <CheckCircle2 size={18} color="white" />}
-        {status === 'available' && <Play size={16} color="var(--primary-color)" fill="var(--primary-color)" />}
-        {status === 'locked' && <Lock size={16} color="#94a3b8" />}
+        {status === 'done' && <CheckCircle2 size={16} color="white" />}
+        {status === 'available' && <Play size={14} color="var(--primary-color)" fill="var(--primary-color)" />}
+        {status === 'locked' && <Lock size={14} color="#94a3b8" />}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontWeight: 600, fontSize: '0.88rem', color: status === 'locked' ? 'var(--text-muted)' : 'var(--text-color)', marginBottom: '2px' }}>{title || info.titulo}</p>
-        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{info.hora}</p>
+        <p style={{ fontWeight: 650, fontSize: '0.74rem', color: status === 'locked' ? 'var(--text-muted)' : 'var(--text-color)', marginBottom: '1px' }}>{title || info.titulo}</p>
+        <p style={{ fontSize: '0.64rem', color: 'var(--text-muted)' }}>{info.hora}</p>
       </div>
       {showActive && (
         <span style={{
-          fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary-color)',
-          padding: '3px 10px', borderRadius: '20px',
+          fontSize: '0.58rem', fontWeight: 700, color: 'var(--primary-color)',
+          padding: '2px 7px', borderRadius: '20px',
           border: '1.5px solid var(--primary-color)', letterSpacing: '0.05em',
         }}>AHORA</span>
       )}
       {status === 'done' && (
         <span style={{
-          fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary-color)',
-          padding: '3px 10px', borderRadius: '20px',
+          fontSize: '0.58rem', fontWeight: 700, color: 'var(--primary-color)',
+          padding: '2px 7px', borderRadius: '20px',
           backgroundColor: 'var(--primary-light)', letterSpacing: '0.05em',
         }}>HECHA</span>
       )}
@@ -521,7 +526,7 @@ const loadVideosVistos = (email?: string): Set<string> => {
 };
 
 // ─── Dashboard Principal ──────────────────────────────────────────────────────
-const savePauseSessionToSupabase = async (record: PauseRecord) => {
+const savePauseSessionToSupabase = async (record: PauseRecord, contentItemId?: string | null) => {
   if (!supabase) return;
   const answers = (record as any).respuestas ?? {};
   const energy = record.energia ?? answers.energia ?? null;
@@ -549,6 +554,21 @@ const savePauseSessionToSupabase = async (record: PauseRecord) => {
 
   if (error) {
     console.error('No se pudo guardar la pausa en Supabase', error);
+    return;
+  }
+
+  if (contentItemId) {
+    const microtraining = await recordReactivaScoreEvent('MICROTRAINING', contentItemId);
+    if (microtraining.error) {
+      console.error('No se pudo registrar el punto del microentrenamiento', microtraining.error);
+    }
+  }
+
+  if (record.tipo === 'diario') {
+    const dailyForm = await recordReactivaScoreEvent('DAILY_FORM');
+    if (dailyForm.error) {
+      console.error('No se pudo registrar el punto del formulario diario', dailyForm.error);
+    }
   }
 
   if (record.tipo === 'semanal-completo') {
@@ -566,6 +586,11 @@ const savePauseSessionToSupabase = async (record: PauseRecord) => {
 
     if (weeklyError) {
       console.error('No se pudo guardar el formulario semanal en Supabase', weeklyError);
+    }
+
+    const weeklyForm = await recordReactivaScoreEvent('WEEKLY_FORM');
+    if (weeklyForm.error) {
+      console.error('No se pudo registrar el puntaje del formulario semanal', weeklyForm.error);
     }
   }
 };
@@ -740,7 +765,17 @@ export const UsuarioDashboard: React.FC = () => {
     filteredStorage.push({ ...full, fecha: new Date().toISOString() });
     localStorage.setItem(pauseKey, JSON.stringify(filteredStorage));
     window.dispatchEvent(new Event('reactiva-pausas-updated'));
-    if (!isDemo) void savePauseSessionToSupabase(full);
+    if (!isDemo) {
+      const completedVideo = getScheduledVideoFor(
+        scheduledVideos,
+        full.dia,
+        full.bloque,
+        companyId,
+        scheduledDateFor(full.dia),
+        user?.workProfile,
+      );
+      void savePauseSessionToSupabase(full, completedVideo?.id);
+    }
     fireConfetti();
   };
 
@@ -788,6 +823,41 @@ export const UsuarioDashboard: React.FC = () => {
     return { status: 'available' };
   };
 
+  // Al entrar, mostrar el día actual del programa. En días intermedios,
+  // conservar una pausa pendiente del día anterior sólo mientras siga dentro
+  // de su ventana real de 24 horas; después avanzar al próximo día programado.
+  useEffect(() => {
+    if (isDemo || scheduledVideos.length === 0) return;
+
+    const now = new Date();
+    const currentProgramDay = PROGRAM_DAY_BY_WEEKDAY[now.getDay()];
+    if (currentProgramDay) {
+      setToday(currentProgramDay);
+      return;
+    }
+
+    const candidates = DAYS.map(day => ({
+      day,
+      date: parseLocalDateKey(scheduledDateFor(day)),
+      hasAvailablePause: (['morning', 'afternoon'] as const).some(block => getStatus(day, block).status === 'available'),
+    }));
+    const pendingWithinWindow = candidates
+      .filter(candidate => candidate.date <= now && candidate.hasAvailablePause)
+      .sort((first, second) => second.date.getTime() - first.date.getTime())[0];
+
+    if (pendingWithinWindow) {
+      setToday(pendingWithinWindow.day);
+      return;
+    }
+
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    const nextProgramDay = candidates
+      .filter(candidate => candidate.date >= startOfToday)
+      .sort((first, second) => first.date.getTime() - second.date.getTime())[0];
+    if (nextProgramDay) setToday(nextProgramDay.day);
+  }, [completed, isDemo, scheduledVideos]);
+
   // Pausa activa del día (la que muestra el video grande)
   const activeBloque: 'morning' | 'afternoon' | null = useMemo(() => {
     const availableBlock = (['morning', 'afternoon'] as const).find((bloque) => getStatus(today, bloque).status === 'available');
@@ -828,10 +898,11 @@ export const UsuarioDashboard: React.FC = () => {
     });
   }, [isDemo, scheduledVideos]);
 
-  const activeInfo = activeBloque ? PAUSAS[activeBloque] : null;
   const activeStatusObj = activeBloque ? getStatus(today, activeBloque) : null;
   const activeScheduledVideo = activeBloque ? getScheduledVideoFor(effectiveScheduledVideos, today, activeBloque, companyId, scheduledDateFor(today), user?.workProfile) : null;
   const openScheduledVideo = openVideo ? getScheduledVideoFor(effectiveScheduledVideos, openVideo.dia, openVideo.bloque, companyId, scheduledDateFor(openVideo.dia), user?.workProfile) : null;
+  const activeThumbnail = activeScheduledVideo?.thumbnailUrl?.trim() ?? '';
+  const usesDefaultPoster = Boolean(activeScheduledVideo && !activeThumbnail);
   const contentLocked = activeStatusObj?.status === 'locked' || (activeStatusObj?.status === 'available' && !activeScheduledVideo);
   const allDoneToday = activeBloque === null;
 
@@ -944,14 +1015,20 @@ export const UsuarioDashboard: React.FC = () => {
             <div className="user-pause-media" style={{
               position: 'relative',
               flex: 1,
-              minHeight: 420,
-              backgroundImage: !contentLocked && activeInfo
-                ? `url(${getVideoThumbnail(activeScheduledVideo, activeInfo.img)})`
-                : !contentLocked && activeInfo ? `url(${activeInfo.img})` : 'none',
+              minHeight: 300,
+              backgroundImage: contentLocked
+                ? 'none'
+                : activeThumbnail
+                  ? `url(${activeThumbnail})`
+                  : activeScheduledVideo
+                    ? `url(${DEFAULT_VIDEO_POSTER}), radial-gradient(circle at 78% 20%, rgba(0,194,168,0.22), transparent 34%), linear-gradient(145deg, #071525 0%, #0f2740 52%, #0b3b39 100%)`
+                    : 'none',
               backgroundColor: contentLocked ? '#f8fafc' : '#1e293b',
-              backgroundSize: 'cover', backgroundPosition: 'center',
+              backgroundSize: usesDefaultPoster ? '220px auto, cover, cover' : 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
             }}>
-              <div style={{ position: 'absolute', inset: 0, background: contentLocked ? 'linear-gradient(135deg, #f8fafc 0%, #eefdf8 100%)' : 'linear-gradient(to bottom, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.45) 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, background: contentLocked ? 'linear-gradient(135deg, #f8fafc 0%, #eefdf8 100%)' : usesDefaultPoster ? 'transparent' : 'linear-gradient(to bottom, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.45) 100%)' }} />
               {contentLocked && (
                 <div className="user-pause-lock" style={{
                   position: 'absolute',
@@ -993,45 +1070,8 @@ export const UsuarioDashboard: React.FC = () => {
                 </button>
               )}
 
-              {/* Tag inferior izquierda */}
-              <div className="user-pause-copy" style={{ position: 'absolute', left: '1.5rem', bottom: '1.5rem', right: '1.5rem' }}>
-                {allDoneToday ? (
-                  <>
-                    <span style={{
-                      display: 'inline-block', fontSize: '0.7rem', fontWeight: 700,
-                      padding: '5px 12px', borderRadius: '20px',
-                      backgroundColor: 'var(--primary-color)', color: 'white',
-                      letterSpacing: '0.05em', marginBottom: '0.9rem',
-                    }}>DÍA COMPLETO</span>
-                    <h2 style={{ fontSize: '1.95rem', fontWeight: 800, color: 'white', marginBottom: '0.4rem' }}>¡Hiciste todas las pausas de hoy!</h2>
-                    <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)' }}>Excelente trabajo. Seguí así durante la semana.</p>
-                  </>
-                ) : (
-                  <>
-                    {contentLocked ? (
-                      <span style={{
-                        display: 'inline-block', fontSize: '0.7rem', fontWeight: 700,
-                        padding: '5px 12px', borderRadius: '20px',
-                        backgroundColor: '#e0f2fe', color: '#0369a1',
-                        letterSpacing: '0.05em', marginBottom: '0.9rem',
-                      }}>PENDIENTE DE HABILITACIÓN</span>
-                    ) : activeStatusObj?.status === 'available' && (
-                      <span style={{
-                        display: 'inline-block', fontSize: '0.7rem', fontWeight: 700,
-                        padding: '5px 12px', borderRadius: '20px',
-                        backgroundColor: 'var(--primary-color)', color: 'white',
-                        letterSpacing: '0.05em', marginBottom: '0.9rem',
-                      }}>RECOMENDADO AHORA</span>
-                    )}
-                    <h2 style={{ fontSize: '1.95rem', fontWeight: 800, color: contentLocked ? '#0f172a' : 'white', marginBottom: '0.4rem' }}>
-                      {contentLocked ? 'Tu programa está siendo preparado' : activeInfo?.titulo}
-                    </h2>
-                    <p style={{ fontSize: '0.95rem', color: contentLocked ? '#64748b' : 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Clock size={15} /> {contentLocked ? 'Vas a poder ver tus pausas cuando ReActiva habilite el contenido.' : activeInfo?.subtitulo}
-                    </p>
-                  </>
-                )}
-              </div>
+              {allDoneToday && <span className="user-pause-minimal-status complete"><CheckCircle2 size={15} /> Día completo</span>}
+              {!allDoneToday && contentLocked && <span className="user-pause-minimal-status"><Lock size={14} /> {activeStatusObj?.reason || 'Pausa no disponible'}</span>}
             </div>
 
             {/* Barra de acción inferior */}
@@ -1042,18 +1082,11 @@ export const UsuarioDashboard: React.FC = () => {
               const puedeVerVideo = isAvailable && !!activeScheduledVideo;
               const puedeCompletar = isAvailable && videoVisto;
 
-              let prompt: string;
-              if (activeStatusObj?.status === 'available' && !activeScheduledVideo) prompt = 'Contenido pendiente de carga por ReActiva.';
-              else if (!isAvailable) prompt = activeStatusObj?.reason || 'Pausa bloqueada';
-              else if (!videoVisto) prompt = 'Primero mirá el video completo. Después vas a poder completar la pausa.';
-              else prompt = 'Video finalizado. Ya podés completar tu pausa.';
-
               return (
                 <div className="user-pause-action" style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '1rem', padding: '1.1rem 1.5rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                  gap: '1rem', padding: '0.85rem 1rem',
                 }}>
-                  <p style={{ fontSize: '0.95rem', color: 'var(--text-color)', fontWeight: 500 }}>{prompt}</p>
                   <div className="user-pause-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.65rem', flexShrink: 0 }}>
                     <button
                       type="button"
@@ -1090,56 +1123,51 @@ export const UsuarioDashboard: React.FC = () => {
         </div>
 
         {/* ── COLUMNA DERECHA: Tu semana ───────────────────────────────── */}
-        <div className="user-week-card" style={{
+        <div className="user-program-side">
+          <ReactivaScoreCard enabled={!isDemo} />
+          <div className="user-week-card" style={{
           backgroundColor: 'white', borderRadius: '20px',
-          border: '1px solid #eef0f3', padding: '1.5rem',
+          border: '1px solid #eef0f3', padding: '1rem',
           boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
-          display: 'flex', flexDirection: 'column', gap: '0.5rem',
+          display: 'flex', flexDirection: 'column', gap: '0.25rem',
         }}>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '2px' }}>Tu semana</h3>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-            <span style={{ fontWeight: 700, color: 'var(--primary-color)' }}>{totalPausas}</span> de {totalObjetivo} pausas completadas
-          </p>
+          <div className="user-week-summary">
+            <span>
+              <strong>Tu semana</strong>
+              <small><b>{totalPausas}</b> de {totalObjetivo} pausas completadas</small>
+            </span>
+            <span>{pct}%</span>
+          </div>
 
-          {DAYS.map(dia => {
-            const isCurrent = dia === today;
-            return (
-              <div className="user-week-day" key={dia} style={{ marginBottom: '0.5rem' }}>
-                <div className="user-week-day-head" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
-                  <p style={{
-                    fontWeight: 700, fontSize: '0.95rem',
-                    color: isCurrent ? 'var(--primary-color)' : 'var(--text-color)',
-                  }}>{dia}</p>
-                  {isCurrent && <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'var(--primary-color)' }} />}
+          <div className="user-week-detail">
+            {DAYS.map(dia => {
+              const isCurrent = dia === today;
+              return (
+                <div className="user-week-day" key={dia}>
+                  <div className="user-week-day-head">
+                    <p style={{ color: isCurrent ? 'var(--primary-color)' : 'var(--text-color)' }}>{dia}</p>
+                    {isCurrent && <span />}
+                  </div>
+                  {(['morning', 'afternoon'] as const).map(bloque => {
+                    const { status } = getStatus(dia, bloque);
+                    const isActive = isCurrent && activeBloque === bloque;
+                    const scheduledVideo = getScheduledVideoFor(effectiveScheduledVideos, dia, bloque, companyId, scheduledDateFor(dia), user?.workProfile);
+                    return (
+                      <WeekPauseRow
+                        key={bloque}
+                        bloque={bloque}
+                        status={status}
+                        isActive={isActive}
+                        time={scheduledVideo?.time}
+                        title={scheduledVideo?.title}
+                      />
+                    );
+                  })}
                 </div>
-                {(['morning', 'afternoon'] as const).map(bloque => {
-                  const { status } = getStatus(dia, bloque);
-                  const isActive = isCurrent && activeBloque === bloque;
-                  const scheduledVideo = getScheduledVideoFor(effectiveScheduledVideos, dia, bloque, companyId, scheduledDateFor(dia), user?.workProfile);
-                  const scheduledTime = scheduledVideo?.time;
-                  return (
-                    <WeekPauseRow
-                      key={bloque}
-                      bloque={bloque}
-                      status={status}
-                      isActive={isActive}
-                      time={scheduledTime}
-                      title={scheduledVideo?.title}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
-          {/* Footer */}
-          <div style={{
-            marginTop: '0.5rem', padding: '0.75rem 1rem',
-            backgroundColor: '#f0fdf9', borderRadius: '12px',
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-          }}>
-            <span style={{ fontSize: '1.1rem' }}>🌱</span>
-            <p style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>Pequeñas pausas, grandes resultados</p>
           </div>
         </div>
       </div>
@@ -1150,7 +1178,8 @@ export const UsuarioDashboard: React.FC = () => {
       {openVideo && openScheduledVideo && (
         <VideoModal
           videoUrl={openScheduledVideo.url}
-          titulo={`${openScheduledVideo.title || PAUSAS[openVideo.bloque].titulo} · ${openVideo.dia} ${openVideo.bloque === 'morning' ? 'mañana' : 'tarde'}`}
+          posterUrl={openScheduledVideo.thumbnailUrl}
+          titulo={`${openScheduledVideo.title || 'Pausa activa'} · ${openVideo.dia} ${openVideo.bloque === 'morning' ? 'mañana' : 'tarde'}`}
           onClose={handleVideoClose}
           onWatched={handleVideoWatched}
         />

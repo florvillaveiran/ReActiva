@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
+    "test:reactiva": "node scripts/test-reactiva-score.mjs",
+    "test:reactiva-email": "tsx scripts/test-reactiva-streak-email.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"

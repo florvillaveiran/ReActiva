@@ -11,6 +11,9 @@ export type TransactionalEmailPayload = {
   subject?: string;
   body?: string;
   automationId?: string;
+  includeReactivaStreak?: boolean;
+  recipientProfileId?: string;
+  recipientCompanyId?: string;
 };
 
 type EmailResult = {

@@ -176,6 +176,12 @@ const TRIGGERS = [
   { id: 'low_energy', title: 'Cambio de energía', icon: <Zap size={18} /> },
 ];
 
+const SCORE_TEMPLATE_VARIABLE_PATTERN = /\{\{(?:puntajeActual|puntajeMaximo|porcentajePuntaje|puntajeSemanal|rachaActual|puntosFaltantes|estadoSorteo|premioMensual)\}\}/g;
+
+const stripScoreTemplateVariables = (template: string) => (
+  template.replace(SCORE_TEMPLATE_VARIABLE_PATTERN, '').replace(/\n{3,}/g, '\n\n').trim()
+);
+
 interface ConditionRule {
   field: string;
   operator: string;
@@ -213,6 +219,7 @@ const buildDefaults = (): EmailAutomation[] => AUTOMATION_DEFINITIONS.map((defin
   subject: definition.defaultSubject,
   body: definition.defaultBody,
   attachReport: definition.report ?? false,
+  includeReactivaStreak: false,
 }));
 
 const mergeAutomations = (saved: EmailAutomation[]) => {
@@ -321,7 +328,7 @@ export const Emails: React.FC = () => {
   useEffect(() => {
     if (!supabase) return;
 
-    const applySharedTemplate = (template: { id: string; subject: string; body: string; active?: boolean; delay_minutes?: number }) => {
+    const applySharedTemplate = (template: { id: string; subject: string; body: string; active?: boolean; delay_minutes?: number; include_reactiva_streak?: boolean }) => {
       setAutomations(current => current.map(item => (
         item.id === template.id
           ? {
@@ -330,6 +337,7 @@ export const Emails: React.FC = () => {
               body: template.body,
               active: template.id === 'pause-reminder' ? true : template.active ?? item.active,
               offsetMinutes: template.delay_minutes ?? item.offsetMinutes,
+              includeReactivaStreak: template.id === 'pause-reminder' ? template.include_reactiva_streak === true : item.includeReactivaStreak,
             }
           : item
       )));
@@ -340,6 +348,7 @@ export const Emails: React.FC = () => {
             body: template.body,
             active: template.id === 'pause-reminder' ? true : template.active ?? current.active,
             offsetMinutes: template.delay_minutes ?? current.offsetMinutes,
+            includeReactivaStreak: template.id === 'pause-reminder' ? template.include_reactiva_streak === true : current.includeReactivaStreak,
           }
         : current);
     };
@@ -347,7 +356,7 @@ export const Emails: React.FC = () => {
     const loadSharedTemplates = async () => {
       const { data, error } = await supabase
         .from('email_automation_templates')
-        .select('id, subject, body, active, delay_minutes')
+        .select('id, subject, body, active, delay_minutes, include_reactiva_streak')
         .in('id', ['pause-reminder', 'missed-pause-reminder']);
 
       if (error) {
@@ -536,7 +545,11 @@ export const Emails: React.FC = () => {
     const automation = automations.find(item => item.id === id);
     if (!automation) return;
     setEditingId(id);
-    setDraft({ ...automation });
+    setDraft({
+      ...automation,
+      subject: id === 'pause-reminder' ? stripScoreTemplateVariables(automation.subject) : automation.subject,
+      body: id === 'pause-reminder' ? stripScoreTemplateVariables(automation.body) : automation.body,
+    });
   };
 
   const saveDraft = async () => {
@@ -563,6 +576,7 @@ export const Emails: React.FC = () => {
         template_body: draft.body.trim(),
         template_active: draft.id === 'pause-reminder' ? true : draft.active,
         template_delay_minutes: draft.id === 'pause-reminder' ? 5 : draft.offsetMinutes,
+        template_include_reactiva_streak: draft.id === 'pause-reminder' && draft.includeReactivaStreak === true,
       });
       setSavingTemplate(false);
 
@@ -632,6 +646,7 @@ export const Emails: React.FC = () => {
           responsable: company?.contactoNombre || 'Responsable de RRHH',
           companyId: user.empresa_id,
           userId: user.id,
+          supabaseId: user.supabaseId,
         };
       });
   };
@@ -652,8 +667,11 @@ export const Emails: React.FC = () => {
     const appUrl = `${window.location.origin}/plataforma/login`;
     let sentCount = 0;
     const errors: string[] = [];
+    const shouldIncludeStreak = automation.id === 'pause-reminder' && automation.includeReactivaStreak === true;
 
     for (const recipient of recipients) {
+      const recipientProfileId = 'supabaseId' in recipient && typeof recipient.supabaseId === 'string' ? recipient.supabaseId : undefined;
+      const recipientCompanyId = companies.find(company => company.id === recipient.companyId)?.supabaseId;
       const templateValues = {
         nombre: recipient.nombre,
         empresa: recipient.empresa,
@@ -661,8 +679,14 @@ export const Emails: React.FC = () => {
         hora: automation.id === 'pause-reminder' ? (nextVideo?.hora ?? automation.scheduleTime) : automation.scheduleTime,
         minutos: String(automation.id === 'pause-reminder' ? 5 : automation.offsetMinutes),
       };
-      const subject = renderTemplate(automation.subject, templateValues);
-      const body = renderTemplate(automation.body, templateValues);
+      const rawSubject = automation.id === 'pause-reminder' ? stripScoreTemplateVariables(automation.subject) : automation.subject;
+      const rawBody = automation.id === 'pause-reminder' ? stripScoreTemplateVariables(automation.body) : automation.body;
+      const subject = renderTemplate(rawSubject, templateValues);
+      const body = renderTemplate(rawBody, templateValues);
+      if (shouldIncludeStreak && (!recipientProfileId || !recipientCompanyId)) {
+        errors.push(`${recipient.email}: no se pudo identificar al destinatario real de la Racha ReActiva.`);
+        continue;
+      }
       const result = await sendTransactionalEmail({
         type: 'automation_email',
         to: recipient.email,
@@ -672,6 +696,9 @@ export const Emails: React.FC = () => {
         subject,
         body,
         automationId: automation.id,
+        includeReactivaStreak: shouldIncludeStreak,
+        recipientProfileId,
+        recipientCompanyId,
       });
 
       // Persist to Supabase regardless of result so the Rendimiento panel has real data
@@ -1471,6 +1498,25 @@ export const Emails: React.FC = () => {
                   <small>Podés usar: {'{{nombre}}'}, {'{{empresa}}'}, {'{{hora}}'} y {'{{minutos}}'}.</small>
                 )}
               </label>
+              {editingDefinition.id === 'pause-reminder' && (
+                <section className="automation-personalization">
+                  <div>
+                    <strong>Personalización del mensaje</strong>
+                    <span>Agrega automáticamente un mensaje personalizado según la constancia del colaborador.</span>
+                  </div>
+                  <label className="automation-personalization-toggle">
+                    <span>Incluir estado de la Racha ReActiva</span>
+                    <span className="automation-toggle">
+                      <input
+                        type="checkbox"
+                        checked={draft.includeReactivaStreak === true}
+                        onChange={event => setDraft({ ...draft, includeReactivaStreak: event.target.checked })}
+                      />
+                      <span />
+                    </span>
+                  </label>
+                </section>
+              )}
 
               {editingDefinition.report && (
                 <label className="automation-report-option">
@@ -1498,6 +1544,12 @@ export const Emails: React.FC = () => {
                 </div>
                 <strong>{draft.subject || 'Sin asunto'}</strong>
                 <p>{draft.body || 'El contenido del correo aparecerá aquí.'}</p>
+                {editingDefinition.id === 'pause-reminder' && draft.includeReactivaStreak && (
+                  <>
+                    <div className="email-preview-streak">🔥 Llevás 3 semanas completas consecutivas. ¡Seguí así para mantener tu racha!</div>
+                    <small className="email-preview-streak-note">El mensaje final se personalizará según la racha de cada destinatario.</small>
+                  </>
+                )}
                 {draft.attachReport && <span className="email-attachment"><FileText size={14} /> Informe_Bienestar.pdf</span>}
               </div>
             </div>

@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, AlertTriangle, Building2, CheckCircle2, Lightbulb, Target, TrendingDown, TrendingUp, Users, Zap, MessageSquare, ShieldAlert, Sparkles, ArrowRight, X } from 'lucide-react';
+import { Activity, AlertTriangle, Award, Building2, CheckCircle2, Lightbulb, Target, TrendingDown, TrendingUp, Users, Zap, MessageSquare, ShieldAlert, Sparkles, ArrowRight, X } from 'lucide-react';
 import { useEmpresas } from '../../context/EmpresasContext';
 import { useAdminStats } from '../../hooks/useAdminStats';
-import { buildDashboardActions, buildDashboardInsights, buildImpactMetrics } from '../../lib/dashboardIntelligence';
+import { buildDashboardActions, buildDashboardInsights, buildImpactMetrics, buildReactivaScoreInsights } from '../../lib/dashboardIntelligence';
 import { getDashboardPeriodRanges, type DashboardPeriod } from '../../lib/dashboardPeriods';
 import { supabase } from '../../lib/supabase';
 import { TeamCommentsModal } from './TeamCommentsModal';
+import { averageScoreForPeriod, ReactivaTeamScorePanel } from '../../components/ReactivaTeamScorePanel';
+import { useReactivaScoreSummary } from '../../hooks/useReactivaScoreSummary';
 
 const statusFor = (participacion: number, molestias: number) => {
   if (participacion >= 75 && molestias <= 25) return { label: 'Excelente', color: '#059669', bg: '#ecfdf5', icon: <CheckCircle2 size={24} /> };
@@ -14,7 +16,7 @@ const statusFor = (participacion: number, molestias: number) => {
   return { label: 'Atención', color: '#d97706', bg: '#fff7ed', icon: <AlertTriangle size={24} /> };
 };
 
-type DetailKey = 'participacion' | 'usuarios' | 'empresas' | 'estado';
+type DetailKey = 'participacion' | 'usuarios' | 'empresas' | 'puntaje' | 'estado';
 
 interface DashboardProfileDetail {
   id: string;
@@ -98,6 +100,7 @@ export const AdminDashboard: React.FC = () => {
   const previousStats = useAdminStats(statsCompanyId, periodRanges.previous.from, periodRanges.previous.to, 'ALL');
   const administrativeStats = useAdminStats(statsCompanyId, from, to, 'ADMINISTRATIVO');
   const operativeStats = useAdminStats(statsCompanyId, from, to, 'OPERATIVO');
+  const { summary: scoreSummary, loading: scoreLoading, unavailable: scoreUnavailable } = useReactivaScoreSummary(statsCompanyId);
 
   useEffect(() => {
     let mounted = true;
@@ -175,10 +178,10 @@ export const AdminDashboard: React.FC = () => {
   }, [empresas, from, statsCompanyId, to]);
 
   const status = statusFor(stats.adherencia, stats.reportanMolestias);
-  const insights = useMemo(
-    () => buildDashboardInsights(stats, administrativeStats, operativeStats, empresaId === 'all' ? 'global' : 'company'),
-    [administrativeStats, empresaId, operativeStats, stats],
-  );
+  const insights = useMemo(() => [
+    ...buildReactivaScoreInsights(scoreSummary),
+    ...buildDashboardInsights(stats, administrativeStats, operativeStats, empresaId === 'all' ? 'global' : 'company'),
+  ].slice(0, 5), [administrativeStats, empresaId, operativeStats, scoreSummary, stats]);
   const actions = useMemo(() => buildDashboardActions(insights), [insights]);
   const impact = useMemo(() => buildImpactMetrics(stats, previousStats), [previousStats, stats]);
   const activeCompanies = empresas.filter(empresa => empresa.estado === 'Activa').length;
@@ -198,14 +201,13 @@ export const AdminDashboard: React.FC = () => {
     return { label: 'Recomendación', color: '#2563eb', icon: <Lightbulb size={16} /> };
   };
 
-  const calculateReactivaIndex = () => {
-    let score = 50;
-    if (stats.adherencia > 40) score += 20;
-    if (stats.energiaPromedio && stats.energiaPromedio > 3) score += 15;
-    if (stats.reportanMolestias < 30) score += 15;
-    return Math.min(100, Math.max(0, score));
-  };
-  const reactivaIndex = calculateReactivaIndex();
+  const reactivaScoreAverage = scoreSummary ? averageScoreForPeriod(scoreSummary.users, analyticsPeriod) : 0;
+  const reactivaScoreTone = reactivaScoreAverage >= 100 ? 'complete' : reactivaScoreAverage >= 90 ? 'near' : 'progress';
+  const reactivaScoreTheme = reactivaScoreTone === 'complete'
+    ? { color: '#047857', bg: '#ecfdf5', border: '#6ee7b7', helper: 'Racha completa' }
+    : reactivaScoreTone === 'near'
+      ? { color: '#c2410c', bg: '#fff7ed', border: '#fed7aa', helper: 'A un paso de completar' }
+      : { color: '#0369a1', bg: '#eff6ff', border: '#bfdbfe', helper: 'En progreso' };
 
   const analyzeCommentsPattern = (comentarios: typeof stats.comentarios) => {
     if (comentarios.length === 0) return `Aún no hay suficientes comentarios ${analyticsPeriod === 'semanal' ? 'esta semana' : 'este mes'}.`;
@@ -231,6 +233,7 @@ export const AdminDashboard: React.FC = () => {
     participacion: `Detalle de participación ${analyticsPeriod === 'semanal' ? 'semanal' : 'mensual'}`,
     usuarios: 'Usuarios con actividad',
     empresas: 'Empresas registradas',
+    puntaje: `Puntaje ReActiva ${analyticsPeriod === 'semanal' ? 'semanal' : 'mensual'}`,
     estado: 'Por qué el estado es atención',
   };
 
@@ -268,15 +271,16 @@ export const AdminDashboard: React.FC = () => {
         <Card icon={<Users size={16} />} label="Usuarios activos" value={String(stats.usuariosCount)} helper={`Con actividad ${periodRanges.label}`} color="#1d4ed8" bg="#dbeafe" active={selectedDetail === 'usuarios'} onClick={() => setSelectedDetail(selectedDetail === 'usuarios' ? null : 'usuarios')} />
         <Card icon={<Building2 size={16} />} label="Empresas" value={String(empresas.length)} helper={`${activeCompanies} activas`} color="#6d28d9" bg="#ede9fe" active={selectedDetail === 'empresas'} onClick={() => setSelectedDetail(selectedDetail === 'empresas' ? null : 'empresas')} />
         
-        {/* Índice ReActiva */}
-        <button type="button" className="card" style={{ margin: 0, padding: '0.9rem', borderRadius: 14, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(15,23,42,0.03)', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        {/* Puntaje ReActiva: constancia real, no un indice inferido */}
+        <button type="button" className={`card reactiva-overview-card ${reactivaScoreTone}`} onClick={() => setSelectedDetail(selectedDetail === 'puntaje' ? null : 'puntaje')} style={{ margin: 0, padding: '0.9rem', borderRadius: 14, border: selectedDetail === 'puntaje' ? `1.5px solid ${reactivaScoreTheme.color}` : `1px solid ${reactivaScoreTheme.border}`, background: reactivaScoreTheme.bg, boxShadow: selectedDetail === 'puntaje' ? `0 8px 22px ${reactivaScoreTheme.color}20` : '0 4px 12px rgba(15,23,42,0.03)', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-            <span style={{ color: '#64748b', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.2 }}>Índice ReActiva</span>
-            <span style={{ width: 28, height: 28, borderRadius: 8, display: 'grid', placeItems: 'center', color: '#0369a1', background: '#e0f2fe', flexShrink: 0 }}><Activity size={16} /></span>
+            <span style={{ color: '#64748b', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.2 }}>Puntaje ReActiva</span>
+            <span style={{ width: 28, height: 28, borderRadius: 8, display: 'grid', placeItems: 'center', color: reactivaScoreTheme.color, background: '#fff', flexShrink: 0 }}><Award size={16} /></span>
           </div>
           <div>
-            <strong style={{ display: 'block', color: '#0369a1', fontSize: '1.6rem', lineHeight: 1, marginBottom: '0.2rem' }}>{reactivaIndex} <span style={{ fontSize: '0.85rem', color: '#64748b' }}>/ 100</span></strong>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '0.72rem', lineHeight: 1.2 }}>{reactivaIndex > 80 ? 'Excelente' : reactivaIndex > 50 ? 'Bueno' : 'Atención'}</p>
+            <strong style={{ display: 'block', color: reactivaScoreTheme.color, fontSize: '1.6rem', lineHeight: 1, marginBottom: '0.2rem' }}>{scoreLoading || scoreUnavailable || !scoreSummary ? '—' : Math.round(reactivaScoreAverage)} <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{scoreSummary ? '%' : ''}</span></strong>
+            {scoreUnavailable && <p style={{ margin: 0, color: '#64748b', fontSize: '0.72rem', lineHeight: 1.2 }}>Pendiente de sincronización</p>}
+            {scoreSummary && <span className="reactiva-overview-progress"><i style={{ width: `${Math.min(100, Math.max(0, reactivaScoreAverage))}%` }} /></span>}
           </div>
         </button>
 
@@ -297,7 +301,6 @@ export const AdminDashboard: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '0.9rem' }}>
             <div>
               <h3 style={{ margin: 0, color: '#0f172a', fontSize: '0.95rem', fontWeight: 850 }}>{detailTitle[selectedDetail]}</h3>
-              <p style={{ margin: '0.15rem 0 0', color: '#64748b', fontSize: '0.75rem' }}>Datos leídos desde Supabase: perfiles, empresas y pausas registradas.</p>
             </div>
             <button type="button" className="btn-secondary" onClick={() => setSelectedDetail(null)} style={{ padding: '0.35rem 0.6rem', borderRadius: 8, fontSize: '0.75rem' }}>Cerrar</button>
           </div>
@@ -341,6 +344,16 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
+          {selectedDetail === 'puntaje' && (
+            <ReactivaTeamScorePanel
+              companyId={statsCompanyId}
+              period={analyticsPeriod}
+              title={empresaId === 'all' ? 'Puntaje de todas las empresas' : `Puntaje de ${selectedEmpresa?.nombre ?? 'la empresa'}`}
+              showExportActions
+              showCompanyFilter={empresaId === 'all'}
+            />
+          )}
+
           {selectedDetail === 'estado' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
               <div style={{ padding: '0.75rem', borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
@@ -364,8 +377,8 @@ export const AdminDashboard: React.FC = () => {
       <section style={{ background: '#f0fdf4', borderRadius: 16, border: '1px solid #bbf7d0', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
           <span style={{ color: '#166534' }}><Lightbulb size={18} /></span>
-          <h3 style={{ margin: 0, color: '#14532d', fontSize: '0.9rem', fontWeight: 850 }}>Centro de Inteligencia</h3>
-          <span style={{ color: '#166534', fontSize: '0.75rem', opacity: 0.8 }}>Lo más importante que detectamos esta semana</span>
+          <h3 style={{ margin: 0, color: '#14532d', fontSize: '0.9rem', fontWeight: 850 }}>Lo más importante</h3>
+          <span style={{ color: '#166534', fontSize: '0.75rem', opacity: 0.8 }}>Resumen claro del período elegido</span>
         </div>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>

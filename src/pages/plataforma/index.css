@@ -138,8 +138,8 @@
   gap: 0.25rem;
 }
 
-#plataforma-root .work-profile-segment.administrative { background: #f0fdfa; }
-#plataforma-root .work-profile-segment.operative { background: #eff6ff; }
+#plataforma-root .work-profile-segment.administrative { background: #eff6ff; }
+#plataforma-root .work-profile-segment.operative { background: #f5f3ff; }
 
 #plataforma-root .work-profile-segment > span {
   font-size: 0.75rem;
@@ -275,6 +275,731 @@
   #plataforma-root .work-profile-tension-notes {
     display: grid;
     gap: 0.35rem;
+  }
+}
+
+/* Seguimiento del Puntaje ReActiva para administración y RRHH */
+#plataforma-root .reactiva-team-panel,
+#plataforma-root .reactiva-settings-panel {
+  padding: 1.2rem;
+  border: 1px solid #dbe7e3;
+  border-radius: 18px;
+  background: linear-gradient(155deg, #ffffff 0%, #fbfffe 58%, #f4fbf9 100%);
+  box-shadow: 0 12px 36px rgba(15, 118, 110, 0.07);
+}
+
+#plataforma-root .reactiva-team-loading {
+  min-height: 180px;
+  background: linear-gradient(100deg, #f8fafc 25%, #ecfdf5 45%, #f8fafc 65%);
+  background-size: 220% 100%;
+  animation: reactivaScoreLoading 1.4s ease infinite;
+}
+
+#plataforma-root .reactiva-team-empty {
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #64748b;
+}
+
+#plataforma-root .reactiva-team-empty div {
+  display: flex;
+  flex-direction: column;
+}
+
+#plataforma-root .reactiva-team-empty strong { color: #334155; }
+#plataforma-root .reactiva-team-empty span { font-size: 0.8rem; }
+
+#plataforma-root .reactiva-team-head,
+#plataforma-root .reactiva-settings-head,
+#plataforma-root .reactiva-settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+#plataforma-root .reactiva-team-head small {
+  color: #0f766e;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .reactiva-team-head h3 {
+  margin: 0.15rem 0 0;
+  color: #0f172a;
+  font-size: 1.12rem;
+}
+
+#plataforma-root .reactiva-team-heading {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+#plataforma-root .reactiva-team-heading-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  color: #047857;
+  background: linear-gradient(145deg, #d1fae5, #ccfbf1);
+  box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.08);
+}
+
+#plataforma-root .reactiva-team-momentum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+#plataforma-root .reactiva-team-momentum span {
+  min-height: 23px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-team-momentum .near {
+  color: #b45309;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+#plataforma-root .reactiva-team-momentum .complete {
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+#plataforma-root .reactiva-team-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+#plataforma-root .reactiva-team-global {
+  padding: 0.4rem 0.6rem;
+  border-radius: 9px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-team-actions button {
+  min-height: 34px;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #fff;
+  color: #334155;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+#plataforma-root .reactiva-team-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+#plataforma-root .reactiva-team-breakdowns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+#plataforma-root .reactiva-team-breakdowns > div,
+#plataforma-root .reactiva-company-summary {
+  padding: 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+#plataforma-root .reactiva-team-breakdowns h4,
+#plataforma-root .reactiva-company-summary h4 {
+  margin: 0 0 0.55rem;
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+#plataforma-root .reactiva-breakdown-bars {
+  display: grid;
+  gap: 0.7rem;
+}
+
+#plataforma-root .reactiva-breakdown-bars > div {
+  min-width: 0;
+}
+
+#plataforma-root .reactiva-breakdown-bars > div > span:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+#plataforma-root .reactiva-breakdown-bars strong {
+  color: #0f766e;
+  font-size: 0.72rem;
+}
+
+#plataforma-root .reactiva-breakdown-progress {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  display: block;
+  background: #e8eef2;
+}
+
+#plataforma-root .reactiva-breakdown-progress i {
+  height: 100%;
+  border-radius: inherit;
+  display: block;
+  background: linear-gradient(90deg, #60a5fa, #2dd4bf);
+  transition: width 300ms ease;
+}
+
+#plataforma-root .reactiva-breakdown-bars.weekly .reactiva-breakdown-progress i {
+  background: linear-gradient(90deg, #34d399, #00bfa6);
+}
+
+#plataforma-root .reactiva-breakdown-bars p {
+  margin: 0;
+  padding: 0.55rem 0;
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+#plataforma-root .reactiva-company-summary { margin-top: 0.75rem; }
+#plataforma-root .reactiva-company-summary > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-top: 1px solid #e2e8f0; }
+#plataforma-root .reactiva-company-summary > div > span { display: flex; flex-direction: column; color: #0f766e; text-align: right; font-size: 0.82rem; font-weight: 800; }
+#plataforma-root .reactiva-company-summary > div > span:first-child { color: #334155; text-align: left; }
+#plataforma-root .reactiva-company-summary small { color: #94a3b8; font-size: 0.66rem; font-weight: 600; }
+
+#plataforma-root .reactiva-team-kpis > div {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: #f8fbff;
+  color: #0369a1;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+#plataforma-root .reactiva-team-kpis > div:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 18px rgba(15, 23, 42, 0.05);
+}
+
+#plataforma-root .reactiva-team-kpis > div.eligible,
+#plataforma-root .reactiva-team-kpis > div.complete {
+  border-color: #bbf7d0;
+  color: #047857;
+  background: #f0fdf4;
+}
+
+#plataforma-root .reactiva-team-kpis > div.streak {
+  border-color: #fed7aa;
+  color: #c2410c;
+  background: #fff7ed;
+}
+
+#plataforma-root .reactiva-team-kpis > div.participants {
+  border-color: #e2e8f0;
+  color: #475569;
+  background: #f8fafc;
+}
+
+#plataforma-root .reactiva-team-kpis span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+#plataforma-root .reactiva-team-kpis strong {
+  color: #0f172a;
+  font-size: 1.1rem;
+}
+
+#plataforma-root .reactiva-team-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 180px 180px;
+  gap: 0.55rem;
+  margin: 1rem 0 0.7rem;
+}
+
+#plataforma-root .reactiva-people-toggle {
+  width: 100%;
+  min-height: 64px;
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #dbe7e3;
+  border-radius: 14px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.9);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+#plataforma-root .reactiva-people-toggle:hover,
+#plataforma-root .reactiva-people-toggle.open {
+  border-color: #99d9cf;
+  background: #f8fffd;
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.06);
+}
+
+#plataforma-root .reactiva-people-toggle:focus-visible {
+  outline: 3px solid rgba(0, 194, 168, 0.18);
+  outline-offset: 2px;
+}
+
+#plataforma-root .reactiva-people-toggle-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  color: #0f766e;
+  background: #ecfdf5;
+}
+
+#plataforma-root .reactiva-people-toggle-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+#plataforma-root .reactiva-people-toggle-copy strong {
+  color: #0f172a;
+  font-size: 0.8rem;
+}
+
+#plataforma-root .reactiva-people-toggle-copy small {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#plataforma-root .reactiva-people-toggle-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-people-toggle-action svg {
+  transition: transform 160ms ease;
+}
+
+#plataforma-root .reactiva-people-toggle.open .reactiva-people-toggle-action svg {
+  transform: rotate(180deg);
+}
+
+#plataforma-root .reactiva-people-detail {
+  animation: fadeIn 180ms ease-out;
+}
+
+#plataforma-root .reactiva-team-filters.has-company {
+  grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(150px, 180px));
+}
+
+#plataforma-root .reactiva-team-filters label {
+  min-height: 38px;
+  padding: 0 0.65rem;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #94a3b8;
+  background: white;
+}
+
+#plataforma-root .reactiva-team-filters input,
+#plataforma-root .reactiva-team-filters select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  padding: 0 0.65rem;
+  background: white;
+  color: #334155;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+#plataforma-root .reactiva-team-filters label input {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+}
+
+#plataforma-root .reactiva-team-list {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.025);
+}
+
+#plataforma-root .reactiva-team-row {
+  position: relative;
+  min-width: 650px;
+  display: grid;
+  grid-template-columns: minmax(190px, 1.4fr) minmax(130px, 0.8fr) minmax(90px, 0.55fr) minmax(130px, 0.7fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.78rem 0.9rem;
+  border-bottom: 1px solid #eef2f7;
+  color: #475569;
+  font-size: 0.78rem;
+  transition: background 150ms ease;
+}
+
+#plataforma-root .reactiva-team-row:last-child { border-bottom: 0; }
+#plataforma-root .reactiva-team-row:not(.reactiva-team-row-head):hover { background: #f8fafc; }
+#plataforma-root .reactiva-team-row.state-progress { box-shadow: inset 3px 0 #93c5fd; }
+#plataforma-root .reactiva-team-row.state-eligible { box-shadow: inset 3px 0 #6ee7b7; }
+#plataforma-root .reactiva-team-row.state-near {
+  background: linear-gradient(90deg, rgba(255, 247, 237, 0.75), #fff 25%);
+  box-shadow: inset 3px 0 #fb923c;
+}
+#plataforma-root .reactiva-team-row.state-complete {
+  background: linear-gradient(90deg, rgba(236, 253, 245, 0.95), #fff 28%);
+  box-shadow: inset 3px 0 #10b981;
+}
+#plataforma-root .reactiva-team-row-head {
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+#plataforma-root .reactiva-team-row > span { min-width: 0; }
+#plataforma-root .reactiva-team-row > span:first-child,
+#plataforma-root .reactiva-team-row > span:nth-child(3) { display: flex; flex-direction: column; }
+#plataforma-root .reactiva-team-row strong { color: #0f172a; }
+#plataforma-root .reactiva-team-row small { overflow: hidden; color: #94a3b8; text-overflow: ellipsis; white-space: nowrap; }
+
+#plataforma-root .reactiva-team-score-cell {
+  gap: 0.42rem;
+}
+
+#plataforma-root .reactiva-team-score-cell > span:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+#plataforma-root .reactiva-team-score-cell > span:first-child small {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-team-row-progress {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  display: block;
+  background: #e2e8f0;
+}
+
+#plataforma-root .reactiva-team-row-progress i {
+  height: 100%;
+  border-radius: inherit;
+  display: block;
+  background: linear-gradient(90deg, #60a5fa, #2dd4bf);
+  transition: width 300ms ease;
+}
+
+#plataforma-root .state-near .reactiva-team-row-progress i {
+  background: linear-gradient(90deg, #fbbf24, #fb923c);
+}
+
+#plataforma-root .state-complete .reactiva-team-row-progress i,
+#plataforma-root .state-eligible .reactiva-team-row-progress i {
+  background: linear-gradient(90deg, #34d399, #00bfa6);
+}
+
+#plataforma-root .reactiva-team-state {
+  width: 100%;
+  min-width: 0;
+  max-width: 150px;
+  box-sizing: border-box;
+  padding: 0.38rem 0.55rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+#plataforma-root .reactiva-team-state > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+#plataforma-root .reactiva-team-state strong {
+  color: currentColor;
+  font-size: 0.7rem;
+  white-space: normal;
+}
+
+#plataforma-root .reactiva-team-state small {
+  color: currentColor;
+  font-size: 0.6rem;
+  opacity: 0.72;
+}
+
+#plataforma-root .reactiva-team-state.progress {
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+#plataforma-root .reactiva-team-state.eligible {
+  border-color: #a7f3d0;
+  color: #047857;
+  background: #ecfdf5;
+}
+
+#plataforma-root .reactiva-team-state.near {
+  border-color: #fed7aa;
+  color: #c2410c;
+  background: #fff7ed;
+}
+
+#plataforma-root .reactiva-team-state.complete {
+  border-color: #6ee7b7;
+  color: #047857;
+  background: linear-gradient(135deg, #ecfdf5, #ccfbf1);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);
+}
+#plataforma-root .reactiva-team-no-results { margin: 0; padding: 1rem; color: #64748b; font-size: 0.8rem; }
+#plataforma-root .reactiva-team-disclaimer { margin: 0.65rem 0 0; color: #94a3b8; font-size: 0.68rem; }
+
+#plataforma-root .reactiva-settings-title {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+#plataforma-root .reactiva-settings-title > span {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: #d1fae5;
+  color: #047857;
+}
+
+#plataforma-root .reactiva-settings-title h3 { margin: 0; color: #0f172a; font-size: 1rem; }
+#plataforma-root .reactiva-settings-title p { margin: 0.15rem 0 0; color: #64748b; font-size: 0.76rem; }
+#plataforma-root .reactiva-settings-switch { display: inline-flex; align-items: center; gap: 0.4rem; color: #334155; font-size: 0.78rem; font-weight: 750; }
+
+#plataforma-root .reactiva-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+#plataforma-root .reactiva-settings-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+#plataforma-root .reactiva-settings-grid input,
+#plataforma-root .reactiva-settings-grid textarea {
+  width: 100%;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  color: #0f172a;
+  background: white;
+  font: inherit;
+  font-size: 0.82rem;
+  box-sizing: border-box;
+}
+
+#plataforma-root .reactiva-settings-prize { grid-column: 1 / -1; }
+#plataforma-root .reactiva-settings-visibility { display: flex; flex-wrap: wrap; gap: 0.7rem 1.1rem; margin-top: 1rem; padding: 0.85rem; border-radius: 12px; background: #f8fafc; color: #475569; font-size: 0.78rem; }
+#plataforma-root .reactiva-settings-visibility strong { width: 100%; color: #334155; }
+#plataforma-root .reactiva-settings-visibility label { display: inline-flex; align-items: center; gap: 0.35rem; }
+#plataforma-root .reactiva-settings-footer { align-items: flex-end; margin-top: 1rem; }
+#plataforma-root .reactiva-settings-footer p { max-width: 520px; margin: 0; color: #64748b; font-size: 0.72rem; }
+#plataforma-root .reactiva-settings-footer button { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+
+#plataforma-root .automation-variable-list {
+  margin-top: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #dbe7e3;
+  border-radius: 12px;
+  background: #f8fffc;
+}
+
+#plataforma-root .automation-variable-list > strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #0f766e;
+  font-size: 0.76rem;
+}
+
+#plataforma-root .automation-variable-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+#plataforma-root .automation-variable-list code {
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.68rem;
+}
+
+#plataforma-root .automation-variable-list small {
+  display: block;
+  margin-top: 0.55rem;
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+#plataforma-root .automation-personalization {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.85rem;
+  padding: 0.95rem;
+  border: 1px solid #dbe7e3;
+  border-radius: 13px;
+  background: #f8fffc;
+}
+
+#plataforma-root .automation-personalization > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+#plataforma-root .automation-personalization > div strong {
+  color: #0f172a;
+  font-size: 0.82rem;
+}
+
+#plataforma-root .automation-personalization > div span {
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+#plataforma-root .automation-personalization-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #dbe7e3;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#plataforma-root .automation-personalization-toggle > .automation-toggle {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  #plataforma-root .reactiva-team-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #plataforma-root .reactiva-team-filters,
+  #plataforma-root .reactiva-team-filters.has-company { grid-template-columns: 1fr 1fr; }
+  #plataforma-root .reactiva-team-filters label { grid-column: 1 / -1; }
+}
+
+@media (max-width: 600px) {
+  #plataforma-root .reactiva-team-panel,
+  #plataforma-root .reactiva-settings-panel { padding: 0.9rem; }
+  #plataforma-root .reactiva-team-head,
+  #plataforma-root .reactiva-settings-head,
+  #plataforma-root .reactiva-settings-footer { align-items: stretch; flex-direction: column; }
+  #plataforma-root .reactiva-team-actions button { flex: 1; justify-content: center; }
+  #plataforma-root .reactiva-team-kpis,
+  #plataforma-root .reactiva-team-filters,
+  #plataforma-root .reactiva-settings-grid,
+  #plataforma-root .reactiva-team-breakdowns { grid-template-columns: 1fr; }
+  #plataforma-root .reactiva-team-filters label,
+  #plataforma-root .reactiva-settings-prize { grid-column: auto; }
+  #plataforma-root .reactiva-settings-footer button { justify-content: center; }
+  #plataforma-root .reactiva-people-toggle {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    padding: 0.65rem;
+  }
+  #plataforma-root .reactiva-people-toggle-icon {
+    width: 34px;
+    height: 34px;
+  }
+  #plataforma-root .reactiva-people-toggle-action {
+    font-size: 0;
+  }
+  #plataforma-root .reactiva-people-toggle-action svg {
+    width: 18px;
+    height: 18px;
   }
 }
 
@@ -2133,6 +2858,26 @@
   font-size: 0.8rem;
   line-height: 1.55;
   white-space: pre-line;
+}
+
+#plataforma-root .email-preview-streak {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #99f6e4;
+  border-radius: 10px;
+  background: #f0fdfa;
+  color: #115e59;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+#plataforma-root .email-preview-streak-note {
+  display: block;
+  margin-top: 0.4rem;
+  color: #94a3b8;
+  font-size: 0.66rem;
+  line-height: 1.4;
 }
 
 #plataforma-root .email-attachment {
@@ -7015,4 +7760,2863 @@
   #plataforma-root .user-dashboard-page .user-pause-buttons {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* Puntaje ReActiva del usuario */
+#plataforma-root .user-program-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+#plataforma-root .reactiva-score-card {
+  width: 100%;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 1.25rem;
+  background: linear-gradient(145deg, #ffffff 0%, #f0fdf9 100%);
+  color: #0f172a;
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.08);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+#plataforma-root .reactiva-score-card:focus-visible {
+  outline: 3px solid rgba(16, 185, 129, 0.25);
+  outline-offset: 2px;
+}
+
+#plataforma-root .reactiva-score-card-head {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#plataforma-root .reactiva-score-card-head > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+#plataforma-root .reactiva-score-card-head small,
+#plataforma-root .reactiva-score-modal header small {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .reactiva-score-card-head strong {
+  font-size: 0.96rem;
+}
+
+#plataforma-root .reactiva-score-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #d1fae5;
+  color: #047857;
+}
+
+#plataforma-root .reactiva-score-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 1rem 0 0.55rem;
+}
+
+#plataforma-root .reactiva-score-main > strong {
+  font-size: 2rem;
+  line-height: 1;
+  color: #047857;
+}
+
+#plataforma-root .reactiva-score-main > strong small {
+  font-size: 1rem;
+  color: #64748b;
+}
+
+#plataforma-root .reactiva-score-main > span {
+  color: #047857;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-score-progress {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbe8e4;
+}
+
+#plataforma-root .reactiva-score-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #10b981, #00c2a8);
+}
+
+#plataforma-root .reactiva-score-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+#plataforma-root .reactiva-score-status span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#plataforma-root .reactiva-score-status .is-eligible {
+  color: #047857;
+}
+
+#plataforma-root .reactiva-score-current-week {
+  margin: 0.55rem 0 0;
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+#plataforma-root .reactiva-score-current-week strong { color: #0f766e; }
+
+#plataforma-root .reactiva-score-streak {
+  color: #c2410c;
+}
+
+#plataforma-root .reactiva-score-loading {
+  min-height: 186px;
+  cursor: default;
+  background: linear-gradient(100deg, #f8fafc 25%, #ecfdf5 45%, #f8fafc 65%);
+  background-size: 220% 100%;
+  animation: reactivaScoreLoading 1.4s ease infinite;
+}
+
+@keyframes reactivaScoreLoading {
+  to { background-position: -220% 0; }
+}
+
+#plataforma-root .reactiva-score-unavailable {
+  min-height: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: default;
+  color: #64748b;
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+#plataforma-root .reactiva-score-unavailable div {
+  display: flex;
+  flex-direction: column;
+}
+
+#plataforma-root .reactiva-score-unavailable strong { color: #334155; }
+#plataforma-root .reactiva-score-unavailable span { font-size: 0.76rem; }
+
+#plataforma-root .reactiva-score-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+#plataforma-root .reactiva-score-modal {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 2rem));
+  overflow-y: auto;
+  border-radius: 22px;
+  padding: 1.5rem;
+  background: white;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.24);
+}
+
+#plataforma-root .reactiva-score-modal header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+#plataforma-root .reactiva-score-modal h2 {
+  margin: 0.15rem 0 0;
+  color: #0f172a;
+  font-size: 1.45rem;
+}
+
+#plataforma-root .reactiva-score-modal header button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+}
+
+#plataforma-root .reactiva-score-summary,
+#plataforma-root .reactiva-score-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+#plataforma-root .reactiva-score-summary > div,
+#plataforma-root .reactiva-score-detail-grid > div {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+#plataforma-root .reactiva-score-summary strong,
+#plataforma-root .reactiva-score-detail-grid strong {
+  display: block;
+  color: #047857;
+  font-size: 1.25rem;
+}
+
+#plataforma-root .reactiva-score-summary span,
+#plataforma-root .reactiva-score-detail-grid span {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+#plataforma-root .reactiva-score-detail-grid {
+  margin-top: 0.75rem;
+}
+
+#plataforma-root .reactiva-score-current-detail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 1.15rem;
+}
+
+#plataforma-root .reactiva-score-current-detail h3 {
+  grid-column: 1 / -1;
+  margin: 0 0 0.1rem;
+  color: #334155;
+  font-size: 0.88rem;
+}
+
+#plataforma-root .reactiva-score-current-detail > div {
+  padding: 0.65rem;
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+}
+
+#plataforma-root .reactiva-score-current-detail span { color: #64748b; font-size: 0.66rem; }
+#plataforma-root .reactiva-score-current-detail strong { color: #0f766e; }
+
+#plataforma-root .reactiva-score-weeks {
+  margin-top: 1.25rem;
+}
+
+#plataforma-root .reactiva-score-weeks h3 {
+  margin-bottom: 0.65rem;
+  color: #334155;
+  font-size: 0.88rem;
+}
+
+#plataforma-root .reactiva-score-weeks > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #eef2f7;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+#plataforma-root .reactiva-score-weeks strong { color: #334155; }
+#plataforma-root .reactiva-score-weeks strong.complete { color: #059669; }
+#plataforma-root .reactiva-score-weeks p { color: #64748b; font-size: 0.82rem; }
+
+#plataforma-root .reactiva-score-eligibility {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+#plataforma-root .reactiva-score-eligibility.eligible {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+#plataforma-root .reactiva-score-eligibility div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+#plataforma-root .reactiva-score-eligibility span {
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+#plataforma-root .reactiva-score-disclaimer {
+  margin: 1rem 0 0;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+#plataforma-root .reactiva-score-streak-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+#plataforma-root .reactiva-score-streak-detail span {
+  padding: 0.7rem;
+  border-radius: 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 768px) {
+  #plataforma-root .reactiva-score-modal {
+    padding: 1.15rem;
+    border-radius: 18px;
+  }
+
+  #plataforma-root .reactiva-score-summary,
+  #plataforma-root .reactiva-score-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  #plataforma-root .reactiva-score-current-detail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  #plataforma-root .reactiva-score-summary > div,
+  #plataforma-root .reactiva-score-detail-grid > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+  }
+}
+/* RRHH dashboard: compact score summary and responsive executive metrics. */
+#plataforma-root .rrhh-dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+#plataforma-root .rrhh-metric-card-button {
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+#plataforma-root .rrhh-metric-card-button:hover {
+  transform: translateY(-2px);
+}
+
+#plataforma-root .rrhh-metric-card-button:focus-visible {
+  outline: 3px solid rgba(3, 105, 161, 0.2);
+  outline-offset: 2px;
+}
+
+#plataforma-root .rrhh-metric-card-action {
+  width: fit-content;
+  margin-top: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: inherit;
+  font-size: 0.74rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+#plataforma-root .rrhh-metric-card-action > span {
+  transition: transform 160ms ease;
+}
+
+#plataforma-root .rrhh-metric-card-button:hover .rrhh-metric-card-action > span {
+  transform: translateX(2px);
+}
+
+#plataforma-root .reactiva-overview-card,
+#plataforma-root .rrhh-metric-card-button {
+  overflow: hidden;
+}
+
+#plataforma-root .reactiva-overview-card.complete,
+#plataforma-root .rrhh-metric-card-button.complete {
+  background: linear-gradient(145deg, #ffffff 0%, #ecfdf5 100%) !important;
+}
+
+#plataforma-root .reactiva-overview-card.near,
+#plataforma-root .rrhh-metric-card-button.near {
+  background: linear-gradient(145deg, #ffffff 0%, #fff7ed 100%) !important;
+}
+
+#plataforma-root .reactiva-overview-progress,
+#plataforma-root .rrhh-metric-card-progress {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  display: block;
+  margin-top: 0.65rem;
+  background: rgba(148, 163, 184, 0.22);
+}
+
+#plataforma-root .reactiva-overview-progress i,
+#plataforma-root .rrhh-metric-card-progress i {
+  height: 100%;
+  border-radius: inherit;
+  display: block;
+  background: linear-gradient(90deg, #60a5fa, #2dd4bf);
+  transition: width 300ms ease;
+}
+
+#plataforma-root .reactiva-overview-card.near .reactiva-overview-progress i,
+#plataforma-root .rrhh-metric-card-button.near .rrhh-metric-card-progress i {
+  background: linear-gradient(90deg, #fbbf24, #fb923c);
+}
+
+#plataforma-root .reactiva-overview-card.complete .reactiva-overview-progress i,
+#plataforma-root .rrhh-metric-card-button.complete .rrhh-metric-card-progress i {
+  background: linear-gradient(90deg, #34d399, #00bfa6);
+}
+
+#plataforma-root .rrhh-reactiva-score-detail {
+  animation: fadeIn 180ms ease-out;
+}
+
+@media (max-width: 1180px) {
+  #plataforma-root .rrhh-dashboard-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  #plataforma-root .rrhh-dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  #plataforma-root .rrhh-dashboard-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Paneles internos: densidad y alineación consistente. */
+#plataforma-root .company-detail-summary-grid {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+#plataforma-root .company-detail-summary-card {
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0.85rem !important;
+  border-radius: 14px !important;
+}
+
+#plataforma-root .company-detail-summary-card h3,
+#plataforma-root .user-onboarding-facts-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.65rem;
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+#plataforma-root .company-onboarding-value {
+  margin: 0;
+  color: #1e293b;
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+#plataforma-root .company-onboarding-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+#plataforma-root .company-onboarding-badges > span {
+  margin: 0 !important;
+}
+
+#plataforma-root .company-onboarding-summary {
+  display: grid;
+  gap: 0.75rem;
+}
+
+#plataforma-root .company-detail-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+#plataforma-root .company-stat-card {
+  min-width: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+#plataforma-root .company-stat-card > div {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.35rem;
+  color: #10b981;
+}
+
+#plataforma-root .company-stat-card.orange > div { color: #f59e0b; }
+
+#plataforma-root .company-stat-card small {
+  min-width: 0;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .company-stat-card strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+#plataforma-root .company-onboarding-section,
+#plataforma-root .company-risk-section {
+  margin: 0 !important;
+  padding: 0.9rem 1rem !important;
+  border-radius: 15px !important;
+}
+
+#plataforma-root .company-onboarding-section > h3,
+#plataforma-root .company-risk-section > h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.65rem;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+#plataforma-root .company-onboarding-section > h3 svg { color: #10b981; }
+#plataforma-root .company-onboarding-section > h3.orange svg { color: #f59e0b; }
+
+#plataforma-root .company-diagnosis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+#plataforma-root .company-diagnosis-grid > div {
+  min-width: 0;
+}
+
+#plataforma-root .company-diagnosis-grid span {
+  display: block;
+  margin-bottom: 0.22rem;
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .company-diagnosis-grid strong {
+  display: block;
+  color: #1e293b;
+  font-size: 0.86rem;
+}
+
+#plataforma-root .company-empty-value {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+#plataforma-root .company-risk-section-content {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+#plataforma-root .company-risk-section-content > div {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 11px;
+}
+
+#plataforma-root .company-risk-section-content span small {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .company-risk-section-content span strong {
+  display: block;
+  font-size: 1rem;
+}
+
+#plataforma-root .company-risk-section-content p {
+  min-width: 0;
+  margin: 0;
+  color: #475569;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+#plataforma-root .company-detail-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+#plataforma-root .company-overview-shell {
+  margin: 0 !important;
+  padding: 1.15rem !important;
+  border-radius: 18px !important;
+}
+
+#plataforma-root .company-overview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+#plataforma-root .company-overview-heading h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.02rem;
+}
+
+#plataforma-root .company-overview-heading p {
+  margin: 0.2rem 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+#plataforma-root .company-overview-heading > span {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  color: #0f766e;
+  background: #ecfdf5;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+#plataforma-root .company-profile-panel,
+#plataforma-root .company-priorities-panel {
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0.9rem !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px !important;
+  background: #f8fafc;
+}
+
+#plataforma-root .company-profile-panel > h3,
+#plataforma-root .company-priorities-panel > h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.7rem;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+#plataforma-root .company-profile-panel > h3 svg { color: #0f766e; }
+#plataforma-root .company-priorities-panel > h3 svg { color: #7c3aed; }
+
+#plataforma-root .company-profile-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+#plataforma-root .company-profile-fact {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #fff;
+}
+
+#plataforma-root .company-profile-fact-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #0f766e;
+  background: #e6fffb;
+}
+
+#plataforma-root .company-profile-fact div { min-width: 0; }
+
+#plataforma-root .company-profile-fact div > span,
+#plataforma-root .company-priority-group > span {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: #94a3b8;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .company-profile-fact strong {
+  display: block;
+  color: #1e293b;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+#plataforma-root .company-priorities-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+#plataforma-root .company-priority-group {
+  padding: 0.65rem 0.7rem;
+  border-radius: 11px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+#plataforma-root .company-priority-group + .company-priority-group {
+  margin-top: 0.55rem;
+}
+
+#plataforma-root .company-priority-group em {
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+#plataforma-root .company-detail-risk-card {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 13px;
+  background: #fffaf3;
+}
+
+#plataforma-root .company-risk-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #9a3412;
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+#plataforma-root .company-risk-content {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+#plataforma-root .company-risk-content > div {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+}
+
+#plataforma-root .company-risk-content strong {
+  font-size: 1rem;
+}
+
+#plataforma-root .company-risk-content p {
+  min-width: 0;
+  margin: 0;
+  color: #475569;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+#plataforma-root .user-onboarding-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+  grid-template-areas:
+    "facts facts facts"
+    "risk pain goals";
+  gap: 0.75rem;
+}
+
+#plataforma-root .user-onboarding-summary-grid > .card {
+  min-width: 0;
+  margin: 0 !important;
+  padding: 1rem !important;
+  border-radius: 15px !important;
+}
+
+#plataforma-root .user-onboarding-risk-card {
+  grid-area: risk;
+}
+
+#plataforma-root .user-onboarding-facts-card {
+  grid-area: facts;
+}
+
+#plataforma-root .user-onboarding-pain-card {
+  grid-area: pain;
+}
+
+#plataforma-root .user-onboarding-goals-card {
+  grid-area: goals;
+}
+
+#plataforma-root .user-onboarding-facts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+#plataforma-root .user-onboarding-fact {
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+#plataforma-root .user-onboarding-fact span {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .user-onboarding-fact strong {
+  display: block;
+  color: #1e293b;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 769px) {
+  #plataforma-root .analytics-admin-page .analytics-header {
+    display: block !important;
+    margin-bottom: 1.3rem !important;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-header .header-title {
+    margin: 0 !important;
+    font-size: 1.45rem;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-filters {
+    display: grid !important;
+    grid-template-columns:
+      minmax(175px, 1.05fr)
+      minmax(170px, 0.95fr)
+      minmax(218px, auto)
+      minmax(135px, 0.72fr)
+      minmax(220px, 1.25fr)
+      auto;
+    align-items: center !important;
+    gap: 0.6rem !important;
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-control,
+  #plataforma-root .analytics-admin-page .analytics-period-group {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-control .input-field,
+  #plataforma-root .analytics-admin-page .analytics-period-group .input-field {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 42px;
+    margin: 0 !important;
+    border-color: #e2e8f0;
+    border-radius: 11px;
+    background: #f8fafc !important;
+    font-size: 0.79rem;
+    text-overflow: ellipsis;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-profile-compare-button {
+    width: 100%;
+    min-height: 42px;
+    padding-inline: 0.7rem;
+    background: #f8fafc;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-period-group {
+    gap: 0.45rem !important;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-compare {
+    min-height: 42px;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    background: #f8fafc;
+    font-size: 0.72rem !important;
+    line-height: 1.2;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-spacer {
+    display: none !important;
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-filters > .rg-trigger {
+    grid-column: auto !important;
+    justify-self: stretch !important;
+    width: auto !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 0.55rem 0.8rem !important;
+    border-radius: 11px !important;
+    font-size: 0.76rem !important;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .analytics-rrhh-page .analytics-header {
+    align-items: center !important;
+    gap: 1rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  #plataforma-root .analytics-rrhh-page .analytics-filters {
+    display: flex !important;
+    flex: 1;
+    flex-wrap: nowrap !important;
+    justify-content: flex-end;
+    gap: 0.6rem !important;
+    min-width: 0;
+  }
+
+  #plataforma-root .analytics-rrhh-page .analytics-filters > * {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: 0 !important;
+  }
+
+  #plataforma-root .analytics-rrhh-page .analytics-period-group,
+  #plataforma-root .analytics-rrhh-page .analytics-custom-range {
+    flex-wrap: nowrap !important;
+  }
+
+  #plataforma-root .analytics-rrhh-page .analytics-profile-compare-button {
+    padding-inline: 0.75rem;
+    white-space: nowrap;
+  }
+
+  #plataforma-root .companies-page > .page-toolbar,
+  #plataforma-root .users-page > .page-toolbar {
+    margin-bottom: 1.1rem !important;
+  }
+
+  #plataforma-root .companies-page > .card[style*="margin-bottom: 2rem"],
+  #plataforma-root .users-page .users-search-card {
+    padding: 0.65rem !important;
+    margin-bottom: 0.85rem !important;
+    border-radius: 14px;
+  }
+
+  #plataforma-root .companies-page > div[style*="display: grid"] {
+    gap: 0.7rem !important;
+  }
+
+  #plataforma-root .companies-page .company-list-card {
+    padding: 0.9rem 1rem !important;
+  }
+
+  #plataforma-root .companies-page .company-card-head {
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .companies-page .company-card-main {
+    gap: 0.8rem !important;
+  }
+
+  #plataforma-root .companies-page .company-card-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  #plataforma-root .companies-page .company-card-contact {
+    padding-top: 0.55rem !important;
+  }
+
+  #plataforma-root .company-detail-back {
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .company-detail-hero {
+    padding: 1rem 1.15rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  #plataforma-root .company-detail-hero-row {
+    flex-wrap: nowrap !important;
+  }
+
+  #plataforma-root .company-detail-identity {
+    min-width: 0;
+    flex: 1;
+  }
+
+  #plataforma-root .company-detail-status {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  #plataforma-root .company-detail-icon {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  #plataforma-root .company-detail-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem !important;
+    margin: 0 !important;
+  }
+
+  #plataforma-root .company-info-card {
+    min-width: 0 !important;
+    padding: 0.7rem 0.8rem !important;
+    border-radius: 12px !important;
+  }
+
+  #plataforma-root .company-info-card > div {
+    margin-bottom: 0.3rem !important;
+  }
+
+  #plataforma-root .company-info-card p {
+    font-size: 0.84rem !important;
+    line-height: 1.25;
+  }
+
+  #plataforma-root .company-detail-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #plataforma-root .company-onboarding-summary {
+    display: grid;
+    gap: 1rem;
+  }
+
+  #plataforma-root .company-detail-direct {
+    width: 100%;
+    margin: 0;
+  }
+
+  #plataforma-root .company-detail-summary-card h3,
+  #plataforma-root .company-detail-risk-card h3 {
+    margin-bottom: 0.65rem !important;
+    font-size: 0.88rem !important;
+  }
+
+  #plataforma-root .company-detail-summary-card p {
+    margin-bottom: 0.3rem;
+    font-size: 0.78rem !important;
+    line-height: 1.35;
+  }
+
+  #plataforma-root .company-detail-risk-card {
+    padding: 0.8rem 1rem !important;
+    margin: 0 !important;
+    border-radius: 14px !important;
+  }
+
+  #plataforma-root .company-detail-risk-card > div {
+    gap: 0.85rem !important;
+  }
+
+  #plataforma-root .users-page .responsive-table-card th,
+  #plataforma-root .users-page .responsive-table-card td {
+    padding: 0.72rem 0.85rem !important;
+  }
+
+  #plataforma-root .user-detail-back {
+    margin-bottom: 0.55rem !important;
+  }
+
+  #plataforma-root .user-detail-hero {
+    padding: 1rem 1.15rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  #plataforma-root .user-detail-tabs {
+    margin-bottom: 0.9rem !important;
+  }
+
+  #plataforma-root .user-detail-page .card {
+    padding: 1rem !important;
+  }
+
+  #plataforma-root .user-detail-kpi-grid {
+    gap: 0.65rem !important;
+    margin-bottom: 0.9rem !important;
+  }
+
+  #plataforma-root .user-detail-evolution-grid {
+    gap: 0.65rem !important;
+    margin-bottom: 0.9rem !important;
+  }
+
+  #plataforma-root .user-onboarding-summary-grid {
+    grid-template-rows: auto auto;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1250px) {
+  #plataforma-root .analytics-admin-page .analytics-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #plataforma-root .analytics-admin-page .analytics-period-group {
+    grid-column: span 2;
+  }
+
+  #plataforma-root .user-onboarding-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+#plataforma-root .analytics-summary-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 42px;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #99f6e4;
+  border-radius: 11px;
+  background: #f0fdfa;
+  color: #0f766e;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#plataforma-root .analytics-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+#plataforma-root .analytics-summary-trigger:hover {
+  border-color: #5eead4;
+  background: #ccfbf1;
+}
+
+#plataforma-root .analytics-summary-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+#plataforma-root .analytics-summary-backdrop {
+  position: fixed;
+  z-index: 10020;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.18s ease-out;
+}
+
+#plataforma-root .analytics-summary-modal {
+  width: min(760px, 96vw);
+  max-height: 90vh;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 22px;
+  background: #f8fafc;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.3);
+}
+
+#plataforma-root .analytics-summary-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.35rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #ffffff 55%, #ecfeff);
+}
+
+#plataforma-root .analytics-summary-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+#plataforma-root .analytics-summary-icon {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 13px;
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+#plataforma-root .analytics-summary-title-wrap p {
+  margin: 0 0 0.12rem;
+  color: #0f766e;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .analytics-summary-title-wrap h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.32rem;
+  line-height: 1.15;
+}
+
+#plataforma-root .analytics-summary-title-wrap div > span {
+  display: block;
+  margin-top: 0.28rem;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+#plataforma-root .analytics-summary-header > button {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 0;
+  border-radius: 11px;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+}
+
+#plataforma-root .analytics-summary-body {
+  max-height: calc(90vh - 104px);
+  overflow-y: auto;
+  padding: 1.15rem 1.35rem 1.25rem;
+}
+
+#plataforma-root .analytics-summary-diagnostic {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  background: #eff6ff;
+}
+
+#plataforma-root .analytics-summary-diagnostic > div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+#plataforma-root .analytics-summary-diagnostic span {
+  color: #64748b;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .analytics-summary-diagnostic strong {
+  color: #1d4ed8;
+  font-size: 1rem;
+}
+
+#plataforma-root .analytics-summary-diagnostic p {
+  margin: 0;
+  color: #334155;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+#plataforma-root .analytics-summary-diagnostic.positive {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+#plataforma-root .analytics-summary-diagnostic.positive strong {
+  color: #047857;
+}
+
+#plataforma-root .analytics-summary-diagnostic.attention {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+#plataforma-root .analytics-summary-diagnostic.attention strong {
+  color: #c2410c;
+}
+
+#plataforma-root .analytics-summary-diagnostic.neutral {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+#plataforma-root .analytics-summary-diagnostic.neutral strong {
+  color: #475569;
+}
+
+#plataforma-root .analytics-summary-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.8rem;
+}
+
+#plataforma-root .analytics-summary-kpis span {
+  padding: 0.7rem 0.75rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #fff;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+#plataforma-root .analytics-summary-kpis b {
+  display: block;
+  margin-bottom: 0.12rem;
+  color: #0f766e;
+  font-size: 1.08rem;
+}
+
+#plataforma-root .analytics-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+#plataforma-root .analytics-summary-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  min-height: 112px;
+  padding: 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+#plataforma-root .analytics-summary-card > span {
+  display: grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  background: #ecfeff;
+  color: #0f766e;
+}
+
+#plataforma-root .analytics-summary-card.attention > span {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+#plataforma-root .analytics-summary-card.action > span {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+#plataforma-root .analytics-summary-card h3 {
+  margin: 0 0 0.3rem;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+#plataforma-root .analytics-summary-card p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+#plataforma-root .analytics-summary-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+#plataforma-root .analytics-summary-details span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.42rem 0.62rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #475569;
+  font-size: 0.68rem;
+}
+
+#plataforma-root .analytics-summary-note {
+  margin: 0.8rem 0 0;
+  color: #94a3b8;
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  #plataforma-root .analytics-admin-page .analytics-title-row {
+    margin-bottom: 0.75rem;
+  }
+
+  #plataforma-root .analytics-summary-kpis,
+  #plataforma-root .analytics-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #plataforma-root .analytics-summary-card {
+    min-height: 0;
+  }
+
+  #plataforma-root .analytics-summary-diagnostic {
+    grid-template-columns: 120px 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  #plataforma-root .analytics-summary-backdrop {
+    padding: 0.55rem;
+  }
+
+  #plataforma-root .analytics-summary-header,
+  #plataforma-root .analytics-summary-body {
+    padding-inline: 0.9rem;
+  }
+
+  #plataforma-root .analytics-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #plataforma-root .analytics-summary-trigger {
+    min-height: 38px;
+    padding-inline: 0.65rem;
+  }
+
+  #plataforma-root .analytics-summary-diagnostic {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+}
+
+#plataforma-root .rrhh-dashboard-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+#plataforma-root .rrhh-metric-card {
+  height: 122px;
+  min-height: 122px;
+  padding: 0.8rem 0.9rem !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+#plataforma-root .rrhh-metric-card > div:first-child {
+  margin-bottom: 0.42rem !important;
+}
+
+#plataforma-root .rrhh-metric-card > div:first-child > span:last-child {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+}
+
+#plataforma-root .rrhh-metric-card > strong {
+  font-size: 1.5rem !important;
+  margin-bottom: 0.28rem !important;
+}
+
+#plataforma-root .rrhh-metric-card-action {
+  margin-top: 0.38rem;
+  padding-top: 0;
+  font-size: 0.7rem;
+}
+
+#plataforma-root .rrhh-metric-score-row {
+  display: grid;
+  grid-template-columns: auto minmax(60px, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 !important;
+}
+
+#plataforma-root .rrhh-metric-score-row > strong {
+  font-size: 1.5rem !important;
+}
+
+#plataforma-root .rrhh-metric-score-row .rrhh-metric-card-progress {
+  width: 100%;
+  height: 5px;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  #plataforma-root .company-detail-summary-grid,
+  #plataforma-root .company-detail-main-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  #plataforma-root .rrhh-dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #plataforma-root .rrhh-metric-card {
+    height: auto;
+    min-height: 118px;
+  }
+
+  #plataforma-root .user-onboarding-summary-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "risk"
+      "facts"
+      "pain"
+      "goals";
+  }
+
+  #plataforma-root .user-onboarding-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #plataforma-root .company-detail-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #plataforma-root .company-detail-risk-card {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  #plataforma-root .company-risk-content {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  #plataforma-root .company-risk-section-content {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 420px) {
+  #plataforma-root .rrhh-dashboard-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  #plataforma-root .company-detail-summary-grid,
+  #plataforma-root .user-onboarding-facts,
+  #plataforma-root .company-diagnosis-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Puntaje del usuario: recorrido lúdico, simple y alineado a ReActiva. */
+#plataforma-root .reactiva-score-game-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: #bae6fd;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(45, 212, 191, 0.15), transparent 34%),
+    linear-gradient(150deg, #ffffff 0%, #f0f9ff 54%, #f0fdfa 100%);
+  box-shadow: 0 12px 32px rgba(3, 105, 161, 0.1);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+#plataforma-root .reactiva-score-game-card:hover {
+  transform: translateY(-2px);
+  border-color: #67e8f9;
+  box-shadow: 0 16px 36px rgba(3, 105, 161, 0.14);
+}
+
+#plataforma-root .reactiva-score-game-card.near {
+  border-color: #fed7aa;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(251, 146, 60, 0.14), transparent 34%),
+    linear-gradient(150deg, #ffffff 0%, #fffaf3 55%, #f0fdfa 100%);
+}
+
+#plataforma-root .reactiva-score-game-card.complete {
+  border-color: #86efac;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(52, 211, 153, 0.2), transparent 36%),
+    linear-gradient(150deg, #ffffff 0%, #ecfdf5 55%, #f0fdfa 100%);
+  box-shadow: 0 14px 38px rgba(5, 150, 105, 0.14);
+}
+
+#plataforma-root .reactiva-score-game-card .reactiva-score-card-head,
+#plataforma-root .reactiva-game-hero,
+#plataforma-root .reactiva-game-week,
+#plataforma-root .reactiva-game-missions,
+#plataforma-root .reactiva-game-footer {
+  position: relative;
+  z-index: 1;
+}
+
+#plataforma-root .reactiva-score-game-card .reactiva-score-icon {
+  color: #0369a1;
+  background: linear-gradient(145deg, #e0f2fe, #ccfbf1);
+}
+
+#plataforma-root .reactiva-score-game-card.complete .reactiva-score-icon {
+  color: #047857;
+  background: linear-gradient(145deg, #dcfce7, #ccfbf1);
+}
+
+#plataforma-root .reactiva-game-streak {
+  min-height: 27px;
+  padding: 0.3rem 0.48rem;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: #c2410c;
+  background: rgba(255, 247, 237, 0.9);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+#plataforma-root .reactiva-game-hero {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+
+#plataforma-root .reactiva-game-ring {
+  width: 88px;
+  height: 88px;
+  padding: 7px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(#00bfa6 var(--score-progress), #dfe9ed 0);
+  box-shadow: 0 8px 22px rgba(0, 191, 166, 0.13);
+  box-sizing: border-box;
+}
+
+#plataforma-root .reactiva-score-game-card.near .reactiva-game-ring {
+  background: conic-gradient(#fb923c var(--score-progress), #f3e7dc 0);
+}
+
+#plataforma-root .reactiva-game-ring > span {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+}
+
+#plataforma-root .reactiva-game-ring strong {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+#plataforma-root .reactiva-game-ring small {
+  margin-top: 0.25rem;
+  color: #64748b;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-game-mission {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#plataforma-root .reactiva-game-mission > small {
+  color: #0f766e;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#plataforma-root .reactiva-score-game-card.near .reactiva-game-mission > small {
+  color: #c2410c;
+}
+
+#plataforma-root .reactiva-game-mission > strong {
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #0f172a;
+  font-size: 0.88rem;
+  line-height: 1.25;
+}
+
+#plataforma-root .reactiva-game-mission > strong svg {
+  flex: 0 0 auto;
+  color: #00a891;
+}
+
+#plataforma-root .reactiva-game-mission > span {
+  margin-top: 0.24rem;
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+#plataforma-root .reactiva-game-week {
+  margin-top: 1rem;
+}
+
+#plataforma-root .reactiva-game-week-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.38rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+#plataforma-root .reactiva-game-week-title strong {
+  color: #0f766e;
+}
+
+#plataforma-root .reactiva-score-game-card .reactiva-score-progress {
+  height: 7px;
+  background: rgba(148, 163, 184, 0.22);
+}
+
+#plataforma-root .reactiva-score-game-card.near .reactiva-score-progress span {
+  background: linear-gradient(90deg, #fbbf24, #fb923c);
+}
+
+#plataforma-root .reactiva-game-missions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.42rem;
+  margin-top: 0.8rem;
+}
+
+#plataforma-root .reactiva-game-missions > span {
+  min-width: 0;
+  padding: 0.48rem;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 11px;
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+#plataforma-root .reactiva-game-missions > span > span:first-child {
+  width: 25px;
+  height: 25px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #0284c7;
+  background: #e0f2fe;
+}
+
+#plataforma-root .reactiva-game-missions > span > span:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#plataforma-root .reactiva-game-missions strong {
+  overflow: hidden;
+  color: #334155;
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#plataforma-root .reactiva-game-missions small {
+  color: #94a3b8;
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-game-missions > span.complete {
+  border-color: #a7f3d0;
+  background: rgba(236, 253, 245, 0.88);
+}
+
+#plataforma-root .reactiva-game-missions > span.complete > span:first-child {
+  color: #047857;
+  background: #d1fae5;
+}
+
+#plataforma-root .reactiva-game-footer {
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(203, 213, 225, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-game-footer > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+#plataforma-root .reactiva-game-footer > span:last-child {
+  color: #0f766e;
+  white-space: nowrap;
+}
+
+#plataforma-root .reactiva-game-footer .is-eligible {
+  color: #047857;
+}
+
+#plataforma-root .reactiva-score-game-modal {
+  width: min(680px, 100%);
+  padding: 1.1rem;
+  border: 1px solid #dbe7e3;
+  display: block;
+  background:
+    radial-gradient(circle at 100% 0, rgba(45, 212, 191, 0.1), transparent 28%),
+    #fff;
+}
+
+#plataforma-root .reactiva-score-game-modal > * + * {
+  margin-top: 0.65rem;
+}
+
+#plataforma-root .reactiva-score-game-modal > header {
+  margin: 0 0 0.65rem;
+}
+
+#plataforma-root .reactiva-score-game-modal > .reactiva-score-detail-grid,
+#plataforma-root .reactiva-score-game-modal > .reactiva-score-current-detail,
+#plataforma-root .reactiva-score-game-modal > .reactiva-score-weeks,
+#plataforma-root .reactiva-score-game-modal > .reactiva-score-eligibility,
+#plataforma-root .reactiva-score-game-modal > .reactiva-score-streak-detail,
+#plataforma-root .reactiva-score-game-modal > .reactiva-score-disclaimer {
+  margin-top: 0;
+}
+
+#plataforma-root .reactiva-game-compact-overview {
+  min-height: 68px;
+  padding: 0.7rem;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  background: linear-gradient(145deg, #f8fafc, #f0f9ff);
+}
+
+#plataforma-root .reactiva-game-compact-overview > span:first-child,
+#plataforma-root .reactiva-game-compact-streak {
+  display: flex;
+  flex-direction: column;
+}
+
+#plataforma-root .reactiva-game-compact-overview strong {
+  color: #047857;
+  font-size: 1.15rem;
+  line-height: 1.1;
+}
+
+#plataforma-root .reactiva-game-compact-overview small {
+  color: #64748b;
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+#plataforma-root .reactiva-game-compact-progress {
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+#plataforma-root .reactiva-game-compact-progress > span:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+#plataforma-root .reactiva-game-compact-progress > span:last-child {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  display: block;
+  background: #dbe4ea;
+}
+
+#plataforma-root .reactiva-game-compact-progress i {
+  height: 100%;
+  border-radius: inherit;
+  display: block;
+  background: linear-gradient(90deg, #60a5fa, #2dd4bf);
+}
+
+#plataforma-root .reactiva-game-compact-streak {
+  padding-left: 0.8rem;
+  border-left: 1px solid #dbe2ea;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 0.1rem 0.4rem;
+  color: #c2410c;
+}
+
+#plataforma-root .reactiva-game-compact-streak > span {
+  display: flex;
+  flex-direction: column;
+}
+
+#plataforma-root .reactiva-game-section-title {
+  margin: 0.65rem 0 0.4rem;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+#plataforma-root .reactiva-game-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+#plataforma-root .reactiva-game-modal-title > span {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  color: #0369a1;
+  background: linear-gradient(145deg, #e0f2fe, #ccfbf1);
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-summary > div {
+  position: relative;
+  padding: 0.9rem 0.8rem;
+  border-color: #dbeafe;
+  background: linear-gradient(145deg, #f8fafc, #f0f9ff);
+}
+
+#plataforma-root .reactiva-game-summary-icon {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 0.5rem;
+  border-radius: 9px;
+  display: grid !important;
+  place-items: center;
+  color: #0f766e !important;
+  background: #ccfbf1;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-detail-grid > div {
+  min-height: 84px;
+  padding: 0.7rem;
+  border-color: #e2e8f0;
+  background: #fff;
+}
+
+#plataforma-root .reactiva-game-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #64748b;
+}
+
+#plataforma-root .reactiva-game-detail-title svg {
+  flex: 0 0 auto;
+  color: #0284c7;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-detail-grid strong {
+  margin: 0.4rem 0 0.5rem;
+}
+
+#plataforma-root .reactiva-game-detail-progress {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  display: block;
+  background: #e2e8f0;
+}
+
+#plataforma-root .reactiva-game-detail-progress i {
+  height: 100%;
+  border-radius: inherit;
+  display: block;
+  background: linear-gradient(90deg, #60a5fa, #2dd4bf);
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail h3 > span {
+  margin-left: auto;
+  color: #0f766e;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail > div {
+  min-height: 48px;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail > div.complete {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail > div > span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-eligibility {
+  min-height: 66px;
+  padding: 0.7rem;
+  align-items: center;
+}
+
+#plataforma-root .reactiva-game-inline-streak {
+  margin-left: auto;
+  padding-left: 0.75rem;
+  border-left: 1px solid currentColor;
+  color: inherit !important;
+  font-size: 0.66rem !important;
+  white-space: nowrap;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-disclaimer {
+  margin-bottom: 0;
+  font-size: 0.62rem;
+}
+
+#plataforma-root .reactiva-game-journey-toggle {
+  width: 100%;
+  min-height: 62px;
+  padding: 0.7rem;
+  border: 1px solid #dbe7e3;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  color: #334155;
+  background: #f8fffd;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+#plataforma-root .reactiva-game-journey-toggle > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+#plataforma-root .reactiva-game-journey-toggle > span:first-child {
+  min-width: 0;
+  color: #0f766e;
+}
+
+#plataforma-root .reactiva-game-journey-toggle > span:first-child > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#plataforma-root .reactiva-game-journey-toggle strong {
+  color: #0f172a;
+  font-size: 0.76rem;
+}
+
+#plataforma-root .reactiva-game-journey-toggle small {
+  color: #64748b;
+  font-size: 0.64rem;
+}
+
+#plataforma-root .reactiva-game-journey-toggle > span:last-child {
+  color: #0f766e;
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+#plataforma-root .reactiva-game-journey-toggle[aria-expanded="true"] > span:last-child svg {
+  transform: rotate(180deg);
+}
+
+#plataforma-root .reactiva-game-journey-list {
+  margin-top: 0.35rem;
+  padding: 0 !important;
+  border: 0 !important;
+  display: block !important;
+  animation: fadeIn 160ms ease-out;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-game-journey-list > div {
+  display: grid;
+  grid-template-columns: 28px minmax(115px, 1fr) minmax(90px, 1.3fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-game-journey-list > div > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  color: #334155;
+  font-weight: 750;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-game-journey-list > div > span:nth-child(2) small {
+  color: #94a3b8;
+  font-size: 0.64rem;
+  font-weight: 600;
+}
+
+#plataforma-root .reactiva-game-week-node {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  background: #e2e8f0;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+#plataforma-root .reactiva-game-journey-list > div.complete .reactiva-game-week-node {
+  color: #047857;
+  background: #d1fae5;
+}
+
+#plataforma-root .reactiva-game-week-line {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  display: block;
+  background: #e2e8f0;
+}
+
+#plataforma-root .reactiva-game-week-line i {
+  height: 100%;
+  border-radius: inherit;
+  display: block;
+  background: linear-gradient(90deg, #60a5fa, #2dd4bf);
+}
+
+#plataforma-root .reactiva-game-journey-list > div.complete .reactiva-game-week-line i {
+  background: linear-gradient(90deg, #34d399, #00bfa6);
+}
+
+@media (max-width: 520px) {
+  #plataforma-root .reactiva-score-game-card {
+    padding: 1rem;
+  }
+
+  #plataforma-root .reactiva-game-hero {
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  #plataforma-root .reactiva-game-ring {
+    width: 76px;
+    height: 76px;
+  }
+
+  #plataforma-root .reactiva-game-missions {
+    gap: 0.3rem;
+  }
+
+  #plataforma-root .reactiva-game-missions > span {
+    grid-template-columns: 1fr;
+    padding: 0.42rem;
+  }
+
+  #plataforma-root .reactiva-game-missions > span > span:first-child {
+    width: 23px;
+    height: 23px;
+  }
+
+  #plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #plataforma-root .reactiva-score-game-modal {
+    display: block;
+    padding: 0.85rem;
+  }
+
+  #plataforma-root .reactiva-score-game-modal > * + * {
+    margin-top: 0.5rem;
+  }
+
+  #plataforma-root .reactiva-score-game-modal .reactiva-score-detail-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  #plataforma-root .reactiva-score-game-modal .reactiva-score-detail-grid > div {
+    min-height: 74px;
+    padding: 0.48rem;
+    display: block;
+  }
+
+  #plataforma-root .reactiva-game-compact-overview {
+    grid-template-columns: auto minmax(110px, 1fr);
+    min-height: 58px;
+    padding: 0.55rem;
+    gap: 0.55rem;
+  }
+
+  #plataforma-root .reactiva-game-compact-streak {
+    display: none;
+  }
+
+  #plataforma-root .reactiva-game-inline-streak {
+    display: none;
+  }
+
+  #plataforma-root .reactiva-score-game-modal .reactiva-score-eligibility {
+    min-height: 56px;
+  }
+
+  #plataforma-root .reactiva-score-game-modal .reactiva-game-journey-list > div {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+  }
+
+  #plataforma-root .reactiva-score-game-modal .reactiva-game-week-line {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
+}
+
+/* Panel de usuario compacto: sin textos editoriales ni listados abiertos por defecto. */
+#plataforma-root .user-pause-minimal-status {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  left: 0.8rem;
+  width: fit-content;
+  max-width: calc(100% - 1.6rem);
+  padding: 0.42rem 0.65rem;
+  border: 1px solid #dbe7e3;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #475569;
+  background: rgba(255, 255, 255, 0.94);
+  font-size: 0.7rem;
+  font-weight: 750;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+#plataforma-root .user-pause-minimal-status.complete {
+  border-color: #a7f3d0;
+  color: #047857;
+  background: rgba(236, 253, 245, 0.95);
+}
+
+#plataforma-root .user-week-toggle {
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  color: #334155;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+#plataforma-root .user-week-toggle > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+#plataforma-root .user-week-toggle strong {
+  color: #0f172a;
+  font-size: 0.86rem;
+}
+
+#plataforma-root .user-week-toggle small {
+  color: #64748b;
+  font-size: 0.66rem;
+}
+
+#plataforma-root .user-week-toggle small b {
+  color: #00a891;
+}
+
+#plataforma-root .user-week-toggle > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #0f766e;
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+#plataforma-root .user-week-toggle > span:last-child svg {
+  transition: transform 160ms ease;
+}
+
+#plataforma-root .user-week-toggle.open > span:last-child svg {
+  transform: rotate(180deg);
+}
+
+#plataforma-root .user-week-detail {
+  padding-top: 0.45rem;
+  border-top: 1px solid #eef2f7;
+  animation: fadeIn 160ms ease-out;
+}
+
+#plataforma-root .reactiva-score-game-modal {
+  max-height: none;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  #plataforma-root .user-dashboard-page .user-pause-media {
+    min-height: 210px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-action {
+    padding: 0.55rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-buttons {
+    width: 100%;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-card {
+    padding: 0.65rem !important;
+  }
+
+  #plataforma-root .user-week-card > .user-week-detail:last-child {
+    margin-top: 0 !important;
+    padding: 0.4rem 0 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  #plataforma-root .reactiva-score-game-modal {
+    max-height: calc(100dvh - 1rem);
+  }
+}
+
+/* Distribución final del panel de usuario: semana fija y alturas equilibradas. */
+#plataforma-root .user-program-side {
+  gap: 0.75rem;
+}
+
+#plataforma-root .user-program-side .reactiva-score-game-card {
+  padding: 1rem;
+  border-radius: 18px;
+}
+
+#plataforma-root .user-program-side .reactiva-game-hero {
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+#plataforma-root .user-program-side .reactiva-game-ring {
+  width: 74px;
+  height: 74px;
+  padding: 6px;
+}
+
+#plataforma-root .user-program-side .reactiva-game-ring strong {
+  font-size: 1.05rem;
+}
+
+#plataforma-root .user-program-side .reactiva-game-week {
+  margin-top: 0.7rem;
+}
+
+#plataforma-root .user-program-side .reactiva-game-footer {
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+}
+
+#plataforma-root .user-week-card {
+  gap: 0 !important;
+  box-sizing: border-box;
+}
+
+#plataforma-root .user-week-summary {
+  min-height: 42px;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid #eef2f7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+#plataforma-root .user-week-summary > span:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+#plataforma-root .user-week-summary strong {
+  color: #0f172a;
+  font-size: 0.86rem;
+}
+
+#plataforma-root .user-week-summary small {
+  color: #64748b;
+  font-size: 0.64rem;
+}
+
+#plataforma-root .user-week-summary small b,
+#plataforma-root .user-week-summary > span:last-child {
+  color: #00a891;
+  font-weight: 850;
+}
+
+#plataforma-root .user-week-summary > span:last-child {
+  font-size: 0.82rem;
+}
+
+#plataforma-root .user-week-detail {
+  padding-top: 0.5rem;
+  border: 0;
+  display: grid;
+  gap: 0.38rem;
+}
+
+#plataforma-root .user-week-day {
+  min-width: 0;
+  display: grid !important;
+  grid-template-columns: 50px repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 !important;
+}
+
+#plataforma-root .user-week-day-head {
+  min-width: 0;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#plataforma-root .user-week-day-head p {
+  overflow: hidden;
+  margin: 0;
+  font-size: 0.66rem !important;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#plataforma-root .user-week-day-head span {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--primary-color);
+}
+
+#plataforma-root .user-week-pause-row {
+  min-width: 0;
+  min-height: 42px;
+  gap: 0.34rem !important;
+  margin: 0 !important;
+  padding: 0.38rem !important;
+  border-width: 1px !important;
+  border-radius: 10px !important;
+  box-sizing: border-box;
+}
+
+#plataforma-root .user-week-pause-row > div:first-child {
+  width: 27px !important;
+  height: 27px !important;
+  border-radius: 8px !important;
+}
+
+#plataforma-root .user-week-pause-row > div:nth-child(2) p:first-child {
+  overflow: hidden;
+  font-size: 0.6rem !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#plataforma-root .user-week-pause-row > div:nth-child(2) p:last-child {
+  font-size: 0.54rem !important;
+  white-space: nowrap;
+}
+
+#plataforma-root .user-week-pause-row > span {
+  display: none;
+}
+
+/* Modal de puntaje: bloques uniformes y recompensa compacta. */
+#plataforma-root .reactiva-game-compact-overview {
+  grid-template-columns: 92px minmax(180px, 1fr) 112px;
+  min-height: 64px;
+  padding: 0.65rem 0.75rem;
+}
+
+#plataforma-root .reactiva-game-compact-overview > span:first-child {
+  align-self: stretch;
+  justify-content: center;
+}
+
+#plataforma-root .reactiva-game-compact-progress {
+  align-content: center;
+  padding: 0 0.7rem;
+  border-right: 1px solid #dbe2ea;
+  border-left: 1px solid #dbe2ea;
+}
+
+#plataforma-root .reactiva-game-compact-streak {
+  padding: 0;
+  border: 0;
+  justify-self: center;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-detail-grid {
+  gap: 0.55rem;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-detail-grid > div {
+  min-height: 86px;
+  padding: 0.65rem 0.75rem;
+  box-sizing: border-box;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail {
+  gap: 0.55rem;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail > div {
+  min-height: 50px;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-eligibility {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 0.65rem;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-eligibility > div {
+  min-width: 0;
+}
+
+#plataforma-root .reactiva-game-inline-streak {
+  margin: 0;
+  padding: 0.35rem 0 0.35rem 0.75rem;
+}
+
+@media (max-width: 768px) {
+  #plataforma-root .user-program-side {
+    gap: 0.55rem;
+  }
+
+  #plataforma-root .user-program-side .reactiva-score-game-card {
+    padding: 0.8rem;
+  }
+
+  #plataforma-root .user-week-day {
+    grid-template-columns: 45px repeat(2, minmax(0, 1fr));
+  }
+
+  #plataforma-root .reactiva-game-compact-overview {
+    grid-template-columns: 72px minmax(110px, 1fr);
+  }
+
+  #plataforma-root .reactiva-game-compact-progress {
+    padding: 0 0 0 0.55rem;
+    border-right: 0;
+  }
+
+  #plataforma-root .reactiva-score-game-modal .reactiva-score-eligibility {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+}
+
+/* Escritorio: ocupar todo el alto útil sin dejar un vacío debajo. */
+@media (min-width: 901px) {
+  #plataforma-root .user-dashboard-page {
+    height: calc(100vh - 5rem);
+    min-height: 0;
+    padding-bottom: 0 !important;
+    overflow: hidden;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-grid {
+    height: 100%;
+    min-height: 0;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-grid > div:first-child,
+  #plataforma-root .user-dashboard-page .user-program-side {
+    min-height: 0;
+    height: 100%;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-card {
+    min-height: 0;
+    flex: 1;
+  }
+
+  #plataforma-root .user-dashboard-page .user-pause-media {
+    min-height: 0 !important;
+    flex: 1 1 auto;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-side .reactiva-score-game-card {
+    flex: 0 0 auto;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-card {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-detail {
+    min-height: 0;
+    flex: 1;
+    display: grid;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-day {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto repeat(2, minmax(0, 1fr));
+    gap: 0.38rem;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-day-head {
+    min-height: 18px;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-day-head p {
+    font-size: 0.72rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-pause-row {
+    min-height: 0;
+    height: 100%;
+    padding: 0.5rem 0.6rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-pause-row > div:first-child {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-pause-row > div:nth-child(2) p:first-child {
+    font-size: 0.68rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-pause-row > div:nth-child(2) p:last-child {
+    font-size: 0.6rem !important;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-pause-row > span {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+}
+
+/* Celular y tablet: altura natural, video proporcionado y semana en tres filas. */
+@media (max-width: 900px) {
+  #plataforma-root .user-dashboard-page {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  #plataforma-root .user-dashboard-page .user-program-grid {
+    height: auto;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-detail {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-day {
+    grid-template-columns: 46px repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.32rem;
+  }
+
+  #plataforma-root .user-dashboard-page .user-week-pause-row > span {
+    display: none;
+  }
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-eligibility {
+  grid-template-columns: 20px minmax(0, 1fr);
+}
+
+/* Cierre visual compacto del detalle de puntaje. */
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail {
+  margin-top: 0.7rem !important;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-current-detail h3 {
+  margin-bottom: 0.08rem;
+}
+
+#plataforma-root .reactiva-score-game-modal .reactiva-score-disclaimer {
+  margin: 0.7rem 0 0;
+  padding-top: 0.55rem;
+  border-top: 1px solid #eef2f7;
+  text-align: center;
 }

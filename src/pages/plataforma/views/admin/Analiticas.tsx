@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
-import { Filter, Calendar, Bell, CheckCircle2, ListChecks, Users, Briefcase, Settings, Monitor, UserRoundCheck, GitCompareArrows, ShieldCheck } from 'lucide-react';
+import { Filter, Calendar, Bell, CheckCircle2, ListChecks, Users, Briefcase, Settings, Monitor, UserRoundCheck, GitCompareArrows, ShieldCheck, Sparkles, X, TrendingUp, AlertTriangle, Lightbulb } from 'lucide-react';
 import { type AdminStats, type AnalyticsWorkProfileFilter, useAdminStats } from '../../hooks/useAdminStats';
 import { ReportGenerator } from '../../components/ReportGenerator';
 import { useAuth } from '../../context/AuthContext';
@@ -546,6 +546,189 @@ const WorkProfileComparison: React.FC<{
   );
 };
 
+const WORK_PROFILE_FILTER_LABELS: Record<AnalyticsWorkProfileFilter, string> = {
+  ALL: 'Todos los perfiles',
+  ADMINISTRATIVO: 'Administrativo',
+  OPERATIVO: 'Operativo',
+};
+
+const AnalyticsSummaryModal: React.FC<{
+  data: AnaliticaSet;
+  stats: AdminStats;
+  previousData: AnaliticaSet;
+  previousStats: AdminStats;
+  comparisonActive: boolean;
+  compareWorkProfiles: boolean;
+  administrativeStats: AdminStats;
+  operativeStats: AdminStats;
+  companyLabel: string;
+  periodLabel: string;
+  workProfileFilter: AnalyticsWorkProfileFilter;
+  onClose: () => void;
+}> = ({
+  data,
+  stats,
+  previousData,
+  previousStats,
+  comparisonActive,
+  compareWorkProfiles,
+  administrativeStats,
+  operativeStats,
+  companyLabel,
+  periodLabel,
+  workProfileFilter,
+  onClose,
+}) => {
+  const summary = useMemo(() => {
+    if (!stats.hayDatos) {
+      return {
+        overview: 'Todavía no hay actividad registrada para la combinación de filtros seleccionada.',
+        standout: 'No hay información suficiente para identificar una tendencia destacada.',
+        attention: 'Revisá el período, la empresa o el perfil laboral para ampliar la consulta.',
+        action: 'Confirmá que existan usuarios activos y pausas registradas dentro del período.',
+        trend: null as number | null,
+        topTension: null as { name: string; valor: number } | null,
+        topPain: null as { name: string; valor: number } | null,
+      };
+    }
+
+    const firstPoint = data.evolucion[0];
+    const lastPoint = data.evolucion.at(-1);
+    const trend = firstPoint && lastPoint
+      ? Math.round(lastPoint.participacion - firstPoint.participacion)
+      : null;
+    const topTension = [...data.tension].sort((a, b) => b.valor - a.valor)[0] ?? null;
+    const topPain = [...data.zonas].sort((a, b) => b.valor - a.valor)[0] ?? null;
+    const positiveIndicators = [
+      { label: 'participación', value: data.kpis.participacion },
+      { label: 'foco', value: data.kpis.foco },
+      { label: 'impacto percibido', value: data.kpis.impacto },
+      { label: 'energía', value: data.kpis.energia },
+    ];
+    const strongest = [...positiveIndicators].sort((a, b) => b.value - a.value)[0];
+
+    let attention = 'Los indicadores se mantienen sin alertas relevantes para este período.';
+    let action = 'Mantené la programación actual y seguí observando la evolución en el próximo período.';
+    if (data.kpis.participacion < 50) {
+      attention = `La participación es el principal punto de atención, con ${data.kpis.participacion}% de cumplimiento.`;
+      action = 'Revisá horarios, accesos y recordatorios para facilitar que el equipo complete las pausas programadas.';
+    } else if (data.kpis.dolor >= 30) {
+      attention = `${data.kpis.dolor}% de los usuarios reportó molestias${topPain ? `, principalmente en ${topPain.name.toLowerCase()}` : ''}.`;
+      action = 'Priorizá contenidos relacionados con la zona más reportada y revisá su evolución en el próximo período.';
+    } else if (data.kpis.energia < 50) {
+      attention = `La energía promedio se encuentra en ${data.kpis.energia}%, por debajo del resto de los indicadores.`;
+      action = 'Revisá los momentos de mayor carga y ubicá las pausas antes de que se acumule el cansancio.';
+    } else if (data.kpis.foco < 50) {
+      attention = `El foco registra ${data.kpis.foco}% y requiere seguimiento.`;
+      action = 'Probá reforzar las pausas breves en los bloques con mayor dispersión y volvé a medir el próximo período.';
+    }
+
+    return {
+      overview: `${stats.totalPausas} pausas registradas entre ${stats.usuariosCount} usuarios. La participación del período es ${data.kpis.participacion}%.`,
+      standout: strongest
+        ? `El indicador más alto es ${strongest.label}, con ${strongest.value}%${trend === null ? '.' : `; la participación ${trend > 0 ? `subió ${trend}` : trend < 0 ? `bajó ${Math.abs(trend)}` : 'se mantuvo'} puntos dentro del período.`}`
+        : 'No hay información suficiente para identificar una tendencia destacada.',
+      attention,
+      action,
+      trend,
+      topTension,
+      topPain,
+    };
+  }, [data, stats]);
+
+  const previousAvailable = comparisonActive && previousStats.hayDatos;
+  const participationDelta = data.kpis.participacion - previousData.kpis.participacion;
+  const administrativeVisible = administrativeStats.usuariosCount >= WORK_PROFILE_PRIVACY_MIN_USERS;
+  const operativeVisible = operativeStats.usuariosCount >= WORK_PROFILE_PRIVACY_MIN_USERS;
+  const profileComparisonReady = compareWorkProfiles && administrativeVisible && operativeVisible;
+  const profileDifference = administrativeStats.adherencia - operativeStats.adherencia;
+  const profileLabel = compareWorkProfiles
+    ? 'Comparación de perfiles'
+    : WORK_PROFILE_FILTER_LABELS[workProfileFilter];
+  const diagnostic = !stats.hayDatos
+    ? { label: 'Sin datos', tone: 'neutral', text: 'No hay registros suficientes para diagnosticar este período.' }
+    : data.kpis.participacion < 50 || data.kpis.dolor >= 30 || data.kpis.energia < 50
+      ? { label: 'Requiere atención', tone: 'attention', text: summary.attention }
+      : data.kpis.participacion >= 75 && data.kpis.energia >= 65 && data.kpis.foco >= 65
+        ? { label: 'Buen avance', tone: 'positive', text: 'Los principales indicadores muestran una evolución favorable en el período seleccionado.' }
+        : { label: 'En seguimiento', tone: 'monitoring', text: 'El programa avanza, aunque todavía hay indicadores que conviene seguir de cerca.' };
+
+  return (
+    <div className="analytics-summary-backdrop" onClick={onClose}>
+      <section
+        className="analytics-summary-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="analytics-summary-title"
+        onClick={event => event.stopPropagation()}
+      >
+        <header className="analytics-summary-header">
+          <div className="analytics-summary-title-wrap">
+            <span className="analytics-summary-icon"><Sparkles size={22} /></span>
+            <div>
+              <p>Resumen de analíticas</p>
+              <h2 id="analytics-summary-title">Diagnóstico rápido</h2>
+              <span>{companyLabel} · {profileLabel} · {periodLabel}</span>
+            </div>
+          </div>
+          <button type="button" aria-label="Cerrar resumen" onClick={onClose}><X size={20} /></button>
+        </header>
+
+        <div className="analytics-summary-body">
+          <div className={`analytics-summary-diagnostic ${diagnostic.tone}`}>
+            <div>
+              <span>Estado general</span>
+              <strong>{diagnostic.label}</strong>
+            </div>
+            <p>{diagnostic.text}</p>
+          </div>
+
+          {stats.hayDatos && (
+            <div className="analytics-summary-kpis" aria-label="Indicadores principales del resumen">
+              <span><b>{data.kpis.participacion}%</b> Participación</span>
+              <span><b>{data.kpis.energia}%</b> Energía</span>
+              <span><b>{data.kpis.foco}%</b> Foco</span>
+              <span><b>{data.kpis.dolor}%</b> Molestias</span>
+            </div>
+          )}
+
+          <div className="analytics-summary-grid">
+            <article className="analytics-summary-card standout">
+              <span><TrendingUp size={18} /></span>
+              <div><h3>Lo más llamativo</h3><p>{summary.standout}</p></div>
+            </article>
+            <article className="analytics-summary-card attention">
+              <span><AlertTriangle size={18} /></span>
+              <div><h3>A tener en cuenta</h3><p>{summary.attention}</p></div>
+            </article>
+            <article className="analytics-summary-card action">
+              <span><Lightbulb size={18} /></span>
+              <div><h3>Qué hacer ahora</h3><p>{summary.action}</p></div>
+            </article>
+          </div>
+
+          {stats.hayDatos && (
+            <div className="analytics-summary-details">
+              {summary.topTension && <span><b>Mayor tensión:</b> {summary.topTension.name} ({summary.topTension.valor}%)</span>}
+              {summary.topPain && summary.topPain.valor > 0 && <span><b>Zona más reportada:</b> {prettyZone(summary.topPain.name)} ({summary.topPain.valor}%)</span>}
+              {previousAvailable && (
+                <span><b>Vs. {previousMonthLabel(periodLabel)}:</b> participación {participationDelta > 0 ? '+' : ''}{participationDelta} pp</span>
+              )}
+              {profileComparisonReady && (
+                <span><b>Perfiles:</b> participación {Math.abs(profileDifference)} pp mayor en {profileDifference >= 0 ? 'Administrativo' : 'Operativo'}</span>
+              )}
+              {compareWorkProfiles && !profileComparisonReady && (
+                <span><ShieldCheck size={14} /> La comparación se oculta cuando un grupo no alcanza el mínimo de privacidad.</span>
+              )}
+            </div>
+          )}
+
+        </div>
+      </section>
+    </div>
+  );
+};
+
 const normalizeZone = (name: string) => name.toLowerCase().replace('baja', 'baja').replace('alta', 'alta');
 
 const prettyZone = (name: string) => {
@@ -615,6 +798,7 @@ const PainZonesCard: React.FC<{ zonas: { name: string; valor: number }[]; totalP
 export const Analiticas: React.FC = () => {
   const { user } = useAuth();
   const { empresas } = useEmpresas();
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [filtro, setFiltro] = useState<string>('all');
   const [workProfileFilter, setWorkProfileFilter] = useState<AnalyticsWorkProfileFilter>('ALL');
   const [compareWorkProfiles, setCompareWorkProfiles] = useState(false);
@@ -731,12 +915,8 @@ export const Analiticas: React.FC = () => {
     return (
       <div className="analytics-page analytics-rrhh-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
         <div className="analytics-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.35rem' }}>
-          <h2 className="header-title" style={{ marginBottom: 0 }}>Analiticas RRHH</h2>
+          <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas</h2>
           <div className="analytics-filters" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="input-field" style={{ width: 160, display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'white' }}>
-              <Filter size={15} />
-              {currentEmpresaLabel}
-            </div>
             <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={periodo} onChange={(event) => setPeriodo(event.target.value as PeriodoKey)}>
               <option value="semanal">Semanal</option>
               <option value="mensual">Mensual</option>
@@ -892,12 +1072,8 @@ export const Analiticas: React.FC = () => {
     return (
       <div className="analytics-page analytics-rrhh-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
         <div className="analytics-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.35rem' }}>
-          <h2 className="header-title" style={{ marginBottom: 0 }}>Analiticas RRHH</h2>
+          <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas</h2>
           <div className="analytics-filters" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="input-field" style={{ width: 160, display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'white' }}>
-              <Filter size={15} /> 
-              {currentEmpresaLabel}
-            </div>
             <select className="input-field" style={{ width: 150, backgroundColor: 'white' }} value={periodo} onChange={(event) => setPeriodo(event.target.value as PeriodoKey)}>
               <option value="semanal">Semanal</option>
               <option value="mensual">Mensual</option>
@@ -1038,13 +1214,29 @@ export const Analiticas: React.FC = () => {
   }
 
   return (
-    <div className="analytics-page" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+    <div className={`analytics-page ${user?.role === 'rrhh' ? 'analytics-rrhh-page' : 'analytics-admin-page'}`} style={{ animation: 'fadeIn 0.3s ease-out' }}>
       <div className="analytics-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas Detalladas</h2>
+        {user?.role === 'admin' ? (
+          <div className="analytics-title-row">
+            <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas</h2>
+            <button
+              type="button"
+              className="analytics-summary-trigger"
+              onClick={() => setSummaryOpen(true)}
+              disabled={periodo === 'personalizado' && (!fechaDesde || !fechaHasta || fechaDesde > fechaHasta)}
+              title={periodo !== 'personalizado' || (!!fechaDesde && !!fechaHasta && fechaDesde <= fechaHasta)
+                ? 'Ver resumen de los filtros seleccionados'
+                : 'Seleccioná una fecha desde y hasta válidas'}
+            >
+              <Sparkles size={15} />
+              Ver resumen
+            </button>
+          </div>
+        ) : <h2 className="header-title" style={{ marginBottom: 0 }}>Analíticas</h2>}
         
         <div className="analytics-filters" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Empresa */}
-          <div className="analytics-control" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          {user?.role === 'admin' && <div className="analytics-control" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Filter size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
             <select
               className="input-field"
@@ -1053,13 +1245,13 @@ export const Analiticas: React.FC = () => {
               onChange={(e) => setFiltro(e.target.value)}
               disabled={!!rrhhEmpresaKey}
             >
-              <option value="all">Todas</option>
+              <option value="all">Todas las empresas</option>
               {user?.isDemo && <option value="demo-company">Empresa Demo</option>}
               {empresas.map(emp => (
                 <option key={emp.supabaseId ?? emp.id} value={emp.supabaseId ?? emp.id.toString()}>{emp.nombre}</option>
               ))}
             </select>
-          </div>
+          </div>}
 
           {/* Perfil laboral */}
           <div className="analytics-control analytics-work-profile" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -1190,6 +1382,23 @@ export const Analiticas: React.FC = () => {
           )}
         </div>
       </div>
+
+      {summaryOpen && user?.role === 'admin' && (
+        <AnalyticsSummaryModal
+          data={data}
+          stats={stats}
+          previousData={previousData}
+          previousStats={previousStats}
+          comparisonActive={comparisonActive}
+          compareWorkProfiles={compareWorkProfiles}
+          administrativeStats={administrativeStats}
+          operativeStats={operativeStats}
+          companyLabel={currentEmpresaLabel}
+          periodLabel={reportPeriodoLabel}
+          workProfileFilter={workProfileFilter}
+          onClose={() => setSummaryOpen(false)}
+        />
+      )}
 
       {compareWorkProfiles && (
         <WorkProfileComparison

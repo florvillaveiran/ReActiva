@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { reactivaStreakEmailMessage } from '../_shared/reactiva-streak-message.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,12 @@ type EmailPayload = {
   subject?: string;
   body?: string;
   automationId?: string;
+  includeReactivaStreak?: boolean;
+  recipientProfileId?: string;
+  recipientCompanyId?: string;
+  // Campo interno: siempre se recalcula en esta función y nunca se confía
+  // en un valor recibido desde el navegador.
+  streakMessage?: string;
 };
 
 const escapeHtml = (value = '') =>
@@ -30,6 +37,7 @@ const escapeHtml = (value = '') =>
   }[char] ?? char));
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isUuid = (value?: string) => !!value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -51,6 +59,7 @@ const buildEmail = (payload: Required<Pick<EmailPayload, 'type' | 'to' | 'invita
       preview: 'Nuevo mensaje de ReActiva.',
       title: escapeHtml(payload.subject?.trim() || 'Mensaje de ReActiva'),
       intro: escapeHtml(payload.body?.trim() || 'Te compartimos una novedad de ReActiva.').replace(/\n/g, '<br />'),
+      streakMessage: escapeHtml(payload.streakMessage?.trim() || ''),
       cta: payload.invitationUrl ? 'Ingresar a ReActiva' : '',
       invitationUrl,
     };
@@ -72,6 +81,7 @@ const buildEmail = (payload: Required<Pick<EmailPayload, 'type' | 'to' | 'invita
     preview: 'Crea tu acceso individual a la plataforma.',
     title: 'Activa tu cuenta en ReActiva',
     intro: `${recipientName}, te compartimos el enlace para crear tu acceso a ReActiva y quedar asociado a ${companyName}.`,
+    streakMessage: '',
     cta: 'Crear acceso',
     invitationUrl,
   };
@@ -102,6 +112,15 @@ const renderHtml = (email: ReturnType<typeof buildEmail>) => `
                   <p style="font-size:16px;line-height:1.6;margin:0;color:#475569;">${email.intro}</p>
                 </td>
               </tr>
+              ${email.streakMessage ? `
+              <tr>
+                <td style="padding:14px 32px 2px;">
+                  <div style="padding:14px 16px;border:1px solid #99f6e4;border-radius:14px;background:#f0fdfa;color:#115e59;font-size:15px;line-height:1.5;font-weight:700;">
+                    ${email.streakMessage}
+                  </div>
+                </td>
+              </tr>
+              ` : ''}
               ${email.cta ? `
               <tr>
                 <td style="padding:26px 32px 12px;text-align:center;">
@@ -177,6 +196,38 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Enlace de invitacion no valido.' }, 400);
   }
 
+  let streakMessage = '';
+  if (payload.type === 'automation_email' && payload.automationId === 'pause-reminder' && payload.includeReactivaStreak === true) {
+    if (!isUuid(payload.recipientProfileId) || !isUuid(payload.recipientCompanyId)) {
+      return jsonResponse({ error: 'No pudimos identificar al destinatario de la Racha ReActiva.' }, 400);
+    }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceRoleKey) {
+      return jsonResponse({ error: 'Supabase no esta configurado para consultar la racha.' }, 500);
+    }
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { data: recipient, error: recipientError } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('id', payload.recipientProfileId)
+      .eq('company_id', payload.recipientCompanyId)
+      .eq('email', payload.to)
+      .eq('role', 'usuario')
+      .maybeSingle();
+    if (recipientError || !recipient) {
+      return jsonResponse({ error: 'El destinatario no coincide con el usuario y la empresa indicados.' }, 400);
+    }
+    const { data: streakState, error: streakError } = await adminClient.rpc(
+      'get_reactiva_email_streak_state',
+      { target_profile_id: payload.recipientProfileId },
+    );
+    if (streakError || !streakState) {
+      return jsonResponse({ error: streakError?.message ?? 'No pudimos consultar la Racha ReActiva.' }, 500);
+    }
+    streakMessage = reactivaStreakEmailMessage(streakState);
+  }
+
   const email = buildEmail({
     type: payload.type,
     to: payload.to,
@@ -186,6 +237,7 @@ Deno.serve(async (req) => {
     subject: payload.subject,
     body: payload.body,
     automationId: payload.automationId,
+    streakMessage,
   });
 
   const resendPayload = {

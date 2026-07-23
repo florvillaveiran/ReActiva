@@ -27,8 +27,8 @@ const WorkProfileBadge: React.FC<{ workProfile?: WorkProfile }> = ({ workProfile
       className="work-profile-badge"
       style={{
         display: 'inline-flex', alignItems: 'center', width: 'fit-content', padding: '0.28rem 0.68rem', borderRadius: '999px',
-        backgroundColor: isUnclassified ? '#fff7ed' : workProfile === 'ADMINISTRATIVO' ? '#eff6ff' : '#ecfdf5',
-        color: isUnclassified ? '#c2410c' : workProfile === 'ADMINISTRATIVO' ? '#2563eb' : '#059669',
+        backgroundColor: isUnclassified ? '#fff7ed' : workProfile === 'ADMINISTRATIVO' ? '#eff6ff' : '#f5f3ff',
+        color: isUnclassified ? '#c2410c' : workProfile === 'ADMINISTRATIVO' ? '#2563eb' : '#7c3aed',
         fontSize: '0.76rem', fontWeight: 700, whiteSpace: 'nowrap',
       }}
     >
@@ -134,9 +134,10 @@ const UsuarioDetalle: React.FC<{
   usuario: Usuario;
   empresa: Empresa | undefined;
   onBack: () => void;
+  canDownloadPdf?: boolean;
   canEditWorkProfile?: boolean;
   onWorkProfileChange?: (workProfile: WorkProfile) => Promise<void>;
-}> = ({ usuario, empresa, onBack, canEditWorkProfile = false, onWorkProfileChange }) => {
+}> = ({ usuario, empresa, onBack, canDownloadPdf = true, canEditWorkProfile = false, onWorkProfileChange }) => {
   const [activeTab, setActiveTab] = useState<'resumen' | 'analiticas'>('resumen');
   const [periodo, setPeriodo] = useState<AnalyticsPeriod>('semanal');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -364,8 +365,8 @@ const UsuarioDetalle: React.FC<{
         <>
           {/* TAB RESUMEN */}
           {activeTab === 'resumen' && (
-            <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-              <div className="card" style={{ padding: '1.75rem', borderLeft: `4px solid ${riesgo.color}`, marginBottom: '1.5rem' }}>
+            <div className="user-onboarding-summary-grid" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+              <div className="card user-onboarding-risk-card" style={{ padding: '1.75rem', borderLeft: `4px solid ${riesgo.color}` }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <TrendingUp size={18} color={riesgo.color} /> Índice de Riesgo Inicial
                 </h3>
@@ -381,8 +382,27 @@ const UsuarioDetalle: React.FC<{
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                <div className="card" style={{ flex: 1, padding: '1.75rem', minWidth: '300px' }}>
+              <div className="card user-onboarding-facts-card">
+                <h3>
+                  <Activity size={18} color="#3b82f6" /> Perfil inicial completo
+                </h3>
+                <div className="user-onboarding-facts">
+                  {[
+                    { label: 'Perfil laboral', value: workProfileLabel(usuario.workProfile ?? data.workProfile) },
+                    { label: 'Actividad física', value: data.actividadFisica || 'Sin respuesta' },
+                    { label: 'Energía habitual', value: data.energia || 'Sin respuesta' },
+                    { label: 'Fatiga al finalizar', value: data.fatiga || 'Sin respuesta' },
+                    { label: 'Bienestar general', value: data.bienestar || 'Sin respuesta' },
+                  ].map(item => (
+                    <div key={item.label} className="user-onboarding-fact">
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+                <div className="card user-onboarding-detail-card user-onboarding-pain-card">
                   <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <AlertCircle size={18} color="#f59e0b" /> Dolor Musculoesquelético
                   </h3>
@@ -393,7 +413,7 @@ const UsuarioDetalle: React.FC<{
                     }
                   </div>
                 </div>
-                <div className="card" style={{ flex: 1, padding: '1.75rem', minWidth: '300px' }}>
+                <div className="card user-onboarding-detail-card user-onboarding-goals-card">
                   <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <CheckCircle2 size={18} color="#10b981" /> Metas del usuario
                   </h3>
@@ -404,7 +424,6 @@ const UsuarioDetalle: React.FC<{
                     }
                   </div>
                 </div>
-              </div>
             </div>
           )}
 
@@ -428,14 +447,14 @@ const UsuarioDetalle: React.FC<{
                     </div>
                   )}
                 </div>
-                <button
+                {canDownloadPdf && <button
                   className="btn-primary"
                   onClick={handleDescargarPDF}
                   disabled={generandoPDF}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
                 >
                   <Download size={16} /> {generandoPDF ? 'Generando...' : 'Generar PDF'}
-                </button>
+                </button>}
               </div>
 
               {/* REPORT ENCAPSULADO PARA PDF */}
@@ -860,6 +879,7 @@ export const Usuarios: React.FC = () => {
       <UsuarioDetalle
         usuario={selectedUser}
         empresa={emp}
+        canDownloadPdf={!isRrhh}
         canEditWorkProfile={!isRrhh}
         onWorkProfileChange={(workProfile) => handleWorkProfileChange(selectedUser, workProfile)}
         onBack={() => { loadData(); setSelectedUser(null); }}

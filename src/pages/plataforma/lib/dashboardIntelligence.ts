@@ -1,4 +1,5 @@
 import type { AdminStats } from '../hooks/useAdminStats';
+import type { ReactivaScoreSummary, ReactivaTeamScore } from './reactivaScore';
 
 export type IntelligenceScope = 'global' | 'company';
 
@@ -34,6 +35,83 @@ const topItem = (items: { name: string; valor: number }[]) => (
 
 const enoughData = (stats: AdminStats) => stats.totalPausas >= 3 || stats.usuariosCount >= 3;
 
+const scoreAverage = (users: ReactivaTeamScore[]) => {
+  const eligible = users.filter(user => user.maximum > 0);
+  return eligible.length ? eligible.reduce((total, user) => total + user.percent, 0) / eligible.length : 0;
+};
+
+export const buildReactivaScoreInsights = (summary?: ReactivaScoreSummary | null): DashboardInsight[] => {
+  const users = (summary?.users ?? []).filter(user => user.maximum > 0);
+  if (!users.length) return [];
+  if (users.length < 3) {
+    return [{
+      id: 'reactiva-small-sample',
+      title: 'Primeros datos de Puntaje ReActiva',
+      detail: 'Ya hay actividad, pero todavía se necesitan al menos 3 personas para mostrar una tendencia.',
+      source: `${users.length} colaboradores con período programado`,
+      confidence: 'Baja',
+    }];
+  }
+
+  const insights: DashboardInsight[] = [];
+  const classified = users.filter(user => user.eligible).length;
+  const classifiedPercent = Math.round(classified * 100 / users.length);
+  insights.push({
+    id: 'reactiva-eligibility',
+    title: 'Objetivo mensual',
+    detail: `${classified} de ${users.length} personas alcanzaron el objetivo mensual (${classifiedPercent}%).`,
+    source: 'reactiva_score_events y configuración empresarial',
+    confidence: 'Alta',
+  });
+
+  const programmedWeeks = users.reduce((total, user) => total + user.weeks.length, 0);
+  const activityRates = [
+    { label: 'Los microentrenamientos', value: users.reduce((total, user) => total + user.breakdown.microtrainings, 0), maximum: programmedWeeks * 6 },
+    { label: 'Los formularios diarios', value: users.reduce((total, user) => total + user.breakdown.daily_forms, 0), maximum: programmedWeeks * 2 },
+    { label: 'Los formularios semanales', value: users.reduce((total, user) => total + user.breakdown.weekly_forms, 0), maximum: programmedWeeks * 2 },
+  ].filter(item => item.maximum > 0).map(item => ({ ...item, percent: Math.round(item.value * 100 / item.maximum) }));
+  const lowest = activityRates.sort((first, second) => first.percent - second.percent)[0];
+  if (lowest) {
+    insights.push({
+      id: 'reactiva-activity-opportunity',
+      title: 'Actividad para reforzar',
+      detail: `${lowest.label} tienen ${lowest.percent}% de cumplimiento. Conviene revisar si el acceso y los recordatorios son claros.`,
+      source: 'desglose real de reactiva_score_events',
+      confidence: 'Alta',
+    });
+  }
+
+  const administrative = users.filter(user => user.work_profile === 'ADMINISTRATIVO');
+  const operative = users.filter(user => user.work_profile === 'OPERATIVO');
+  if (administrative.length >= 3 && operative.length >= 3) {
+    const administrativeAverage = scoreAverage(administrative);
+    const operativeAverage = scoreAverage(operative);
+    const difference = Math.round(Math.abs(administrativeAverage - operativeAverage));
+    if (difference >= 10) {
+      insights.push({
+        id: 'reactiva-profile-constancy',
+        title: 'Diferencia entre perfiles',
+        detail: `${administrativeAverage > operativeAverage ? 'Administrativo' : 'Operativo'} tiene ${difference} puntos más de cumplimiento. Revisá horarios y acceso de cada grupo.`,
+        source: 'Puntaje ReActiva segmentado por work_profile',
+        confidence: 'Media',
+      });
+    }
+  }
+
+  const averageStreak = users.reduce((total, user) => total + user.streak, 0) / users.length;
+  if (averageStreak > 0) {
+    insights.push({
+      id: 'reactiva-streak',
+      title: 'Racha del equipo',
+      detail: `El promedio actual es de ${averageStreak.toFixed(1)} semanas completas seguidas.`,
+      source: 'semanas consecutivas con 10/10',
+      confidence: 'Alta',
+    });
+  }
+
+  return insights.slice(0, 4);
+};
+
 export const buildDashboardInsights = (
   stats: AdminStats,
   administrativeStats?: AdminStats,
@@ -47,8 +125,8 @@ export const buildDashboardInsights = (
   if (!stats.hayDatos) {
     return [{
       id: 'empty-data',
-      title: 'Todavía no hay datos suficientes',
-      detail: `Aún no se registraron pausas suficientes para generar conclusiones confiables sobre ${scopeLabel}.`,
+      title: 'Todavía faltan datos',
+      detail: `Aún no hay suficientes pausas para mostrar una tendencia de ${scopeLabel}.`,
       source: 'pause_sessions',
       confidence: 'Baja',
     }];
@@ -58,7 +136,7 @@ export const buildDashboardInsights = (
     insights.push({
       id: 'small-sample',
       title: 'Muestra inicial',
-      detail: 'Ya hay actividad registrada, pero la muestra todavía es chica. Los indicadores se muestran como orientación, no como conclusión.',
+      detail: 'Ya hay actividad, pero todavía es poca. Tomá estos datos como una primera referencia.',
       source: `${stats.totalPausas} pausas registradas`,
       confidence: 'Baja',
     });
@@ -68,7 +146,7 @@ export const buildDashboardInsights = (
     insights.push({
       id: 'low-participation',
       title: 'Participación baja',
-      detail: `La participación actual es ${stats.adherencia}%. Conviene revisar horarios, recordatorios y facilidad de acceso.`,
+      detail: `La participación es ${stats.adherencia}%. Revisá horarios, recordatorios y acceso.`,
       source: 'pause_sessions por día y bloque',
       confidence: sampleOk ? 'Alta' : 'Baja',
     });
@@ -86,8 +164,8 @@ export const buildDashboardInsights = (
   if (tension && tension.valor >= 30 && tension.name !== 'No sentí tensión') {
     insights.push({
       id: 'tension-pattern',
-      title: 'Patrón de tensión detectado',
-      detail: `El momento con más tensión reportada es "${tension.name}" con ${tension.valor}% de las respuestas.`,
+      title: 'Momento con más tensión',
+      detail: `${tension.valor}% de las respuestas marca "${tension.name}".`,
       source: 'respuestas semanales de tensión',
       confidence: sampleOk ? 'Media' : 'Baja',
     });
@@ -97,8 +175,8 @@ export const buildDashboardInsights = (
     const zone = stats.zonasDolorTop[0] ?? 'zona no especificada';
     insights.push({
       id: 'pain-signal',
-      title: 'Señal de dolor a atender',
-      detail: `${stats.reportanMolestias}% de las pausas reportan molestias. La zona más mencionada es ${zone}.`,
+      title: 'Molestias para revisar',
+      detail: `${stats.reportanMolestias}% reportó molestias. La zona más mencionada es ${zone}.`,
       source: 'respuestas diarias de dolor',
       confidence: sampleOk ? 'Media' : 'Baja',
     });
@@ -109,7 +187,7 @@ export const buildDashboardInsights = (
     if (Math.abs(diff) >= 15) {
       insights.push({
         id: 'profile-gap',
-        title: 'Brecha entre perfiles laborales',
+        title: 'Diferencia entre perfiles',
         detail: diff > 0
           ? `El perfil Operativo participa ${Math.abs(diff)} puntos menos que Administrativo.`
           : `El perfil Administrativo participa ${Math.abs(diff)} puntos menos que Operativo.`,
@@ -130,7 +208,7 @@ export const buildDashboardActions = (insights: DashboardInsight[]): DashboardAc
       actions.push({
         id: 'review-reminders',
         title: 'Revisar recordatorios y horarios',
-        detail: 'Validar si los emails llegan antes de cada pausa y si el horario coincide con la rutina real de la empresa.',
+        detail: 'Comprobá que los mensajes lleguen a tiempo y que los horarios sirvan para la rutina del equipo.',
         owner: 'RRHH',
         priority: 'Alta',
       });
@@ -140,7 +218,7 @@ export const buildDashboardActions = (insights: DashboardInsight[]): DashboardAc
       actions.push({
         id: 'adjust-pause-timing',
         title: 'Ajustar momento de pausa',
-        detail: 'Evaluar mover o reforzar la pausa del bloque donde aparece mayor tensión.',
+        detail: 'Probá mover o reforzar la pausa del horario con más tensión.',
         owner: 'ReActiva',
         priority: 'Media',
       });
@@ -150,7 +228,7 @@ export const buildDashboardActions = (insights: DashboardInsight[]): DashboardAc
       actions.push({
         id: 'add-target-content',
         title: 'Priorizar contenido específico',
-        detail: 'Programar microentrenamientos o talleres relacionados con la zona de dolor más reportada.',
+        detail: 'Programá contenido para la zona con más molestias.',
         owner: 'ReActiva',
         priority: 'Alta',
       });
@@ -160,7 +238,7 @@ export const buildDashboardActions = (insights: DashboardInsight[]): DashboardAc
       actions.push({
         id: 'profile-segmentation',
         title: 'Revisar segmentación por perfil',
-        detail: 'Comparar videos, horarios y emails de Administrativo vs Operativo para detectar fricción.',
+        detail: 'Compará horarios, videos y mensajes de cada perfil.',
         owner: 'Informativo',
         priority: 'Media',
       });
@@ -171,7 +249,7 @@ export const buildDashboardActions = (insights: DashboardInsight[]): DashboardAc
     actions.push({
       id: 'keep-monitoring',
       title: 'Sostener seguimiento',
-      detail: 'No hay alertas críticas. Mantener medición semanal y revisar evolución con más datos.',
+      detail: 'No hay alertas importantes. Seguí revisando la evolución cada semana.',
       owner: 'Informativo',
       priority: 'Baja',
     });
