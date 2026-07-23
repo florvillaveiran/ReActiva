@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, AlertTriangle, Award, BarChart3, HeartPulse, Lightbulb, Target, TrendingUp, Users, Zap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -8,6 +8,7 @@ import { buildDashboardActions, buildDashboardInsights, buildImpactMetrics, buil
 import { getDashboardPeriodRanges, type DashboardPeriod } from '../../lib/dashboardPeriods';
 import { averageScoreForPeriod, ReactivaTeamScorePanel } from '../../components/ReactivaTeamScorePanel';
 import { useReactivaScoreSummary } from '../../hooks/useReactivaScoreSummary';
+import type { ReactivaScoreSummary, ReactivaTeamScore } from '../../lib/reactivaScore';
 
 const MetricCard: React.FC<{
   label: string;
@@ -76,12 +77,68 @@ const SectionCard: React.FC<{ title: string; icon: React.ReactNode; children: Re
   </section>
 );
 
+const buildDemoScoreUser = (
+  name: string,
+  email: string,
+  profile: ReactivaTeamScore['work_profile'],
+  score: number,
+  maximum: number,
+  streak: number,
+  companyId = 'demo-company',
+): ReactivaTeamScore => ({
+  profile_id: `demo-${email}`,
+  company_id: companyId,
+  month: '2026-07-01',
+  name,
+  email,
+  work_profile: profile,
+  score,
+  maximum,
+  percent: maximum > 0 ? Math.round((score * 100) / maximum) : 0,
+  eligible: maximum > 0 && (score * 100) / maximum >= 80,
+  threshold_percent: 80,
+  streak,
+  best_streak: Math.max(streak, 2),
+  settings: {
+    enabled: true,
+    monthly_close_day: 1,
+    prize_description: 'Reconocimiento mensual ReActiva',
+    show_score_to_users: true,
+    show_streak_to_users: true,
+    show_score_to_rrhh: true,
+  },
+  breakdown: {
+    microtrainings: Math.min(score, 14),
+    daily_forms: Math.max(0, Math.min(score - 8, 8)),
+    weekly_forms: Math.max(0, Math.min(score - 14, 4)),
+  },
+  weeks: [
+    { week_start: '2026-07-06', score: Math.max(0, score - 8), maximum: 10, complete: score >= 18, microtrainings: 4, daily_forms: 2, weekly_forms: 1 },
+    { week_start: '2026-07-13', score: Math.max(0, score - 5), maximum: 10, complete: score >= 15, microtrainings: 5, daily_forms: 2, weekly_forms: 1 },
+    { week_start: '2026-07-20', score: Math.min(score, 10), maximum: 10, complete: score >= 10, microtrainings: Math.min(score, 6), daily_forms: Math.max(0, Math.min(score - 6, 2)), weekly_forms: Math.max(0, Math.min(score - 8, 2)) },
+  ],
+});
+
+const DEMO_REACTIVA_SCORE_SUMMARY: ReactivaScoreSummary = {
+  month: '2026-07-01',
+  company_id: 'demo-company',
+  average_percent: 78,
+  global_average_percent: 74,
+  users: [
+    buildDemoScoreUser('María López', 'maria.demo@empresaalpha.com', 'ADMINISTRATIVO', 8, 10, 2),
+    buildDemoScoreUser('Juan Pérez', 'juan.demo@empresaalpha.com', 'OPERATIVO', 10, 10, 3),
+    buildDemoScoreUser('Lucía Gómez', 'lucia.demo@empresaalpha.com', 'ADMINISTRATIVO', 7, 10, 1),
+    buildDemoScoreUser('Nicolás Ruiz', 'nicolas.demo@empresaalpha.com', 'OPERATIVO', 6, 10, 0),
+  ],
+};
+
 export const EmpresaDashboard: React.FC = () => {
   const { user } = useAuth();
   const { empresas } = useEmpresas();
   const navigate = useNavigate();
   const [analyticsPeriod, setAnalyticsPeriod] = useState<DashboardPeriod>('semanal');
   const [showScoreDetail, setShowScoreDetail] = useState(false);
+  const scoreDetailRef = useRef<HTMLDivElement | null>(null);
 
   const empresa = useMemo(() => {
     if (user?.isDemo) return undefined;
@@ -96,7 +153,8 @@ export const EmpresaDashboard: React.FC = () => {
   const administrativeStats = useAdminStats(companyId, periodRanges.current.from, periodRanges.current.to, 'ADMINISTRATIVO');
   const operativeStats = useAdminStats(companyId, periodRanges.current.from, periodRanges.current.to, 'OPERATIVO');
   const { summary: scoreSummary } = useReactivaScoreSummary(companyId, !user?.isDemo);
-  const reactivaAverage = scoreSummary ? averageScoreForPeriod(scoreSummary.users, analyticsPeriod) : null;
+  const displayScoreSummary = user?.isDemo ? DEMO_REACTIVA_SCORE_SUMMARY : scoreSummary;
+  const reactivaAverage = displayScoreSummary ? averageScoreForPeriod(displayScoreSummary.users, analyticsPeriod) : null;
   const reactivaTone = (reactivaAverage ?? 0) >= 100 ? 'complete' : (reactivaAverage ?? 0) >= 90 ? 'near' : 'progress';
   const reactivaTheme = reactivaTone === 'complete'
     ? { color: '#047857', bg: '#ecfdf5', helper: 'Racha completa' }
@@ -105,13 +163,20 @@ export const EmpresaDashboard: React.FC = () => {
       : { color: '#0369a1', bg: '#eff6ff', helper: 'En progreso' };
 
   const insights = useMemo(() => [
-    ...buildReactivaScoreInsights(scoreSummary),
+    ...buildReactivaScoreInsights(displayScoreSummary),
     ...buildDashboardInsights(currentStats, administrativeStats, operativeStats, 'company'),
-  ].slice(0, 5), [administrativeStats, currentStats, operativeStats, scoreSummary]);
+  ].slice(0, 5), [administrativeStats, currentStats, operativeStats, displayScoreSummary]);
   const actions = useMemo(() => buildDashboardActions(insights), [insights]);
   const impact = useMemo(() => buildImpactMetrics(currentStats, previousStats), [currentStats, previousStats]);
 
   const companyName = user?.isDemo ? 'Empresa Alpha' : empresa?.nombre ?? 'Tu empresa';
+
+  useEffect(() => {
+    if (!showScoreDetail) return;
+    window.requestAnimationFrame(() => {
+      scoreDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [showScoreDetail]);
 
   return (
     <div className="empresa-dashboard-page" style={{ animation: 'fadeIn 0.35s ease-out' }}>
@@ -153,12 +218,17 @@ export const EmpresaDashboard: React.FC = () => {
       </div>
 
       {showScoreDetail && (
-        <div className="rrhh-reactiva-score-detail" style={{ marginBottom: '1.25rem' }}>
+        <div
+          ref={scoreDetailRef}
+          className="rrhh-reactiva-score-detail"
+          style={{ marginBottom: '1.25rem', scrollMarginTop: '1rem' }}
+        >
           <ReactivaTeamScorePanel
             companyId={companyId}
             period={analyticsPeriod}
             title="Puntaje ReActiva del equipo"
-            enabled={!user?.isDemo}
+            enabled
+            demoSummary={user?.isDemo ? DEMO_REACTIVA_SCORE_SUMMARY : null}
             showExportActions={false}
             showCompanyFilter={false}
           />

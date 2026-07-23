@@ -11,7 +11,7 @@ const KpiCard: React.FC<{
   value: string;
   label: string;
 }> = ({ icon, iconBg, iconColor, value, label }) => (
-  <div style={{
+  <div className="user-progress-kpi-card" style={{
     backgroundColor: 'white',
     borderRadius: '16px',
     padding: '1.25rem 1.5rem',
@@ -21,7 +21,7 @@ const KpiCard: React.FC<{
     gap: '1rem',
     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
   }}>
-    <div style={{
+    <div className="user-progress-kpi-icon" style={{
       width: 48, height: 48, borderRadius: '12px',
       backgroundColor: iconBg, color: iconColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -29,8 +29,8 @@ const KpiCard: React.FC<{
       {icon}
     </div>
     <div style={{ minWidth: 0 }}>
-      <p style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-color)', lineHeight: 1.1, marginBottom: '2px' }}>{value}</p>
-      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{label}</p>
+      <p className="user-progress-kpi-value" style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-color)', lineHeight: 1.1, marginBottom: '2px' }}>{value}</p>
+      <p className="user-progress-kpi-label" style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{label}</p>
     </div>
   </div>
 );
@@ -48,7 +48,7 @@ const ChartCard: React.FC<{
   lineColor: string;
   gradientId: string;
 }> = ({ icon, iconBg, iconColor, titulo, subtitulo, promedio, promedioColor, data, lineColor, gradientId }) => (
-  <div style={{
+  <div className="user-progress-chart-card" style={{
     backgroundColor: 'white',
     borderRadius: '16px',
     padding: '1.5rem',

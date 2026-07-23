@@ -4,7 +4,7 @@ import { Award, CheckCircle2, ChevronDown, Clock3, Download, FileText, Flame, Se
 import { useEmpresas } from '../context/EmpresasContext';
 import { useReactivaScoreSummary } from '../hooks/useReactivaScoreSummary';
 import type { DashboardPeriod } from '../lib/dashboardPeriods';
-import type { ReactivaTeamScore } from '../lib/reactivaScore';
+import type { ReactivaScoreSummary, ReactivaTeamScore } from '../lib/reactivaScore';
 
 const dateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -122,9 +122,11 @@ export const ReactivaTeamScorePanel: React.FC<{
   enabled?: boolean;
   showExportActions?: boolean;
   showCompanyFilter?: boolean;
-}> = ({ companyId, period, title = 'Puntaje ReActiva del equipo', enabled = true, showExportActions = false, showCompanyFilter = false }) => {
+  demoSummary?: ReactivaScoreSummary | null;
+}> = ({ companyId, period, title = 'Puntaje ReActiva del equipo', enabled = true, showExportActions = false, showCompanyFilter = false, demoSummary = null }) => {
   const { empresas } = useEmpresas();
   const { summary, loading, unavailable } = useReactivaScoreSummary(companyId, enabled);
+  const activeSummary = demoSummary ?? summary;
   const previousMonth = useMemo(() => {
     const date = new Date();
     date.setMonth(date.getMonth() - 1, 1);
@@ -138,7 +140,7 @@ export const ReactivaTeamScorePanel: React.FC<{
   const [showPeople, setShowPeople] = useState(false);
 
   const companyNames = useMemo(() => new Map(empresas.map(company => [company.supabaseId, company.nombre])), [empresas]);
-  const users = useMemo(() => (summary?.users ?? []).map(user => ({ ...user, period: periodScoreForUser(user, period) })), [period, summary]);
+  const users = useMemo(() => (activeSummary?.users ?? []).map(user => ({ ...user, period: periodScoreForUser(user, period) })), [activeSummary, period]);
   const filtered = useMemo(() => users.filter(user => {
     const term = search.trim().toLowerCase();
     const matchesSearch = !term || user.name.toLowerCase().includes(term) || user.email.toLowerCase().includes(term);
@@ -149,12 +151,12 @@ export const ReactivaTeamScorePanel: React.FC<{
   }).sort((first, second) => first.name.localeCompare(second.name, 'es')), [companyFilter, eligibility, profile, search, users]);
 
   if (!enabled) return null;
-  if (loading) return <section className="reactiva-team-panel reactiva-team-loading" aria-label="Cargando puntajes del equipo" />;
-  if (unavailable || !summary) {
+  if (!demoSummary && loading) return <section className="reactiva-team-panel reactiva-team-loading" aria-label="Cargando puntajes del equipo" />;
+  if (!activeSummary || (!demoSummary && unavailable)) {
     return <section className="reactiva-team-panel reactiva-team-empty"><Award size={22} /><div><strong>{title}</strong><span>Disponible cuando el sistema de puntaje quede sincronizado.</span></div></section>;
   }
 
-  const average = averageScoreForPeriod(summary.users, period);
+  const average = averageScoreForPeriod(activeSummary.users, period);
   const eligibleCount = users.filter(user => user.period.eligible).length;
   const participants = users.filter(user => user.period.maximum > 0).length;
   const programmedUsers = users.filter(user => user.period.maximum > 0);
@@ -165,7 +167,7 @@ export const ReactivaTeamScorePanel: React.FC<{
   const visualUsers = users.map(user => ({ user, visual: teamScoreVisual(user.period, user.streak) }));
   const nearStreakCount = visualUsers.filter(item => item.visual.state === 'near').length;
   const completeStreakCount = visualUsers.filter(item => item.visual.state === 'complete').length;
-  const activityBreakdown = summary.users.reduce((totals, user) => {
+  const activityBreakdown = activeSummary.users.reduce((totals, user) => {
     if (period === 'mensual') {
       totals.micro += user.breakdown.microtrainings;
       totals.daily += user.breakdown.daily_forms;
@@ -180,8 +182,8 @@ export const ReactivaTeamScorePanel: React.FC<{
     }
     return totals;
   }, { micro: 0, daily: 0, weekly: 0, weeks: 0 });
-  const weeklyEvolution = Array.from(new Set(summary.users.flatMap(user => user.weeks.map(week => week.week_start)))).sort().map(weekStart => {
-    const weekValues = summary.users.map(user => user.weeks.find(week => week.week_start === weekStart)).filter(Boolean);
+  const weeklyEvolution = Array.from(new Set(activeSummary.users.flatMap(user => user.weeks.map(week => week.week_start)))).sort().map(weekStart => {
+    const weekValues = activeSummary.users.map(user => user.weeks.find(week => week.week_start === weekStart)).filter(Boolean);
     return { weekStart, average: weekValues.length ? weekValues.reduce((total, week) => total + (week?.score ?? 0), 0) / weekValues.length : 0 };
   });
   const activityItems = [
@@ -195,9 +197,9 @@ export const ReactivaTeamScorePanel: React.FC<{
     previousSummary.users.forEach(user => grouped.set(user.company_id, [...(grouped.get(user.company_id) ?? []), user]));
     grouped.forEach((companyUsers, id) => previousByCompany.set(id, averageScoreForPeriod(companyUsers, 'mensual')));
   }
-  const companyIds: string[] = Array.from(new Set(summary.users.map(user => String(user.company_id))));
+  const companyIds: string[] = Array.from(new Set(activeSummary.users.map(user => String(user.company_id))));
   const companiesSummary = companyIds.map(id => {
-    const companyUsers = summary.users.filter(user => user.company_id === id);
+    const companyUsers = activeSummary.users.filter(user => user.company_id === id);
     const companyAverage = averageScoreForPeriod(companyUsers, period);
     const previousAverage = previousByCompany.get(id);
     return { id, name: companyNames.get(id) ?? 'Empresa', average: companyAverage, classified: companyUsers.filter(user => periodScoreForUser(user, period).eligible).length, trend: period === 'mensual' && previousAverage != null ? companyAverage - previousAverage : null };
